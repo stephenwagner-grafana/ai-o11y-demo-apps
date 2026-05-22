@@ -227,8 +227,8 @@ def summarize(nc_users: list[dict], sb_users: list[dict]) -> str:
         buckets[u["cohort"]] = buckets.get(u["cohort"], 0) + 1
     return (
         f"Generated {len(nc_users)} NC users "
-        f"({buckets['non-ai']} non-ai / "
-        f"{buckets['gift-finder']} gift-finder / "
+        f"({buckets['non_ai']} non_ai / "
+        f"{buckets['gift_finder']} gift_finder / "
         f"{buckets['chatbot']} chatbot / "
         f"{buckets['both']} both) "
         f"+ {len(sb_users)} SB users"
