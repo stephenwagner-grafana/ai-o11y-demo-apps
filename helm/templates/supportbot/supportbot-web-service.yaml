@@ -1,0 +1,18 @@
+{{- if .Values.supportbot.web.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: supportbot-web
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "supportbot-web" | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "aio11y.selectorLabels" "supportbot-web" | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+{{- end }}

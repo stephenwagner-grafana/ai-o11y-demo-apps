@@ -1,0 +1,45 @@
+{{- if .Values.neoncart.giftFinder.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nc-gift-finder
+  namespace: neoncart
+  labels:
+    {{- include "aio11y.labels" "nc-gift-finder" | nindent 4 }}
+spec:
+  replicas: {{ .Values.neoncart.giftFinder.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "nc-gift-finder" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "nc-gift-finder" | nindent 8 }}
+    spec:
+      containers:
+        - name: nc-gift-finder
+          image: {{ include "aio11y.image" (list $ "neoncart-gift-finder") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "nc-gift-finder") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.neoncart.giftFinder.resources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,10 @@
+{{- range list "k6-loadgen" "neoncart" "support-bot" "ai-o11y-postgres" "llm-gateway" }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+  labels:
+    app.kubernetes.io/part-of: ai-o11y-demo-apps
+    app.kubernetes.io/managed-by: Helm
+---
+{{- end }}

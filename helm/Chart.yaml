@@ -1,0 +1,22 @@
+apiVersion: v2
+name: ai-o11y-demo-apps
+description: |
+  Demo applications for showcasing AI observability with Grafana Cloud.
+  Two AI-powered applications (NeonCart e-commerce + SupportBot internal
+  employee chatbot) with full OpenTelemetry instrumentation, deployable
+  to any Kubernetes cluster.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - ai
+  - observability
+  - grafana
+  - sigil
+  - opentelemetry
+home: https://github.com/stephenwagner-grafana/ai-o11y-demo-apps
+sources:
+  - https://github.com/stephenwagner-grafana/ai-o11y-demo-apps
+maintainers:
+  - name: Stephen Wagner
+    email: stephenwagner@grafana.com

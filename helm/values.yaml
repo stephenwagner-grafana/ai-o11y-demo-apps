@@ -1,0 +1,172 @@
+# =============================================================================
+# ai-o11y-demo-apps Helm values
+# =============================================================================
+# All credentials (Sigil, OTel, Anthropic, OpenAI, Gemini) should be supplied
+# via a generated values-overrides file (see tools/install.sh) — never commit
+# real keys here. Everything below is either non-secret defaults or empty
+# placeholders.
+
+global:
+  # Container image registry + tag. Per-component image names are computed
+  # from this in templates/_helpers.tpl.
+  image:
+    registry: ghcr.io/stephenwagner-grafana/ai-o11y-demo-apps
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  # Service identity (resource attribute on every OTel signal)
+  serviceNamespace: ai-o11y-demo-apps
+
+  # Provider credentials — populated by install.sh from the user-supplied .env
+  anthropic:
+    apiKey: ""           # required — CLAUDE_API_KEY
+  openai:
+    apiKey: ""           # optional
+  gemini:
+    apiKey: ""           # optional
+  ollama:
+    baseUrl: ""          # optional — e.g. http://ollama.ollama.svc.cluster.local:11434
+
+  # Per-provider caps (drive the gateway /open endpoint)
+  caps:
+    anthropic:
+      usdPerDay: 20
+    openai:
+      usdPerDay: 5
+    gemini:
+      usdPerDay: 5
+    ollama:
+      gpuUtilizationThreshold: 0.85
+
+  # Default models per provider
+  defaults:
+    anthropicModel: claude-haiku-4-5-20251001
+    openaiModel: gpt-4o-mini
+    geminiModel: gemini-1.5-flash
+    ollamaModel: qwen2.5:32b
+
+  # Sigil credentials (required — populated by install.sh)
+  sigil:
+    endpoint: ""         # SIGIL_ENDPOINT
+    protocol: http       # SIGIL_PROTOCOL
+    authMode: basic      # SIGIL_AUTH_MODE
+    tenantId: ""         # SIGIL_AUTH_TENANT_ID
+    token: ""            # SIGIL_AUTH_TOKEN
+
+  # OTel OTLP credentials (required — populated by install.sh)
+  otel:
+    endpoint: ""         # OTEL_EXPORTER_OTLP_ENDPOINT
+    headers: ""          # OTEL_EXPORTER_OTLP_HEADERS  (Authorization=Basic <base64>)
+
+# =============================================================================
+# Postgres — shared by NeonCart (catalog) + SupportBot (RAG vector store)
+# Lives in the `ai-o11y-postgres` namespace.
+# =============================================================================
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "16-alpine"
+  storage:
+    size: 1Gi
+    storageClass: ""     # empty = use cluster default
+  database: aio11y
+  user: aio11y
+  password: ""           # leave empty; install.sh generates random
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Seed Job (one-shot, runs after Postgres is Ready)
+  seedJob:
+    enabled: true
+
+# =============================================================================
+# LLM Gateway — the gatekeeper. Lives in `llm-gateway` namespace.
+# =============================================================================
+gateway:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # Pricing overrides — empty means use config/pricing.yaml shipped in the image
+  pricingOverrides: {}
+
+# =============================================================================
+# NeonCart — `neoncart` namespace
+# =============================================================================
+neoncart:
+  web:
+    enabled: true
+    replicas: 1
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits:   {cpu: 500m, memory: 512Mi}
+  chatbot:
+    enabled: true
+    replicas: 1
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits:   {cpu: 500m, memory: 512Mi}
+  giftFinder:
+    enabled: true
+    replicas: 1
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+      limits:   {cpu: 500m, memory: 512Mi}
+
+# =============================================================================
+# SupportBot — `support-bot` namespace
+# =============================================================================
+supportbot:
+  web:
+    enabled: true
+    replicas: 1
+    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi}}
+  router:
+    enabled: true
+    replicas: 1
+    resources: {requests: {cpu: 100m, memory: 256Mi}, limits: {cpu: 500m, memory: 512Mi}}
+  billing:
+    enabled: true
+    replicas: 1
+    resources: {requests: {cpu: 50m,  memory: 128Mi}, limits: {cpu: 250m, memory: 256Mi}}
+  techSupport:
+    enabled: true
+    replicas: 1
+    resources: {requests: {cpu: 50m,  memory: 128Mi}, limits: {cpu: 250m, memory: 256Mi}}
+  accountManagement:
+    enabled: true
+    replicas: 1
+    resources: {requests: {cpu: 50m,  memory: 128Mi}, limits: {cpu: 250m, memory: 256Mi}}
+
+# =============================================================================
+# Loadgen — `k6-loadgen` namespace
+# =============================================================================
+loadgen:
+  enabled: true
+  replicas: 1
+  resources:
+    requests: {cpu: 200m, memory: 256Mi}
+    limits:   {cpu: 1000m, memory: 512Mi}
+  # Behavior knobs (mirror LOADGEN.md env vars)
+  ncTotalUsers: 200
+  ncAiAdoptionRate: 0.25
+  ncSessionsPerHour: 60
+  sbTotalUsers: 30
+  sbSessionsPerHour: 30
+  pollOpenIntervalSec: 5
+  timeOfDayCurve: false
+  timezone: America/New_York
+  sbUserDomain: acme.com
+  # users.yaml content is generated by tools/regenerate-users.py and mounted
+  # via ConfigMap. The install.sh wizard generates it before helm install.
+  usersYamlPath: config/users.yaml

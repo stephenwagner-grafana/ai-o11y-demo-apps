@@ -1,0 +1,45 @@
+{{- if .Values.supportbot.accountManagement.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sb-account-management
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "sb-account-management" | nindent 4 }}
+spec:
+  replicas: {{ .Values.supportbot.accountManagement.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "sb-account-management" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "sb-account-management" | nindent 8 }}
+    spec:
+      containers:
+        - name: sb-account-management
+          image: {{ include "aio11y.image" (list $ "supportbot-account-management") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "sb-account-management") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.supportbot.accountManagement.resources | nindent 12 }}
+{{- end }}

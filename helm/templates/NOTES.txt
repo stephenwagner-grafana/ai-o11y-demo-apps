@@ -1,0 +1,32 @@
+─────────────────────────────────────────────────────────────────────────
+ai-o11y-demo-apps {{ .Chart.AppVersion }} installed!
+─────────────────────────────────────────────────────────────────────────
+
+Namespaces created:
+  • k6-loadgen        (central loadgen)
+  • neoncart          (NC web + chatbot + gift-finder)
+  • support-bot       (SB web + router + 3 domain specialists)
+  • llm-gateway       (the gatekeeper)
+  • ai-o11y-postgres  (shared catalog + RAG store)
+
+Check the pods are coming up:
+  kubectl get pods -A -l app.kubernetes.io/part-of=ai-o11y-demo-apps
+
+Run the post-install verifier:
+  ./tools/verify.sh
+
+Reach NeonCart in your browser:
+  kubectl -n neoncart port-forward svc/neoncart-web 8080:8000
+  open http://localhost:8080
+
+Reach the SupportBot UI:
+  kubectl -n support-bot port-forward svc/supportbot-web 8081:8000
+  open http://localhost:8081
+
+The "show me mice" demo trap is baked into nc-chatbot — type "show me mice"
+in the NeonCart chat widget to see a cascading database error trace.
+
+View telemetry in your Grafana Cloud — the AI Observability plugin
+(Sigil) at /a/grafana-sigil-app/ will populate within a minute or two.
+
+─────────────────────────────────────────────────────────────────────────

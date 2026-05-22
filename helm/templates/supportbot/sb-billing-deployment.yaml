@@ -1,0 +1,45 @@
+{{- if .Values.supportbot.billing.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sb-billing
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "sb-billing" | nindent 4 }}
+spec:
+  replicas: {{ .Values.supportbot.billing.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "sb-billing" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "sb-billing" | nindent 8 }}
+    spec:
+      containers:
+        - name: sb-billing
+          image: {{ include "aio11y.image" (list $ "supportbot-billing") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "sb-billing") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.supportbot.billing.resources | nindent 12 }}
+{{- end }}

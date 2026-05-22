@@ -1,0 +1,45 @@
+{{- if .Values.supportbot.techSupport.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sb-tech-support
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "sb-tech-support" | nindent 4 }}
+spec:
+  replicas: {{ .Values.supportbot.techSupport.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "sb-tech-support" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "sb-tech-support" | nindent 8 }}
+    spec:
+      containers:
+        - name: sb-tech-support
+          image: {{ include "aio11y.image" (list $ "supportbot-tech-support") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "sb-tech-support") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.supportbot.techSupport.resources | nindent 12 }}
+{{- end }}

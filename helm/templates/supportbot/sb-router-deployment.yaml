@@ -1,0 +1,50 @@
+{{- if .Values.supportbot.router.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sb-router
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "sb-router" | nindent 4 }}
+spec:
+  replicas: {{ .Values.supportbot.router.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "sb-router" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "sb-router" | nindent 8 }}
+    spec:
+      containers:
+        - name: sb-router
+          image: {{ include "aio11y.image" (list $ "supportbot-router") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "sb-router") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            - name: SB_BILLING_URL
+              value: http://sb-billing.support-bot.svc.cluster.local:8000
+            - name: SB_TECH_SUPPORT_URL
+              value: http://sb-tech-support.support-bot.svc.cluster.local:8000
+            - name: SB_ACCOUNT_URL
+              value: http://sb-account-management.support-bot.svc.cluster.local:8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.supportbot.router.resources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,16 @@
+{{- if and .Values.gateway.enabled .Values.gateway.pricingOverrides }}
+# Optional pricing override. When .Values.gateway.pricingOverrides is empty
+# we ship nothing and the gateway uses the pricing.yaml baked into its image
+# (gateway/config/pricing.yaml). When set, the contents replace that file
+# via a subPath mount on the Deployment.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: llm-gateway-pricing
+  namespace: llm-gateway
+  labels:
+    {{- include "aio11y.labels" "llm-gateway" | nindent 4 }}
+data:
+  pricing.yaml: |
+{{ toYaml .Values.gateway.pricingOverrides | indent 4 }}
+{{- end }}

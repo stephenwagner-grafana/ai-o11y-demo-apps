@@ -1,0 +1,45 @@
+{{- if .Values.neoncart.chatbot.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nc-chatbot
+  namespace: neoncart
+  labels:
+    {{- include "aio11y.labels" "nc-chatbot" | nindent 4 }}
+spec:
+  replicas: {{ .Values.neoncart.chatbot.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "nc-chatbot" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "nc-chatbot" | nindent 8 }}
+    spec:
+      containers:
+        - name: nc-chatbot
+          image: {{ include "aio11y.image" (list $ "neoncart-chatbot") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "nc-chatbot") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.neoncart.chatbot.resources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,66 @@
+{{- if and .Values.postgres.enabled .Values.postgres.seedJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-seed
+  namespace: ai-o11y-postgres
+  labels:
+    {{- include "aio11y.labels" "postgres-seed" | nindent 4 }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+    helm.sh/hook-weight: "0"
+spec:
+  backoffLimit: 4
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "postgres-seed" | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        # Wait for the Postgres StatefulSet to be reachable before attempting
+        # to load schema + CSVs. The StatefulSet readiness probe gates the
+        # Service endpoint, but a freshly-installed chart can race this Job
+        # against the first pod coming up — keep the explicit wait.
+        - name: wait-for-postgres
+          image: "{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              echo "Waiting for postgres.ai-o11y-postgres.svc.cluster.local:5432 ..."
+              until pg_isready -h postgres.ai-o11y-postgres.svc.cluster.local -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                sleep 2
+              done
+              echo "Postgres is ready"
+          env:
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+      containers:
+        - name: seed-loader
+          image: {{ include "aio11y.image" (list $ "postgres-seed-loader") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          env:
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+            - name: SEED_DIR
+              value: /seed
+            - name: SCHEMA_PATH
+              value: /app/schema.sql
+          volumeMounts:
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+      volumes:
+        - name: seed
+          configMap:
+            name: postgres-seed
+{{- end }}

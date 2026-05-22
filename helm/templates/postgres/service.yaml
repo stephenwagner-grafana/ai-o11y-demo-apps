@@ -1,0 +1,18 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: ai-o11y-postgres
+  labels:
+    {{- include "aio11y.labels" "postgres" | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      protocol: TCP
+  selector:
+    {{- include "aio11y.selectorLabels" "postgres" | nindent 4 }}
+{{- end }}

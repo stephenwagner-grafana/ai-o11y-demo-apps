@@ -1,0 +1,84 @@
+{{- if .Values.loadgen.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loadgen
+  namespace: k6-loadgen
+  labels:
+    {{- include "aio11y.labels" "loadgen" | nindent 4 }}
+spec:
+  # Loadgen is stateful (supervises K6 subprocesses + holds user pool in
+  # memory). NEVER scale beyond 1 replica.
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "loadgen" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "loadgen" | nindent 8 }}
+    spec:
+      containers:
+        - name: loadgen
+          image: {{ include "aio11y.image" (list $ "loadgen") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "loadgen") | nindent 12 }}
+            {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
+            # FastAPI/uvicorn port (matches containerPort / probes).
+            - name: PORT
+              value: "8000"
+            # ── Loadgen behavior knobs (see docs/LOADGEN.md) ─────────────
+            - name: NC_TOTAL_USERS
+              value: {{ .Values.loadgen.ncTotalUsers | quote }}
+            - name: NC_AI_ADOPTION_RATE
+              value: {{ .Values.loadgen.ncAiAdoptionRate | quote }}
+            - name: NC_SESSIONS_PER_HOUR
+              value: {{ .Values.loadgen.ncSessionsPerHour | quote }}
+            - name: SB_TOTAL_USERS
+              value: {{ .Values.loadgen.sbTotalUsers | quote }}
+            - name: SB_SESSIONS_PER_HOUR
+              value: {{ .Values.loadgen.sbSessionsPerHour | quote }}
+            - name: LOADGEN_POLL_OPEN_INTERVAL_SEC
+              value: {{ .Values.loadgen.pollOpenIntervalSec | quote }}
+            - name: LOADGEN_TIME_OF_DAY
+              value: {{ .Values.loadgen.timeOfDayCurve | quote }}
+            - name: LOADGEN_TZ
+              value: {{ .Values.loadgen.timezone | quote }}
+            - name: SB_USER_DOMAIN
+              value: {{ .Values.loadgen.sbUserDomain | quote }}
+            - name: LOADGEN_NC_BASE_URL
+              value: http://neoncart-web.neoncart.svc.cluster.local:8000
+            - name: LOADGEN_SB_BASE_URL
+              value: http://supportbot-web.support-bot.svc.cluster.local:8000
+            - name: USERS_CONFIG_PATH
+              value: /etc/loadgen/users.yaml
+          volumeMounts:
+            - name: users-config
+              mountPath: /etc/loadgen
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.loadgen.resources | nindent 12 }}
+      volumes:
+        - name: users-config
+          configMap:
+            name: loadgen-users
+{{- end }}

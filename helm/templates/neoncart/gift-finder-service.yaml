@@ -1,0 +1,18 @@
+{{- if .Values.neoncart.giftFinder.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: nc-gift-finder
+  namespace: neoncart
+  labels:
+    {{- include "aio11y.labels" "nc-gift-finder" | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "aio11y.selectorLabels" "nc-gift-finder" | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+{{- end }}

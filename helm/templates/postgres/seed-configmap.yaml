@@ -1,0 +1,19 @@
+{{- if and .Values.postgres.enabled .Values.postgres.seedJob.enabled }}
+# Seed CSVs mounted at /seed by the seed Job. Files are symlinked from the
+# repo's top-level seed/ dir into helm/files/seed/ so Helm's .Files.Get
+# (which can't traverse `..`) can read them.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-seed
+  namespace: ai-o11y-postgres
+  labels:
+    {{- include "aio11y.labels" "postgres-seed" | nindent 4 }}
+data:
+  categories.csv: |
+{{ .Files.Get "files/seed/categories.csv" | indent 4 }}
+  brands.csv: |
+{{ .Files.Get "files/seed/brands.csv" | indent 4 }}
+  products.csv: |
+{{ .Files.Get "files/seed/products.csv" | indent 4 }}
+{{- end }}

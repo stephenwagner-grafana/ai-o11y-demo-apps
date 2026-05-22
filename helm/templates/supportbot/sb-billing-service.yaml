@@ -1,0 +1,18 @@
+{{- if .Values.supportbot.billing.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sb-billing
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "sb-billing" | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "aio11y.selectorLabels" "sb-billing" | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+{{- end }}

@@ -1,0 +1,103 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-gateway
+  namespace: llm-gateway
+  labels:
+    {{- include "aio11y.labels" "llm-gateway" | nindent 4 }}
+spec:
+  replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "llm-gateway" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "llm-gateway" | nindent 8 }}
+      annotations:
+        {{- if .Values.gateway.pricingOverrides }}
+        checksum/pricing: {{ include (print $.Template.BasePath "/gateway/pricing-configmap.yaml") . | sha256sum }}
+        {{- end }}
+    spec:
+      containers:
+        - name: llm-gateway
+          image: {{ include "aio11y.image" (list $ "gateway") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "llm-gateway") | nindent 12 }}
+            # Provider credentials (gateway is the sole caller of provider SDKs)
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aio11y-providers
+                  key: anthropicApiKey
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aio11y-providers
+                  key: openaiApiKey
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aio11y-providers
+                  key: geminiApiKey
+            - name: OLLAMA_BASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: aio11y-providers
+                  key: ollamaBaseUrl
+            # Per-provider daily $ caps (drive caps.is_open + /open endpoint)
+            - name: ANTHROPIC_CAP_USD_PER_DAY
+              value: {{ .Values.global.caps.anthropic.usdPerDay | quote }}
+            - name: OPENAI_CAP_USD_PER_DAY
+              value: {{ .Values.global.caps.openai.usdPerDay | quote }}
+            - name: GEMINI_CAP_USD_PER_DAY
+              value: {{ .Values.global.caps.gemini.usdPerDay | quote }}
+            - name: OLLAMA_GPU_UTILIZATION_THRESHOLD
+              value: {{ .Values.global.caps.ollama.gpuUtilizationThreshold | quote }}
+            # Default model per provider (overridable from caller)
+            - name: ANTHROPIC_DEFAULT_MODEL
+              value: {{ .Values.global.defaults.anthropicModel | quote }}
+            - name: OPENAI_DEFAULT_MODEL
+              value: {{ .Values.global.defaults.openaiModel | quote }}
+            - name: GEMINI_DEFAULT_MODEL
+              value: {{ .Values.global.defaults.geminiModel | quote }}
+            - name: OLLAMA_DEFAULT_MODEL
+              value: {{ .Values.global.defaults.ollamaModel | quote }}
+          {{- if .Values.gateway.pricingOverrides }}
+          volumeMounts:
+            - name: pricing
+              mountPath: /app/config/pricing.yaml
+              subPath: pricing.yaml
+              readOnly: true
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            {{- toYaml .Values.gateway.resources | nindent 12 }}
+      {{- if .Values.gateway.pricingOverrides }}
+      volumes:
+        - name: pricing
+          configMap:
+            name: llm-gateway-pricing
+      {{- end }}
+{{- end }}

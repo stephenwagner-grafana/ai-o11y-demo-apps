@@ -1,0 +1,18 @@
+{{- if .Values.loadgen.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadgen
+  namespace: k6-loadgen
+  labels:
+    {{- include "aio11y.labels" "loadgen" | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "aio11y.selectorLabels" "loadgen" | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+{{- end }}

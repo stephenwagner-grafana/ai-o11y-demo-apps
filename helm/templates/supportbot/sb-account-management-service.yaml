@@ -1,0 +1,18 @@
+{{- if .Values.supportbot.accountManagement.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: sb-account-management
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "sb-account-management" | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "aio11y.selectorLabels" "sb-account-management" | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+{{- end }}

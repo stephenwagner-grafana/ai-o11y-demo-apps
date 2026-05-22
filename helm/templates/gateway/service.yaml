@@ -1,0 +1,18 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: llm-gateway
+  namespace: llm-gateway
+  labels:
+    {{- include "aio11y.labels" "llm-gateway" | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    {{- include "aio11y.selectorLabels" "llm-gateway" | nindent 4 }}
+{{- end }}
