@@ -1,0 +1,112 @@
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: ruff (python)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ruff
+        run: pip install --no-cache-dir ruff
+
+      - name: Detect ruff config
+        id: ruff_cfg
+        run: |
+          if [ -f ruff.toml ] || [ -f pyproject.toml ] || [ -f .ruff.toml ]; then
+            echo "strict=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "strict=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No ruff.toml / pyproject.toml found — running ruff in soft-fail mode. Add ruff.toml to make this gate strict."
+          fi
+
+      - name: Run ruff (strict)
+        if: steps.ruff_cfg.outputs.strict == 'true'
+        run: ruff check gateway apps postgres loadgen tools
+
+      - name: Run ruff (soft-fail)
+        if: steps.ruff_cfg.outputs.strict == 'false'
+        continue-on-error: true
+        run: |
+          # Only lint dirs that actually exist (postgres/, loadgen/ may not be present yet).
+          targets=()
+          for d in gateway apps postgres loadgen tools; do
+            [ -d "$d" ] && targets+=("$d")
+          done
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "No Python source directories found — nothing to lint."
+            exit 0
+          fi
+          ruff check "${targets[@]}"
+
+  hadolint:
+    name: hadolint (dockerfiles)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find Dockerfiles
+        id: find_dockerfiles
+        run: |
+          # Track every Dockerfile in the repo; exclude vendored/dependency dirs.
+          mapfile -t files < <(find . \
+            -path ./node_modules -prune -o \
+            -path ./.git -prune -o \
+            -type f -name 'Dockerfile*' -print | sort)
+          {
+            echo "files<<EOF"
+            printf '%s\n' "${files[@]}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          printf 'Found %d Dockerfile(s):\n' "${#files[@]}"
+          printf '  %s\n' "${files[@]}"
+
+      - name: Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          # hadolint-action takes a single dockerfile arg; we glob via recursive=true.
+          dockerfile: "**/Dockerfile*"
+          recursive: true
+          no-fail: false
+
+  yamllint:
+    name: yamllint (workflows)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install yamllint
+        run: pip install --no-cache-dir yamllint
+
+      - name: Run yamllint
+        run: |
+          # Self-check on workflow files. Use relaxed defaults; GitHub Actions
+          # YAML commonly trips line-length and "truthy" rules with `on:`.
+          yamllint -d "{extends: relaxed, rules: {line-length: disable, truthy: disable, comments: disable, document-start: disable}}" .github/workflows

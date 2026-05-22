@@ -1,0 +1,574 @@
+"""Loadgen orchestrator.
+
+A small FastAPI service that supervises K6 subprocesses against NeonCart
+and SupportBot. It does NOT call LLM endpoints itself — K6 does. The
+orchestrator's job is:
+
+1. Read `config/users.yaml` at startup — the pool of synthetic users with
+   stable cohort assignments (regenerate via `tools/regenerate-users.py`).
+2. Poll the LLM gateway's `/open` endpoint every few seconds. Watch
+   `providers.anthropic` specifically (NOT `any_open`) — Claude is the
+   rate-defining provider per docs/LOADGEN.md.
+3. Spawn K6 subprocesses for each scenario (one per NC cohort + one SB).
+   Each K6 process is fed the relevant slice of the user pool as a JSON
+   file via `--env USERS_FILE=/path`.
+4. When Claude transitions closed: stop the AI-cohort K6 processes
+   (gift-finder, chatbot, both) and the SB K6 process. The non-AI NC K6
+   stays up — those 150 users keep shopping. In-flight K6 iterations are
+   allowed to finish their current iteration (gentler) by sending SIGTERM
+   and letting K6's own shutdown drain.
+5. When Claude reopens: spawn fresh K6 processes for the AI scenarios.
+6. Expose `/health` (k8s liveness) + `/metrics` (Prometheus for our own
+   internal accounting — NOT the LLM/Sigil metrics, those come from
+   gateway/specialists).
+
+Env vars (all documented in docs/LOADGEN.md):
+    NC_TOTAL_USERS               (informational; truth comes from users.yaml)
+    NC_AI_ADOPTION_RATE          (informational)
+    NC_SESSIONS_PER_HOUR         (passed to K6 as $NC_SESSIONS_PER_HOUR)
+    SB_TOTAL_USERS               (informational)
+    SB_SESSIONS_PER_HOUR         (passed to K6)
+    LOADGEN_TIME_OF_DAY          true/false; passed to K6
+    LOADGEN_TZ                   passed to K6
+    LOADGEN_POLL_OPEN_INTERVAL_SEC   default 5
+    LOADGEN_NC_BASE_URL          default http://nc-web.neoncart.svc.cluster.local
+    LOADGEN_SB_BASE_URL          default http://sb-web.support-bot.svc.cluster.local
+    SB_USER_DOMAIN               default acme.com
+    USERS_CONFIG_PATH            default /etc/loadgen/users.yaml
+    GATEWAY_URL                  default http://llm-gateway.llm-gateway.svc.cluster.local
+"""
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import os
+import signal
+import sys
+import tempfile
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, AsyncIterator
+
+import httpx
+import yaml
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse, PlainTextResponse
+from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    Counter,
+    Gauge,
+    generate_latest,
+)
+
+log = logging.getLogger("loadgen.orchestrator")
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+)
+
+
+# ── Configuration ─────────────────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class Settings:
+    gateway_url: str
+    poll_interval_sec: float
+    nc_base_url: str
+    sb_base_url: str
+    sb_user_domain: str
+    users_config_path: str
+    nc_sessions_per_hour: int
+    sb_sessions_per_hour: int
+    time_of_day: bool
+    tz: str
+    k6_binary: str
+    scripts_dir: Path
+    metrics_port: int
+
+    @classmethod
+    def from_env(cls) -> "Settings":
+        return cls(
+            gateway_url=os.getenv(
+                "GATEWAY_URL",
+                "http://llm-gateway.llm-gateway.svc.cluster.local",
+            ).rstrip("/"),
+            poll_interval_sec=float(os.getenv("LOADGEN_POLL_OPEN_INTERVAL_SEC", "5")),
+            nc_base_url=os.getenv(
+                "LOADGEN_NC_BASE_URL",
+                "http://nc-web.neoncart.svc.cluster.local",
+            ).rstrip("/"),
+            sb_base_url=os.getenv(
+                "LOADGEN_SB_BASE_URL",
+                "http://sb-web.support-bot.svc.cluster.local",
+            ).rstrip("/"),
+            sb_user_domain=os.getenv("SB_USER_DOMAIN", "acme.com"),
+            users_config_path=os.getenv("USERS_CONFIG_PATH", "/etc/loadgen/users.yaml"),
+            nc_sessions_per_hour=int(os.getenv("NC_SESSIONS_PER_HOUR", "60")),
+            sb_sessions_per_hour=int(os.getenv("SB_SESSIONS_PER_HOUR", "30")),
+            time_of_day=os.getenv("LOADGEN_TIME_OF_DAY", "false").lower() in ("1", "true", "yes"),
+            tz=os.getenv("LOADGEN_TZ", "America/New_York"),
+            k6_binary=os.getenv("K6_BINARY", "k6"),
+            scripts_dir=Path(os.getenv("LOADGEN_SCRIPTS_DIR", "/loadgen/k6/scripts")),
+            metrics_port=int(os.getenv("PORT", "8080")),
+        )
+
+
+# ── User pool ─────────────────────────────────────────────────────────────────
+
+@dataclass
+class UserPool:
+    nc_non_ai: list[dict[str, Any]] = field(default_factory=list)
+    nc_gift_finder: list[dict[str, Any]] = field(default_factory=list)
+    nc_chatbot: list[dict[str, Any]] = field(default_factory=list)
+    nc_both: list[dict[str, Any]] = field(default_factory=list)
+    sb: list[dict[str, Any]] = field(default_factory=list)
+
+    @classmethod
+    def load(cls, path: str) -> "UserPool":
+        p = Path(path)
+        if not p.exists():
+            log.warning("users.yaml not found at %s; running with empty pool", path)
+            return cls()
+        data = yaml.safe_load(p.read_text())
+        if not isinstance(data, dict):
+            raise ValueError(f"{path}: expected a dict at top level")
+
+        pool = cls()
+        for u in data.get("nc_users", []):
+            cohort = (u.get("cohort") or "").strip()
+            if cohort == "non_ai":
+                pool.nc_non_ai.append(u)
+            elif cohort == "gift_finder":
+                pool.nc_gift_finder.append(u)
+            elif cohort == "chatbot":
+                pool.nc_chatbot.append(u)
+            elif cohort == "both":
+                pool.nc_both.append(u)
+            else:
+                log.warning("nc user %s has unknown cohort %r; skipping", u.get("email"), cohort)
+        for u in data.get("sb_users", []):
+            pool.sb.append(u)
+
+        log.info(
+            "loaded users: nc_non_ai=%d nc_gift_finder=%d nc_chatbot=%d nc_both=%d sb=%d",
+            len(pool.nc_non_ai),
+            len(pool.nc_gift_finder),
+            len(pool.nc_chatbot),
+            len(pool.nc_both),
+            len(pool.sb),
+        )
+        return pool
+
+
+# ── Prometheus metrics (orchestrator-internal) ────────────────────────────────
+
+m_gateway_anthropic_open = Gauge(
+    "loadgen_gateway_anthropic_open",
+    "1 if the LLM gateway reports Anthropic open, 0 if closed.",
+)
+m_gateway_poll_failures = Counter(
+    "loadgen_gateway_poll_failures_total",
+    "Failures polling the LLM gateway /open endpoint.",
+)
+m_k6_processes_running = Gauge(
+    "loadgen_k6_processes_running",
+    "Number of K6 subprocesses currently running, by scenario.",
+    ["scenario"],
+)
+m_k6_restarts = Counter(
+    "loadgen_k6_restarts_total",
+    "Number of times a K6 scenario was (re)started.",
+    ["scenario"],
+)
+m_k6_terminations = Counter(
+    "loadgen_k6_terminations_total",
+    "Number of times a K6 scenario was terminated due to gateway close.",
+    ["scenario"],
+)
+
+
+# ── K6 process management ─────────────────────────────────────────────────────
+
+@dataclass
+class Scenario:
+    name: str
+    script_filename: str
+    # Whether this scenario requires the Anthropic gateway to be open.
+    needs_anthropic: bool
+    # Per-scenario base URL passed to K6.
+    base_url_env: str
+    base_url: str
+    # Users JSON path for this scenario (regenerated on each start).
+    users_payload: list[dict[str, Any]]
+    # Sessions/hr target for this scenario (used to pace K6).
+    sessions_per_hour: int
+
+
+class K6Supervisor:
+    """Manages one K6 subprocess per Scenario."""
+
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self._procs: dict[str, asyncio.subprocess.Process] = {}
+        self._users_files: dict[str, str] = {}
+        self._scenarios: dict[str, Scenario] = {}
+        self._lock = asyncio.Lock()
+
+    def register(self, scenario: Scenario) -> None:
+        self._scenarios[scenario.name] = scenario
+        m_k6_processes_running.labels(scenario=scenario.name).set(0)
+
+    async def start(self, scenario_name: str) -> None:
+        """Spawn the K6 subprocess for `scenario_name` if not already running."""
+        async with self._lock:
+            if scenario_name in self._procs and self._procs[scenario_name].returncode is None:
+                return  # already running
+
+            sc = self._scenarios.get(scenario_name)
+            if sc is None:
+                log.error("unknown scenario %r", scenario_name)
+                return
+
+            if not sc.users_payload:
+                log.warning("scenario %s has no users assigned; skipping spawn", scenario_name)
+                return
+
+            script_path = self.settings.scripts_dir / sc.script_filename
+            if not script_path.exists():
+                log.error("k6 script missing: %s", script_path)
+                return
+
+            # Write users JSON to a temp file for this run
+            fd, tmp_path = tempfile.mkstemp(prefix=f"users-{scenario_name}-", suffix=".json")
+            with os.fdopen(fd, "w") as f:
+                json.dump(sc.users_payload, f)
+            self._users_files[scenario_name] = tmp_path
+
+            env = os.environ.copy()
+            env["USERS_FILE"] = tmp_path
+            env[sc.base_url_env] = sc.base_url
+            env["SESSIONS_PER_HOUR"] = str(sc.sessions_per_hour)
+            env["LOADGEN_TIME_OF_DAY"] = "true" if self.settings.time_of_day else "false"
+            env["LOADGEN_TZ"] = self.settings.tz
+            env["SB_USER_DOMAIN"] = self.settings.sb_user_domain
+            env["SCENARIO_NAME"] = scenario_name
+
+            # We rely on each script declaring its own scenarios + executor.
+            # `--no-summary --no-thresholds` keeps stdout quiet; K6 still
+            # writes its own metrics to its outputs (or to nothing if not
+            # configured — fine for the demo, app-level telemetry is what we
+            # care about).
+            cmd = [
+                self.settings.k6_binary,
+                "run",
+                "--quiet",
+                "--no-summary",
+                "--no-thresholds",
+                # Distinct REST API port per scenario, or 0 to auto-pick — avoids
+                # parallel-bind collisions (the 6565 default would race).
+                "--address", "0.0.0.0:0",
+                str(script_path),
+            ]
+            log.info("spawning k6 for scenario=%s cmd=%s", scenario_name, " ".join(cmd))
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
+                env=env,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            self._procs[scenario_name] = proc
+            m_k6_processes_running.labels(scenario=scenario_name).set(1)
+            m_k6_restarts.labels(scenario=scenario_name).inc()
+
+            # Drain stdout in a background task — keeps the pipe from filling.
+            asyncio.create_task(self._drain(scenario_name, proc))
+
+    async def stop(self, scenario_name: str, reason: str = "manual") -> None:
+        """SIGTERM the K6 process; it finishes its current iteration then exits."""
+        async with self._lock:
+            proc = self._procs.get(scenario_name)
+            if proc is None or proc.returncode is not None:
+                return
+            log.info("stopping k6 scenario=%s reason=%s pid=%d", scenario_name, reason, proc.pid)
+            try:
+                proc.send_signal(signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            m_k6_terminations.labels(scenario=scenario_name).inc()
+
+        # Wait up to 30s for graceful shutdown; if it doesn't drain, SIGKILL.
+        try:
+            await asyncio.wait_for(proc.wait(), timeout=30)
+        except asyncio.TimeoutError:
+            log.warning("k6 scenario=%s did not exit after SIGTERM; sending SIGKILL", scenario_name)
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+            await proc.wait()
+
+    async def stop_all(self) -> None:
+        await asyncio.gather(
+            *(self.stop(name, reason="shutdown") for name in list(self._procs.keys())),
+            return_exceptions=True,
+        )
+
+    def is_running(self, scenario_name: str) -> bool:
+        proc = self._procs.get(scenario_name)
+        return proc is not None and proc.returncode is None
+
+    async def _drain(self, scenario_name: str, proc: asyncio.subprocess.Process) -> None:
+        assert proc.stdout is not None
+        try:
+            while True:
+                line = await proc.stdout.readline()
+                if not line:
+                    break
+                # Forward k6 output with a prefix so logs are scannable.
+                sys.stdout.write(f"[k6:{scenario_name}] {line.decode(errors='replace')}")
+                sys.stdout.flush()
+        finally:
+            rc = await proc.wait()
+            m_k6_processes_running.labels(scenario=scenario_name).set(0)
+            log.info("k6 scenario=%s exited rc=%d", scenario_name, rc)
+            # Clean up users file
+            path = self._users_files.pop(scenario_name, None)
+            if path and os.path.exists(path):
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
+
+
+# ── Gateway poller ────────────────────────────────────────────────────────────
+
+class GatewayPoller:
+    """Polls the LLM gateway /open endpoint and tracks Anthropic state."""
+
+    def __init__(self, settings: Settings):
+        self.settings = settings
+        self._anthropic_open: bool | None = None  # None until first successful poll
+        self._stop = asyncio.Event()
+
+    @property
+    def anthropic_open(self) -> bool:
+        # If we have never had a successful poll, conservatively treat as
+        # open — without the gateway we still want NC non-AI traffic and we
+        # don't want to silently freeze on misconfiguration.
+        return self._anthropic_open is not False
+
+    async def run(self, on_change) -> None:
+        """Background loop. Calls `on_change(open: bool)` only on transition."""
+        url = f"{self.settings.gateway_url}/open"
+        log.info("polling gateway at %s every %.1fs", url, self.settings.poll_interval_sec)
+
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            while not self._stop.is_set():
+                try:
+                    resp = await client.get(url)
+                    resp.raise_for_status()
+                    body = resp.json()
+                    providers = body.get("providers", {}) if isinstance(body, dict) else {}
+                    ant = providers.get("anthropic") or {}
+                    # Treat missing provider entry as closed (defensive).
+                    new_open = bool(ant.get("open", False)) if ant else False
+                    m_gateway_anthropic_open.set(1 if new_open else 0)
+                    if new_open != self._anthropic_open:
+                        log.info(
+                            "gateway anthropic state changed: %s -> %s (reason=%s)",
+                            self._anthropic_open,
+                            new_open,
+                            ant.get("reason"),
+                        )
+                        self._anthropic_open = new_open
+                        try:
+                            await on_change(new_open)
+                        except Exception:
+                            log.exception("on_change handler failed")
+                except Exception as e:
+                    m_gateway_poll_failures.inc()
+                    log.warning("gateway poll failed: %s", e)
+
+                try:
+                    await asyncio.wait_for(self._stop.wait(), timeout=self.settings.poll_interval_sec)
+                except asyncio.TimeoutError:
+                    pass
+
+    def stop(self) -> None:
+        self._stop.set()
+
+
+# ── Orchestrator ──────────────────────────────────────────────────────────────
+
+# Scenario identifiers
+SC_NC_NON_AI = "neoncart-non-ai"
+SC_NC_GIFT = "neoncart-gift-finder"
+SC_NC_CHAT = "neoncart-chatbot"
+SC_NC_BOTH = "neoncart-both"
+SC_SB = "supportbot"
+
+AI_SCENARIOS = (SC_NC_GIFT, SC_NC_CHAT, SC_NC_BOTH, SC_SB)
+
+
+class Orchestrator:
+    def __init__(self, settings: Settings, pool: UserPool):
+        self.settings = settings
+        self.pool = pool
+        self.supervisor = K6Supervisor(settings)
+        self.poller = GatewayPoller(settings)
+        self._poll_task: asyncio.Task | None = None
+        self._register_scenarios()
+
+    def _register_scenarios(self) -> None:
+        # Non-AI users — always running regardless of gateway state.
+        self.supervisor.register(Scenario(
+            name=SC_NC_NON_AI,
+            script_filename="neoncart-non-ai.js",
+            needs_anthropic=False,
+            base_url_env="NC_BASE_URL",
+            base_url=self.settings.nc_base_url,
+            users_payload=self.pool.nc_non_ai,
+            sessions_per_hour=self._scale(self.settings.nc_sessions_per_hour, 0.75),
+        ))
+        # Gift-finder cohort
+        self.supervisor.register(Scenario(
+            name=SC_NC_GIFT,
+            script_filename="neoncart-gift-finder.js",
+            needs_anthropic=True,
+            base_url_env="NC_BASE_URL",
+            base_url=self.settings.nc_base_url,
+            users_payload=self.pool.nc_gift_finder,
+            sessions_per_hour=self._scale(self.settings.nc_sessions_per_hour, 0.15),
+        ))
+        # Chatbot cohort
+        self.supervisor.register(Scenario(
+            name=SC_NC_CHAT,
+            script_filename="neoncart-chatbot.js",
+            needs_anthropic=True,
+            base_url_env="NC_BASE_URL",
+            base_url=self.settings.nc_base_url,
+            users_payload=self.pool.nc_chatbot,
+            sessions_per_hour=self._scale(self.settings.nc_sessions_per_hour, 0.075),
+        ))
+        # Both — reuses the chatbot script (the script picks gift-finder OR
+        # chatbot per iteration); approximated for the demo.
+        self.supervisor.register(Scenario(
+            name=SC_NC_BOTH,
+            script_filename="neoncart-chatbot.js",
+            needs_anthropic=True,
+            base_url_env="NC_BASE_URL",
+            base_url=self.settings.nc_base_url,
+            users_payload=self.pool.nc_both,
+            sessions_per_hour=self._scale(self.settings.nc_sessions_per_hour, 0.025),
+        ))
+        # SupportBot — 100% AI, all stops when Claude closes.
+        self.supervisor.register(Scenario(
+            name=SC_SB,
+            script_filename="supportbot.js",
+            needs_anthropic=True,
+            base_url_env="SB_BASE_URL",
+            base_url=self.settings.sb_base_url,
+            users_payload=self.pool.sb,
+            sessions_per_hour=self.settings.sb_sessions_per_hour,
+        ))
+
+    @staticmethod
+    def _scale(rate: int, fraction: float) -> int:
+        # Floor at 1/hr so a small cohort still gets occasional traffic.
+        return max(1, int(round(rate * fraction)))
+
+    async def start(self) -> None:
+        # Always start the non-AI scenario immediately — it doesn't care
+        # about the gateway.
+        await self.supervisor.start(SC_NC_NON_AI)
+        # AI scenarios: start them now too, but the poller will tear them
+        # down if the gateway reports Anthropic closed.
+        for name in AI_SCENARIOS:
+            await self.supervisor.start(name)
+
+        # Background poller (kicks transitions, not initial state).
+        self._poll_task = asyncio.create_task(self.poller.run(self._on_anthropic_state))
+
+    async def stop(self) -> None:
+        if self._poll_task:
+            self.poller.stop()
+            try:
+                await asyncio.wait_for(self._poll_task, timeout=10)
+            except asyncio.TimeoutError:
+                self._poll_task.cancel()
+        await self.supervisor.stop_all()
+
+    async def _on_anthropic_state(self, open_: bool) -> None:
+        """Gateway state transition handler."""
+        if open_:
+            log.info("anthropic OPEN — (re)starting AI scenarios")
+            for name in AI_SCENARIOS:
+                await self.supervisor.start(name)
+        else:
+            log.info("anthropic CLOSED — stopping AI scenarios (non-AI keeps running)")
+            await asyncio.gather(
+                *(self.supervisor.stop(name, reason="anthropic_closed") for name in AI_SCENARIOS),
+                return_exceptions=True,
+            )
+
+    def status(self) -> dict[str, Any]:
+        return {
+            "anthropic_open": self.poller.anthropic_open,
+            "scenarios": {
+                name: {
+                    "running": self.supervisor.is_running(name),
+                    "user_count": len(self.supervisor._scenarios[name].users_payload),
+                }
+                for name in self.supervisor._scenarios
+            },
+        }
+
+
+# ── FastAPI app ───────────────────────────────────────────────────────────────
+
+_orch: Orchestrator | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    global _orch
+    settings = Settings.from_env()
+    pool = UserPool.load(settings.users_config_path)
+    _orch = Orchestrator(settings, pool)
+    await _orch.start()
+    log.info("orchestrator started")
+    try:
+        yield
+    finally:
+        log.info("orchestrator shutting down")
+        if _orch is not None:
+            await _orch.stop()
+
+
+app = FastAPI(title="loadgen-orchestrator", version=os.getenv("APP_VERSION", "0.1.0"), lifespan=lifespan)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/readyz")
+def readyz() -> JSONResponse:
+    if _orch is None:
+        return JSONResponse({"status": "starting"}, status_code=503)
+    return JSONResponse({"status": "ready", **_orch.status()})
+
+
+@app.get("/status")
+def status() -> dict[str, Any]:
+    if _orch is None:
+        return {"status": "starting"}
+    return _orch.status()
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> PlainTextResponse:
+    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
