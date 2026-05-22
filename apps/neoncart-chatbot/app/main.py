@@ -1,16 +1,20 @@
 """nc-chatbot specialist.
 
 Handles general chatbot conversations on NeonCart. Receives /chat
-requests from nc-web, calls the LLM gateway, returns a reply.
+requests from nc-web, calls tools as needed, calls the LLM gateway,
+returns a reply.
 
-Built-in demo: when the user message contains "mice" (case-insensitive),
-the chatbot executes a Postgres query that references a column that
-doesn't exist (`species`) — producing a real database error visible in
-the OTel trace from browser → chatbot → postgres. This is the
-"show me mice" cascade demo. It's intentional and always-on.
+Tools available (see app/tools.py):
+- search_products: searches the catalog (contains the "show me mice" trap)
+- navigate_to_page: tells the frontend to navigate to main/search/product/cart/checkout
+
+For Phase 1: the /chat handler invokes tools directly based on simple
+keyword heuristics so traces and the mice trap behave correctly without
+a real LLM call yet. In Phase 2 the LLM picks which tools to invoke.
 
 Endpoints:
   POST /chat       -> respond to a chatbot message
+  GET  /tools      -> list available tool schemas (debug aid)
   GET  /health     -> liveness
   GET  /readyz     -> readiness
   GET  /metrics    -> Prometheus metrics
@@ -19,34 +23,19 @@ from __future__ import annotations
 
 import logging
 import os
-from pathlib import Path
 from typing import Any
 
-import psycopg
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
+
+from .tools import SCHEMAS, execute_tool
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 app = FastAPI(title="nc-chatbot", version=os.getenv("APP_VERSION", "0.1.0"))
 
-
-def _postgres_dsn() -> str | None:
-    """Build the Postgres DSN from env vars. Returns None if not configured."""
-    host = os.getenv("POSTGRES_HOST")
-    if not host:
-        return None
-    return (
-        f"postgresql://{os.getenv('POSTGRES_USER', 'neoncart')}:"
-        f"{os.getenv('POSTGRES_PASSWORD', '')}@{host}:"
-        f"{os.getenv('POSTGRES_PORT', '5432')}/"
-        f"{os.getenv('POSTGRES_DB', 'neoncart')}"
-    )
-
-
-# ── Health / readiness / metrics ──────────────────────────────────────────────
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -63,7 +52,10 @@ def metrics() -> str:
     return "# HELP nc_chatbot_up 1 if the chatbot specialist is up\nnc_chatbot_up 1\n"
 
 
-# ── /chat — the main entrypoint ───────────────────────────────────────────────
+@app.get("/tools")
+def list_tools() -> dict[str, Any]:
+    return {"tools": SCHEMAS}
+
 
 class ChatRequest(BaseModel):
     message: str
@@ -75,46 +67,32 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 def chat(req: ChatRequest) -> dict[str, Any]:
     msg = req.message or ""
+    msg_lower = msg.lower()
 
-    # ── Built-in "show me mice" trap ─────────────────────────────────────────
-    # When the user mentions mice, the chatbot tries to filter the catalog
-    # by `species`. That column doesn't exist in our schema, so Postgres
-    # raises "column \"species\" does not exist". This error is INTENTIONAL
-    # and demonstrates the "show me mice" cascade in the AI o11y demo —
-    # browser → chatbot → postgres, all stitched in one trace.
-    if "mice" in msg.lower():
-        dsn = _postgres_dsn()
-        if not dsn:
-            # Postgres not yet wired in this env. Raise a representative error
-            # so the demo still has something to show in traces.
-            raise HTTPException(
-                status_code=500,
-                detail='database error: column "species" does not exist '
-                       '(synthetic — POSTGRES_HOST not set; will be a real PG error once deployed)',
-            )
-        try:
-            with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
-                cur.execute(
-                    "SELECT sku, name, price_usd FROM products "
-                    "WHERE species = %s LIMIT 10",  # <-- `species` column does not exist
-                    ("mouse",),
-                )
-                _ = cur.fetchall()  # unreachable
-        except psycopg.errors.UndefinedColumn as e:
-            log.warning("show-me-mice trap fired: %s", e)
-            raise HTTPException(status_code=500, detail=f'database error: {e}') from e
-        except psycopg.Error as e:
-            log.warning("show-me-mice trap raised generic PG error: %s", e)
-            raise HTTPException(status_code=500, detail=f'database error: {e}') from e
+    # ── Phase 1 heuristic tool dispatch ──────────────────────────────────────
+    # Phase 2: the LLM (via gateway) picks the tool. For now we mimic that
+    # decision with simple keyword matching so the trace shape is realistic
+    # (chatbot -> tool -> downstream) even before the LLM is wired.
+    tool_results: list[dict[str, Any]] = []
+
+    # search_products — fires for searches, "show me X", and the mice trap
+    if any(k in msg_lower for k in ("search", "show me", "find", "looking for", "mice", "mouse")):
+        result = execute_tool("search_products", {"query": msg, "max_results": 3})
+        tool_results.append({"tool": "search_products", "result": result})
+
+    # navigate_to_page — fires for explicit navigation requests
+    if "cart" in msg_lower and "show" in msg_lower:
+        result = execute_tool("navigate_to_page", {"page": "cart"})
+        tool_results.append({"tool": "navigate_to_page", "result": result})
 
     # ── Normal path — proxy to LLM gateway (stub for Phase 1) ────────────────
-    # TODO Phase 2: call POST {GATEWAY_URL}/v1/llm with proper metadata
-    # (agent_name=nc-chatbot, session_id, user_id, conversation_id, app=neoncart,
-    # X-Caller-Type from the inbound header).
+    # TODO Phase 2: call POST {GATEWAY_URL}/v1/llm with messages + the tools
+    # array from SCHEMAS, then execute whatever tools the LLM picks.
     return {
         "ok": True,
         "reply": f"[stub] nc-chatbot will reply to {msg[:60]!r} via the gateway",
         "specialist": "nc-chatbot",
-        "model": None,  # populated once gateway integration lands
+        "model": None,
         "conversation_id": req.conversation_id or "conv_stub",
+        "tool_calls": tool_results,
     }

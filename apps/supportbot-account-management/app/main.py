@@ -20,6 +20,8 @@ from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from .tools import SCHEMAS, execute_tool
+
 log = logging.getLogger(__name__)
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
@@ -53,9 +55,17 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
 
 
+@app.get("/tools")
+def list_tools() -> dict[str, Any]:
+    return {"tools": SCHEMAS}
+
+
 @app.post("/chat")
 def chat(req: ChatRequest) -> dict[str, Any]:
     log.info("%s answering: %r", AGENT_NAME, req.question[:80])
+    tool_result = execute_tool("lookup_employee_profile", {"employee_email": req.employee_email or "anonymous@acme.com"})
+    tool_calls = [{"tool": "lookup_employee_profile", "result": tool_result}]
+
     # TODO Phase 2: pull relevant policy/IAM context and POST to
     # GATEWAY_URL/v1/llm with agent_name=sb-account-management.
     return {
@@ -66,4 +76,5 @@ def chat(req: ChatRequest) -> dict[str, Any]:
                  f"You asked: {req.question[:80]!r}",
         "model": None,
         "conversation_id": req.conversation_id or "conv_stub",
+        "tool_calls": tool_calls,
     }
