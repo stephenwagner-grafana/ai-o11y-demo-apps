@@ -102,8 +102,9 @@ function viewCart(user, sessionId) {
 }
 
 function addToCart(user, sessionId, sku) {
+  if (!sku) return null;
   return request('POST', `${BASE}/api/cart/add`, {
-    sku: sku || `STUB-${randInt(1, 9999)}`,
+    sku,
     quantity: randInt(1, 2),
     source: 'manual',
   }, user, sessionId);

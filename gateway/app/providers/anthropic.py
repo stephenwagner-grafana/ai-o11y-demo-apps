@@ -22,6 +22,7 @@ import random
 from typing import Any
 
 from anthropic import AsyncAnthropic
+from sigil_sdk import Generation, GenerationStart, ModelRef, TokenUsage
 
 from ..pricing import calculate_cost
 from .base import ProviderRequest, ProviderResponse
@@ -231,10 +232,12 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     rec = None
     if sigil_client is not None:
         try:
-            rec = sigil_client.start_generation(
+            rec = sigil_client.start_generation(GenerationStart(
+                model=ModelRef(provider=PROVIDER_NAME, name=req.model or ""),
                 agent_name=req.agent_name or "unknown-agent",
                 agent_version=req.agent_version or "",
                 conversation_id=req.conversation_id or "",
+                user_id=req.user_id or "",
                 parent_generation_ids=req.parent_generation_ids or [],
                 tags={
                     "app": req.app or "",
@@ -243,7 +246,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
                     "user_id": req.user_id or "",
                     "gen_ai.system": PROVIDER_NAME,
                 },
-            )
+            ))
         except Exception:
             log.exception("sigil start_generation failed (continuing without Sigil)")
             rec = None
@@ -254,10 +257,10 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
         # Best-effort error reporting to Sigil before re-raising
         if rec is not None:
             try:
-                rec.set_result(error=str(e))
-                rec.close()
+                rec.set_call_error(error=e)
+                rec.end()
             except Exception:
-                log.exception("sigil error-set_result failed")
+                log.exception("sigil error reporting failed")
         raise
 
     content_text, tool_calls = _parse_response(response.content)
@@ -271,22 +274,22 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
 
     if rec is not None:
         try:
-            rec.set_result(
-                response_id=response.id,
-                response_model=response.model,
-                stop_reason=response.stop_reason,
-                usage={
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                    "cache_read_input_tokens": cache_read,
-                    "cache_creation_input_tokens": cache_create,
-                },
-            )
-            rec.close()
-            if hasattr(rec, "err") and rec.err():
+            rec.set_result(generation=Generation(
+                response_id=response.id or "",
+                response_model=response.model or "",
+                stop_reason=response.stop_reason or "",
+                usage=TokenUsage(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    cache_read_input_tokens=cache_read,
+                    cache_write_input_tokens=cache_create,
+                ),
+            ))
+            rec.end()
+            if rec.err():
                 log.warning("sigil generation rec.err(): %s", rec.err())
         except Exception:
-            log.exception("sigil set_result/close failed")
+            log.exception("sigil set_result/end failed")
 
     return ProviderResponse(
         content=content_text,

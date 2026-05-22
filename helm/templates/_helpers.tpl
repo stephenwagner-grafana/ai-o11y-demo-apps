@@ -72,6 +72,11 @@ Usage in a Deployment:
     secretKeyRef:
       name: aio11y-otel
       key: headers
+# opentelemetry-instrument defaults to gRPC; we only install the HTTP
+# exporter package, so force protocol=http/protobuf or autoinstrument
+# crashes at startup with "otlp_proto_grpc not found".
+- name: OTEL_EXPORTER_OTLP_PROTOCOL
+  value: http/protobuf
 - name: SIGIL_ENDPOINT
   valueFrom:
     secretKeyRef:

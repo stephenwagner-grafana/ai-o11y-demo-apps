@@ -155,9 +155,19 @@ function callGiftFinder(user, sessionId, conversationId, prompt) {
 
 function maybeAddAndCheckout(user, sessionId, source) {
   // After a chatbot suggestion, sometimes user adds to cart + checks out.
-  // We have no real SKU here — we send a placeholder; nc-web stub returns
-  // ok=true. When the real impl lands, this becomes a real "added by AI" path.
-  const sku = `STUB-${randInt(1, 9999)}`;
+  // We fetch a real SKU from /api/products since the chatbot reply text
+  // doesn't structurally include one; falling back to nothing if the catalog
+  // is empty (avoids FK violations against the products table).
+  const r = request('GET', `${BASE}/api/products`, null, user, sessionId);
+  let sku = null;
+  try {
+    const list = r && r.json && r.json();
+    if (list && list.length > 0) {
+      const p = list[Math.floor(Math.random() * list.length)];
+      sku = p && (p.sku || p.id);
+    }
+  } catch (_) { /* swallow parse errors */ }
+  if (!sku) return;
   request('POST', `${BASE}/api/cart/add`, {
     sku, quantity: 1, source: source || 'ai_chatbot',
   }, user, sessionId);

@@ -22,6 +22,7 @@ import random
 from typing import Any
 
 import httpx
+from sigil_sdk import Generation, GenerationStart, ModelRef, TokenUsage
 
 from ..pricing import calculate_cost
 from .base import ProviderRequest, ProviderResponse
@@ -178,10 +179,12 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     rec = None
     if sigil_client is not None:
         try:
-            rec = sigil_client.start_generation(
+            rec = sigil_client.start_generation(GenerationStart(
+                model=ModelRef(provider=PROVIDER_NAME, name=req.model or model or ""),
                 agent_name=req.agent_name or "unknown-agent",
                 agent_version=req.agent_version or "",
                 conversation_id=req.conversation_id or "",
+                user_id=req.user_id or "",
                 parent_generation_ids=req.parent_generation_ids or [],
                 tags={
                     "app": req.app or "",
@@ -190,7 +193,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
                     "user_id": req.user_id or "",
                     "gen_ai.system": PROVIDER_NAME,
                 },
-            )
+            ))
         except Exception:
             log.exception("sigil start_generation failed (continuing without Sigil)")
             rec = None
@@ -208,10 +211,10 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     except Exception as e:
         if rec is not None:
             try:
-                rec.set_result(error=str(e))
-                rec.close()
+                rec.set_call_error(error=e)
+                rec.end()
             except Exception:
-                log.exception("sigil error-set_result failed")
+                log.exception("sigil error reporting failed")
         raise
 
     message = data.get("message", {}) or {}
@@ -225,20 +228,19 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
 
     if rec is not None:
         try:
-            rec.set_result(
-                response_id=None,  # Ollama doesn't return a response id
-                response_model=response_model,
-                stop_reason=data.get("done_reason") or ("stop" if data.get("done") else None),
-                usage={
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
-                },
-            )
-            rec.close()
-            if hasattr(rec, "err") and rec.err():
+            rec.set_result(generation=Generation(
+                response_model=response_model or "",
+                stop_reason=data.get("done_reason") or ("stop" if data.get("done") else ""),
+                usage=TokenUsage(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                ),
+            ))
+            rec.end()
+            if rec.err():
                 log.warning("sigil generation rec.err(): %s", rec.err())
         except Exception:
-            log.exception("sigil set_result/close failed")
+            log.exception("sigil set_result/end failed")
 
     return ProviderResponse(
         content=content_text,
