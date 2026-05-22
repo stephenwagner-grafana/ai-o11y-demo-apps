@@ -12,7 +12,10 @@ global:
   image:
     registry: ghcr.io/stephenwagner-grafana/ai-o11y-demo-apps
     tag: latest
-    pullPolicy: IfNotPresent
+    # Always pull because we publish on :latest from main; without this,
+    # k3s caches the first :latest it sees and never picks up image fixes.
+    # Switch to IfNotPresent if you pin to a :sha-... tag.
+    pullPolicy: Always
 
   # Service identity (resource attribute on every OTel signal)
   serviceNamespace: ai-o11y-demo-apps
