@@ -1,13 +1,18 @@
 # ai-o11y-demo-apps
 
-A self-contained AI observability demo: two AI-powered applications (NeonCart e-commerce + SupportBot customer service) running on Kubernetes with full OpenTelemetry instrumentation sent to Grafana Cloud.
+A self-contained AI observability demo: two AI-powered applications (NeonCart e-commerce + SupportBot internal employee chatbot) running on Kubernetes with full OpenTelemetry instrumentation sent to Grafana Cloud.
 
 **Status:** 🚧 Active development — scaffolding underway. Not yet deployable.
 
+## Who this is for
+
+- **Grafana SEs** running customer-facing AI observability demos — clone, deploy in 5 minutes, walk through the dashboards.
+- **Grafana customers** evaluating the AI o11y plugin — deploy a realistic-feeling app stack, see what their own AI workloads would look like instrumented.
+
 ## What this demo shows
 
-- **NeonCart** — an e-commerce site with an AI gift-finder and AI chatbot (25% of synthetic users use the AI features; 75% just shop)
-- **SupportBot** — an Acme customer support chat with a router that delegates to domain specialists (billing, tech support, account management)
+- **NeonCart** — a public e-commerce site with an AI gift-finder and AI chatbot (25% of synthetic users use the AI features; 75% just shop)
+- **SupportBot ("Ask Acme")** — Acme Corp's **internal employee chatbot**. Employees ask about HR policy, IT issues, payroll, benefits; an `sb-router` specialist delegates to domain specialists (billing, tech-support, account-management). Not customer-facing — this is the internal helpdesk pattern.
 - **Full AI telemetry** — every LLM call instrumented via the Sigil SDK; cost, latency, tokens, evaluator results, all flowing to your Grafana Cloud
 - **Multi-provider routing** — LLM gateway routes between Anthropic, OpenAI, Gemini, and Ollama with per-provider throughput caps
 - **Realistic synthetic traffic** — K6 loadgen drives normal-but-varied user behavior across both apps

@@ -1,6 +1,6 @@
 # sb-account-management
 
-Acme support bot account / profile / IAM specialist. Receives routed questions from `sb-router` about passwords, login issues, profile updates, role/permission changes. Phase 1 returns stubs; Phase 2 calls the LLM gateway with HR/IAM policy context.
+Acme's internal "Ask Acme" bot — account / profile / IAM specialist for employees. Receives routed questions from `sb-router` about SSO passwords, login issues, profile updates, role/permission changes, group membership. Phase 1 returns stubs; Phase 2 calls the LLM gateway with HR/IAM policy context.
 
 ## Endpoint
 

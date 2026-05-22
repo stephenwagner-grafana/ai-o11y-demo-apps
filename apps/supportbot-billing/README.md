@@ -1,6 +1,6 @@
 # sb-billing
 
-Acme support bot billing-domain specialist. Receives routed questions from `sb-router` about charges, refunds, invoices, payment methods. Phase 1 returns stubs; Phase 2 calls the LLM gateway with billing-domain context.
+Acme's internal "Ask Acme" bot — billing-domain specialist for employees. Receives routed questions from `sb-router` about expense reports, corporate-card charges, employee reimbursements, payroll deductions. Phase 1 returns stubs; Phase 2 calls the LLM gateway with billing-domain context.
 
 ## Endpoint
 

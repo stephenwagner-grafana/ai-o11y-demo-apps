@@ -1,6 +1,6 @@
 # sb-tech-support
 
-Acme support bot tech / IT specialist. Receives routed questions from `sb-router` about hardware, software, network, VPN, "doesn't work" issues. Phase 1 returns stubs; Phase 2 calls the LLM gateway grounded in the RAG knowledge base (pgvector in the shared Postgres).
+Acme's internal "Ask Acme" bot — tech / IT specialist for employees. Receives routed questions from `sb-router` about laptops, VPN, wifi, "this app crashed", OS updates, dev tools. Phase 1 returns stubs; Phase 2 calls the LLM gateway grounded in the internal IT-runbook RAG store (pgvector in the shared Postgres).
 
 ## Endpoint
 
