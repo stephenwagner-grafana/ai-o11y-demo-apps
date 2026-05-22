@@ -91,16 +91,33 @@ def search_products(query: str, max_results: int = 5) -> dict[str, Any]:
             log.warning("show-me-mice trap raised generic PG error: %s", e)
             raise HTTPException(status_code=500, detail=f"database error: {e}") from e
 
-    # Normal path: real PG search (Phase 2 — wires to products table)
-    # For Phase 1 return a stub list.
-    return {
-        "ok": True,
-        "query": query,
-        "results": [
-            {"sku": "GMG-002", "name": "Voltura Stormcaster Mouse", "price_usd": 89.00},
-            {"sku": "ACC-003", "name": "LumenWorks Aurora Desk Light", "price_usd": 65.00},
-        ][:max_results],
-    }
+    # Normal path: real Postgres ILIKE search on name + description.
+    dsn = _postgres_dsn()
+    if not dsn:
+        # No Postgres — fall back to stubs so dev mode still returns *something*.
+        return {
+            "ok": True,
+            "query": query,
+            "results": [
+                {"sku": "GMG-002", "name": "Voltura Stormcaster Mouse", "price_usd": 89.00},
+                {"sku": "ACC-003", "name": "LumenWorks Aurora Desk Light", "price_usd": 65.00},
+            ][:max_results],
+        }
+    try:
+        with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT sku, name, description, price_usd FROM products "
+                "WHERE name ILIKE %s OR description ILIKE %s LIMIT %s",
+                (f"%{query}%", f"%{query}%", max_results),
+            )
+            rows = [
+                {"sku": r[0], "name": r[1], "description": r[2], "price_usd": float(r[3] or 0)}
+                for r in cur.fetchall()
+            ]
+        return {"ok": True, "query": query, "results": rows}
+    except psycopg.Error as e:
+        log.warning("search_products PG error: %s", e)
+        return {"ok": False, "query": query, "results": [], "error": str(e)}
 
 
 # ── Tool: navigate_to_page ────────────────────────────────────────────────────
@@ -155,15 +172,25 @@ GET_PRODUCT_DETAIL_SCHEMA = {
 
 def get_product_detail(sku: str) -> dict[str, Any]:
     log.info("tool=get_product_detail sku=%s", sku)
-    # Phase 2: real Postgres lookup. Phase 1 returns a representative stub.
-    return {
-        "ok": True,
-        "sku": sku,
-        "name": f"Product {sku}",
-        "description": "Demo product detail stub.",
-        "price_usd": 99.00,
-        "stock_qty": 12,
-    }
+    dsn = _postgres_dsn()
+    if not dsn:
+        return {"ok": True, "sku": sku, "name": f"Product {sku}", "description": "Demo product detail stub.",
+                "price_usd": 99.00, "stock_qty": 12}
+    try:
+        with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT sku, name, description, price_usd, stock_qty "
+                "FROM products WHERE sku = %s",
+                (sku,),
+            )
+            r = cur.fetchone()
+        if not r:
+            return {"ok": False, "sku": sku, "error": "not found"}
+        return {"ok": True, "sku": r[0], "name": r[1], "description": r[2],
+                "price_usd": float(r[3] or 0), "stock_qty": int(r[4] or 0)}
+    except psycopg.Error as e:
+        log.warning("get_product_detail PG error: %s", e)
+        return {"ok": False, "sku": sku, "error": str(e)}
 
 
 # ── Tool: add_to_cart ─────────────────────────────────────────────────────────

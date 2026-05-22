@@ -1,15 +1,30 @@
 """nc-gift-finder tools.
 
-One tool: `search_by_criteria` — searches the catalog with structured
-filters (category, max-budget, keywords). Phase 1 returns stubs;
-Phase 2 reads from Postgres.
+Two tools: `search_by_criteria` (structured catalog filter) and
+`add_to_cart`. Wires to the shared Postgres catalog; falls back to a
+small in-memory pool if POSTGRES_HOST isn't set yet (dev mode).
 """
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
+import psycopg
+
 log = logging.getLogger(__name__)
+
+
+def _postgres_dsn() -> str | None:
+    host = os.getenv("POSTGRES_HOST")
+    if not host:
+        return None
+    return (
+        f"postgresql://{os.getenv('POSTGRES_USER', 'neoncart')}:"
+        f"{os.getenv('POSTGRES_PASSWORD', '')}@{host}:"
+        f"{os.getenv('POSTGRES_PORT', '5432')}/"
+        f"{os.getenv('POSTGRES_DB', 'neoncart')}"
+    )
 
 
 SEARCH_BY_CRITERIA_SCHEMA = {
@@ -51,12 +66,53 @@ def search_by_criteria(
 ) -> dict[str, Any]:
     log.info("tool=search_by_criteria category=%s budget=%s keywords=%s",
              category, max_budget_usd, keywords)
-    items = _STUB_RESULTS
+
+    dsn = _postgres_dsn()
+    if not dsn:
+        # Fallback for dev mode
+        items = _STUB_RESULTS
+        if category:
+            items = [p for p in items if p["category"] == category]
+        if max_budget_usd is not None:
+            items = [p for p in items if p["price_usd"] <= max_budget_usd]
+        return {"ok": True, "results": items[:max_results]}
+
+    where: list[str] = []
+    params: list[Any] = []
     if category:
-        items = [p for p in items if p["category"] == category]
+        where.append("LOWER(c.slug) = LOWER(%s)")
+        params.append(category)
     if max_budget_usd is not None:
-        items = [p for p in items if p["price_usd"] <= max_budget_usd]
-    return {"ok": True, "results": items[:max_results]}
+        where.append("p.price_usd <= %s")
+        params.append(max_budget_usd)
+    if keywords:
+        # Match any keyword in name or description (OR across keywords)
+        kw_clauses: list[str] = []
+        for kw in keywords:
+            kw_clauses.append("(p.name ILIKE %s OR p.description ILIKE %s)")
+            params.extend([f"%{kw}%", f"%{kw}%"])
+        where.append("(" + " OR ".join(kw_clauses) + ")")
+
+    where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+    params.append(max(1, min(max_results, 20)))
+
+    try:
+        with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT p.sku, p.name, p.description, p.price_usd, c.slug AS category "
+                "FROM products p LEFT JOIN categories c ON c.id = p.category_id"
+                f"{where_sql} ORDER BY p.price_usd DESC LIMIT %s",
+                tuple(params),
+            )
+            rows = [
+                {"sku": r[0], "name": r[1], "description": r[2],
+                 "price_usd": float(r[3] or 0), "category": r[4]}
+                for r in cur.fetchall()
+            ]
+        return {"ok": True, "results": rows}
+    except psycopg.Error as e:
+        log.warning("search_by_criteria PG error: %s", e)
+        return {"ok": False, "results": [], "error": str(e)}
 
 
 ADD_TO_CART_SCHEMA = {
