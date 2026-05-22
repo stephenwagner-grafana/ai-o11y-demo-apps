@@ -49,12 +49,19 @@ Usage in a Deployment:
 {{- define "aio11y.envOtelSigil" -}}
 {{- $root := index . 0 -}}
 {{- $component := index . 1 -}}
+# Service identity. Both forms emitted so the gateway's manual OTel init
+# (reads SERVICE_NAME) AND `opentelemetry-instrument` auto-instrument
+# (reads OTEL_SERVICE_NAME + OTEL_RESOURCE_ATTRIBUTES) are happy.
 - name: SERVICE_NAME
   value: {{ $component }}
 - name: SERVICE_NAMESPACE
   value: {{ $root.Values.global.serviceNamespace }}
 - name: SERVICE_VERSION
   value: {{ $root.Values.global.image.tag | quote }}
+- name: OTEL_SERVICE_NAME
+  value: {{ $component }}
+- name: OTEL_RESOURCE_ATTRIBUTES
+  value: "service.namespace={{ $root.Values.global.serviceNamespace }},service.version={{ $root.Values.global.image.tag }}"
 - name: OTEL_EXPORTER_OTLP_ENDPOINT
   valueFrom:
     secretKeyRef:
