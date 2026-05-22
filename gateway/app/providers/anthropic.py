@@ -15,8 +15,10 @@ Anthropic rejects OpenAI-style `role: "tool"` messages and expects
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
+import random
 from typing import Any
 
 from anthropic import AsyncAnthropic
@@ -31,6 +33,75 @@ DEFAULT_MODEL = os.getenv("ANTHROPIC_DEFAULT_MODEL", "claude-haiku-4-5-20251001"
 # Hard cap on max_tokens to keep $/day predictable. Specialists send 1024 by
 # default; this clamps the per-call ceiling. Tunable via env.
 _MAX_TOKENS_CAP = int(os.getenv("ANTHROPIC_MAX_TOKENS_CAP", "1024"))
+
+
+def _parse_model_weights(env_value: str) -> list[tuple[str, float]]:
+    """Parse "model_a:weight_a,model_b:weight_b" env value.
+
+    Weights normalized to sum to 1.0. Returns [] when unset/blank.
+    """
+    if not env_value or not env_value.strip():
+        return []
+    pairs: list[tuple[str, float]] = []
+    for entry in env_value.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if ":" not in entry:
+            log.warning("ANTHROPIC_MODEL_WEIGHTS entry missing ':': %r", entry)
+            continue
+        model, w_str = entry.rsplit(":", 1)
+        try:
+            w = float(w_str)
+        except ValueError:
+            log.warning("ANTHROPIC_MODEL_WEIGHTS bad weight %r in %r", w_str, entry)
+            continue
+        if w <= 0:
+            continue
+        pairs.append((model.strip(), w))
+    total = sum(w for _, w in pairs)
+    if total <= 0:
+        return []
+    return [(m, w / total) for m, w in pairs]
+
+
+_MODEL_WEIGHTS = _parse_model_weights(os.getenv("ANTHROPIC_MODEL_WEIGHTS", ""))
+if _MODEL_WEIGHTS:
+    log.info(
+        "anthropic provider: weighted model pool: %s",
+        ", ".join(f"{m}={w:.0%}" for m, w in _MODEL_WEIGHTS),
+    )
+
+
+def _pick_model(req: ProviderRequest) -> str:
+    """Pick a model. Priority: explicit req.model -> weighted-sticky -> default.
+
+    Sticky by session_id so a conversation stays on the same model — better
+    user experience and cleaner per-model dashboard slices.
+    """
+    if req.model:
+        return req.model
+    if not _MODEL_WEIGHTS:
+        return DEFAULT_MODEL
+    # Sticky-per-session: deterministic mapping (session_id, hour bucket) -> model
+    sticky_key = (req.session_id or "") + "|" + req.conversation_id or ""
+    if sticky_key.strip("|"):
+        # Map the key to a [0,1) value and walk the weight CDF
+        h = int(hashlib.md5(sticky_key.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+        cumulative = 0.0
+        for model, w in _MODEL_WEIGHTS:
+            cumulative += w
+            if h < cumulative:
+                return model
+        return _MODEL_WEIGHTS[-1][0]
+    # No session info — plain weighted random
+    r = random.random()
+    cumulative = 0.0
+    for model, w in _MODEL_WEIGHTS:
+        cumulative += w
+        if r < cumulative:
+            return model
+    return _MODEL_WEIGHTS[-1][0]
 
 
 def _to_anthropic_messages(messages: list[dict]) -> tuple[str | None, list[dict]]:
@@ -135,7 +206,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise RuntimeError("ANTHROPIC_API_KEY not set")
 
-    model = req.model or DEFAULT_MODEL
+    model = _pick_model(req)
     system, messages = _to_anthropic_messages(req.messages)
     tools = _to_anthropic_tools(req.tools)
     max_tokens = min(req.max_tokens or 1024, _MAX_TOKENS_CAP)

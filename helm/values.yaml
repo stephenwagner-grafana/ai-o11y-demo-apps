@@ -38,12 +38,28 @@ global:
     ollama:
       gpuUtilizationThreshold: 0.85
 
-  # Default models per provider
+  # Default model per provider (used when modelWeights is empty)
   defaults:
     anthropicModel: claude-haiku-4-5-20251001
     openaiModel: gpt-4o-mini
     geminiModel: gemini-1.5-flash
     ollamaModel: qwen2.5:14b
+
+  # Optional weighted model pools. When set, the provider picks one of these
+  # per request — sticky by (session_id + conversation_id) for conversation
+  # coherence. Format: "model_a:weight_a,model_b:weight_b,..." (weights
+  # normalized; need not sum to 1.0).
+  #
+  # Example for Anthropic — use all three Claude models but bias away from
+  # the expensive Opus:
+  #   anthropicWeights: "claude-haiku-4-5-20251001:0.6,claude-sonnet-4-6:0.35,claude-opus-4-7:0.05"
+  #
+  # Leave blank to always use the matching `*Model` default above.
+  modelWeights:
+    anthropic: ""
+    openai: ""
+    gemini: ""
+    ollama: ""
 
   # Sigil credentials (required — populated by install.sh)
   sigil:

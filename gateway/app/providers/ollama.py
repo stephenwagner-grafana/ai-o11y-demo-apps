@@ -15,8 +15,10 @@ the gateway logs a warning and keeps serving.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
+import random
 from typing import Any
 
 import httpx
@@ -28,6 +30,59 @@ log = logging.getLogger(__name__)
 
 PROVIDER_NAME = "ollama"
 DEFAULT_MODEL = os.getenv("OLLAMA_DEFAULT_MODEL", "qwen2.5:14b")
+
+
+def _parse_model_weights(env_value: str) -> list[tuple[str, float]]:
+    """`model_a:weight_a,model_b:weight_b` -> normalized [(model, weight)]. Empty list when unset."""
+    if not env_value or not env_value.strip():
+        return []
+    pairs: list[tuple[str, float]] = []
+    for entry in env_value.split(","):
+        entry = entry.strip()
+        if not entry or ":" not in entry:
+            continue
+        model, w_str = entry.rsplit(":", 1)
+        try:
+            w = float(w_str)
+        except ValueError:
+            continue
+        if w > 0:
+            pairs.append((model.strip(), w))
+    total = sum(w for _, w in pairs)
+    if total <= 0:
+        return []
+    return [(m, w / total) for m, w in pairs]
+
+
+_MODEL_WEIGHTS = _parse_model_weights(os.getenv("OLLAMA_MODEL_WEIGHTS", ""))
+if _MODEL_WEIGHTS:
+    log.info(
+        "ollama provider: weighted model pool: %s",
+        ", ".join(f"{m}={w:.0%}" for m, w in _MODEL_WEIGHTS),
+    )
+
+
+def _pick_model(req: ProviderRequest) -> str:
+    if req.model:
+        return req.model
+    if not _MODEL_WEIGHTS:
+        return DEFAULT_MODEL
+    sticky_key = (req.session_id or "") + "|" + (req.conversation_id or "")
+    if sticky_key.strip("|"):
+        h = int(hashlib.md5(sticky_key.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
+        cumulative = 0.0
+        for model, w in _MODEL_WEIGHTS:
+            cumulative += w
+            if h < cumulative:
+                return model
+        return _MODEL_WEIGHTS[-1][0]
+    r = random.random()
+    cumulative = 0.0
+    for model, w in _MODEL_WEIGHTS:
+        cumulative += w
+        if r < cumulative:
+            return model
+    return _MODEL_WEIGHTS[-1][0]
 DEFAULT_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 DEFAULT_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
 DEFAULT_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "120"))
@@ -100,7 +155,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     if not base_url:
         raise RuntimeError("OLLAMA_BASE_URL not set")
 
-    model = req.model or DEFAULT_MODEL
+    model = _pick_model(req)
     payload: dict[str, Any] = {
         "model": model,
         "messages": _to_ollama_messages(req.messages),

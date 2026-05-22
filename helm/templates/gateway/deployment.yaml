@@ -60,7 +60,7 @@ spec:
               value: {{ .Values.global.caps.gemini.usdPerDay | quote }}
             - name: OLLAMA_GPU_UTILIZATION_THRESHOLD
               value: {{ .Values.global.caps.ollama.gpuUtilizationThreshold | quote }}
-            # Default model per provider (overridable from caller)
+            # Default model per provider (used when weights are empty)
             - name: ANTHROPIC_DEFAULT_MODEL
               value: {{ .Values.global.defaults.anthropicModel | quote }}
             - name: OPENAI_DEFAULT_MODEL
@@ -69,6 +69,15 @@ spec:
               value: {{ .Values.global.defaults.geminiModel | quote }}
             - name: OLLAMA_DEFAULT_MODEL
               value: {{ .Values.global.defaults.ollamaModel | quote }}
+            # Optional weighted model pools — sticky per session for coherence
+            - name: ANTHROPIC_MODEL_WEIGHTS
+              value: {{ .Values.global.modelWeights.anthropic | default "" | quote }}
+            - name: OPENAI_MODEL_WEIGHTS
+              value: {{ .Values.global.modelWeights.openai | default "" | quote }}
+            - name: GEMINI_MODEL_WEIGHTS
+              value: {{ .Values.global.modelWeights.gemini | default "" | quote }}
+            - name: OLLAMA_MODEL_WEIGHTS
+              value: {{ .Values.global.modelWeights.ollama | default "" | quote }}
           {{- if .Values.gateway.pricingOverrides }}
           volumeMounts:
             - name: pricing

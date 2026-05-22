@@ -296,6 +296,11 @@ global:
   caps:
     anthropic:
       usdPerDay: ${ANTHROPIC_CAP_USD_PER_DAY:-20}
+  modelWeights:
+    anthropic: "${ANTHROPIC_MODEL_WEIGHTS:-}"
+    openai:    "${OPENAI_MODEL_WEIGHTS:-}"
+    gemini:    "${GEMINI_MODEL_WEIGHTS:-}"
+    ollama:    "${OLLAMA_MODEL_WEIGHTS:-}"
 loadgen:
   ncTotalUsers: ${NC_TOTAL_USERS:-200}
   ncAiAdoptionRate: ${NC_AI_ADOPTION_RATE:-0.25}
