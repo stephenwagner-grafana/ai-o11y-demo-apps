@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ask Acme — internal support bot</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%238b5cf6'/%3E%3Ctext x='16' y='22' font-family='-apple-system,sans-serif' font-size='18' font-weight='700' text-anchor='middle' fill='white'%3EA%3C/text%3E%3C/svg%3E" />
+  <script>
+    // Demo-operator identity. Defaults to "Wags Wagner" but can be
+    // overridden by setting DEMO_OPERATOR_NAME / DEMO_OPERATOR_EMAIL env
+    // on the supportbot-frontend Deployment; nginx will substitute these
+    // values via the standard envsubst pattern at install time.
+    // See manifests/supportbot/30-app.yaml for the env block.
+    window.DEMO_OPERATOR_NAME  = "${DEMO_OPERATOR_NAME}";
+    window.DEMO_OPERATOR_EMAIL = "${DEMO_OPERATOR_EMAIL}";
+    // If install didn't substitute, leave undefined so app.js falls back.
+    if (window.DEMO_OPERATOR_NAME  && window.DEMO_OPERATOR_NAME.startsWith("$"))  delete window.DEMO_OPERATOR_NAME;
+    if (window.DEMO_OPERATOR_EMAIL && window.DEMO_OPERATOR_EMAIL.startsWith("$")) delete window.DEMO_OPERATOR_EMAIL;
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <div class="brand-name">Acme — Ask Acme</div>
+          <div class="brand-sub">Company-wide support bot · role-aware · auto-escalating</div>
+        </div>
+      </div>
+      <div class="links" id="dashboardLinks">
+        <!-- Populated at runtime from window.GRAFANA_URL (set in app.js init).
+             Removed from HTML so the static page is portable across FE deployments. -->
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <h1>What can I help you with today?</h1>
+      <p>I can answer questions about HR policy, PTO, benefits, IT tickets, payroll,
+         and the company KB. I run every question through 18 specialist sub-agents
+         and four LLM judges before replying. Pick a demo verb below or type your own.</p>
+      <div class="capabilities">
+        <div class="cap"><span class="cap-icon">🏖️</span> <span class="cap-name">Time off</span></div>
+        <div class="cap"><span class="cap-icon">📋</span> <span class="cap-name">HR policy</span></div>
+        <div class="cap"><span class="cap-icon">💼</span> <span class="cap-name">Benefits</span></div>
+        <div class="cap"><span class="cap-icon">💻</span> <span class="cap-name">IT tickets</span></div>
+        <div class="cap"><span class="cap-icon">💰</span> <span class="cap-name">Payroll</span></div>
+        <div class="cap"><span class="cap-icon">🏢</span> <span class="cap-name">Facilities</span></div>
+        <div class="cap"><span class="cap-icon">📚</span> <span class="cap-name">KB search</span></div>
+        <div class="cap"><span class="cap-icon">🔀</span> <span class="cap-name">Escalation</span></div>
+        <div class="cap"><span class="cap-icon">🛡️</span> <span class="cap-name">PII redact</span></div>
+        <div class="cap"><span class="cap-icon">🚫</span> <span class="cap-name">Injection guard</span></div>
+      </div>
+    </section>
+
+    <section class="role">
+      <label>Asking as:</label>
+      <div class="role-buttons" id="roles"></div>
+      <div class="role-detail">
+        <span>Identity:</span>
+        <select id="employee"></select>
+      </div>
+    </section>
+
+    <section class="composer">
+      <textarea id="query" placeholder="Ask anything... e.g. 'What's my PTO balance?'"></textarea>
+      <div class="actions">
+        <button class="primary" id="ask">Ask Acme</button>
+      </div>
+      <div class="verb-row">
+        <span class="verb-label">Helpful</span>
+        <button class="ghost" data-verb="pto">PTO balance</button>
+        <button class="ghost" data-verb="parental">Parental leave policy</button>
+        <button class="ghost" data-verb="it_ticket">VPN ticket</button>
+        <button class="ghost" data-verb="onboarding">Onboarding checklist</button>
+      </div>
+      <div class="verb-row danger">
+        <span class="verb-label">Governance</span>
+        <button class="ghost" data-verb="exec_comp">Exec comp (as IC)</button>
+        <button class="ghost" data-verb="injection">Prompt injection</button>
+        <button class="ghost" data-verb="escalation">Harassment escalation</button>
+        <button class="ghost" data-verb="mass_extract">Mass extraction probe</button>
+        <button class="ghost" data-verb="api_key">API key paste</button>
+      </div>
+    </section>
+
+    <section class="result" id="result" hidden>
+      <div class="result-head">
+        <div class="result-status" id="status"></div>
+        <div class="result-meta" id="meta"></div>
+      </div>
+      <div class="result-answer" id="answer"></div>
+      <div class="result-judges" id="judges"></div>
+      <details class="result-issues">
+        <summary>Issues raised by this request <span id="issues-count">(0)</span></summary>
+        <ul id="issues"></ul>
+      </details>
+      <details class="result-actions">
+        <summary>Tool calls & specialist output</summary>
+        <pre id="actions"></pre>
+      </details>
+      <div class="result-links">
+        <a id="trace-link" href="#" target="_blank" rel="noopener">View full trace in Sigil ↗</a>
+      </div>
+    </section>
+
+    <section class="footer-grid">
+      <div class="card">
+        <h3>What this demo is</h3>
+        <p>An internal support bot for a fictional 50-employee company called Acme.
+           Every <code>/ask</code> walks an 18-step specialist chain across HRIS,
+           ITSM, Payroll, Org-chart and a Postgres-backed policy KB. Adversarial
+           probes (prompt injection, cross-role asks, PII inputs, escalation triggers)
+           drive realistic failures into the dashboard.</p>
+      </div>
+      <div class="card">
+        <h3>What's instrumented</h3>
+        <ul class="bullets">
+          <li>Per-request Sigil generation tree (parent → child)</li>
+          <li>OTel auto-instrumentation across FastAPI / httpx / Postgres</li>
+          <li>Four LLM judges on every response</li>
+          <li>Loadgen feeds Ollama; live (browser) traffic feeds Claude</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
