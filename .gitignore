@@ -4,6 +4,10 @@
 .env.*.local
 *.creds
 *.creds.env
+.helm-values-overrides.yaml
+
+# Generated config (regenerate via tools/regenerate-users.py)
+helm/config/users.yaml
 
 # Python
 __pycache__/
