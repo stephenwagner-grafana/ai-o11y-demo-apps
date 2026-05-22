@@ -24,6 +24,25 @@ from typing import Any
 from anthropic import AsyncAnthropic
 from sigil_sdk import Generation, GenerationStart, ModelRef, TokenUsage
 
+
+def _first_user_text(messages: list[dict[str, Any]]) -> str:
+    """First user message's plain text, truncated for Sigil conversation_title.
+
+    Handles both string content (Ollama/OpenAI style) and list-of-blocks
+    content (Anthropic native style, e.g. [{"type": "text", "text": "..."}]).
+    """
+    for m in messages:
+        if m.get("role") != "user":
+            continue
+        c = m.get("content", "")
+        if isinstance(c, str):
+            return c[:80]
+        if isinstance(c, list):
+            for block in c:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    return (block.get("text") or "")[:80]
+    return ""
+
 from ..pricing import calculate_cost
 from .base import ProviderRequest, ProviderResponse
 
@@ -237,6 +256,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
                 agent_name=req.agent_name or "unknown-agent",
                 agent_version=req.agent_version or "",
                 conversation_id=req.conversation_id or "",
+                conversation_title=_first_user_text(req.messages),
                 user_id=req.user_id or "",
                 parent_generation_ids=req.parent_generation_ids or [],
                 tags={
