@@ -65,7 +65,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Skip components whose context directory doesn't exist yet (e.g. loadgen,
       # postgres-seed-loader are being added by another agent). Avoids hard
