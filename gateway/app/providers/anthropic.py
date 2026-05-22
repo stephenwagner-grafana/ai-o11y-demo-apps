@@ -275,6 +275,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     if rec is not None:
         try:
             rec.set_result(generation=Generation(
+                model=ModelRef(provider=PROVIDER_NAME, name=response.model or req.model or ""),
                 response_id=response.id or "",
                 response_model=response.model or "",
                 stop_reason=response.stop_reason or "",
