@@ -32,7 +32,7 @@ COPY k6/           ./k6/
 COPY config/       ./config/
 
 ENV PYTHONUNBUFFERED=1 \
-    PORT=8080 \
+    PORT=8000 \
     LOADGEN_SCRIPTS_DIR=/loadgen/k6/scripts \
     USERS_CONFIG_PATH=/etc/loadgen/users.yaml \
     GATEWAY_URL=http://llm-gateway.llm-gateway.svc.cluster.local \
@@ -40,11 +40,11 @@ ENV PYTHONUNBUFFERED=1 \
     LOADGEN_SB_BASE_URL=http://sb-web.support-bot.svc.cluster.local \
     LOADGEN_POLL_OPEN_INTERVAL_SEC=5
 
-EXPOSE 8080
+EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost:${PORT}/health || exit 1
 
 # tini reaps zombie K6 processes if any exit unexpectedly.
 ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["uvicorn", "orchestrator.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["opentelemetry-instrument", "uvicorn", "orchestrator.main:app", "--host", "0.0.0.0", "--port", "8000"]
