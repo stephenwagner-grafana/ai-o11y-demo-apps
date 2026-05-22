@@ -1,0 +1,49 @@
+# Mirror of Sigil's canonical LLM pricing data.
+#
+# Sigil owns canonical pricing but does not (as of 2026-05-22) emit a
+# Prom cost metric or expose a public pricing API. This file is the
+# stopgap. When Sigil ships either, delete this file and switch
+# gateway/app/pricing.py to query Sigil instead.
+#
+# Customer can override individual rates via env vars, e.g.
+#   ANTHROPIC_SONNET_OUTPUT_USD_PER_MTOKEN=15.00
+# Useful for negotiated-discount customers.
+#
+# All rates are USD per 1,000,000 tokens.
+
+anthropic:
+  claude-opus-4-7:
+    input_usd_per_mtoken: 15.00
+    output_usd_per_mtoken: 75.00
+  claude-sonnet-4-6:
+    input_usd_per_mtoken: 3.00
+    output_usd_per_mtoken: 15.00
+  claude-haiku-4-5-20251001:
+    input_usd_per_mtoken: 1.00
+    output_usd_per_mtoken: 5.00
+
+openai:
+  gpt-4-turbo:
+    input_usd_per_mtoken: 10.00
+    output_usd_per_mtoken: 30.00
+  gpt-4o:
+    input_usd_per_mtoken: 2.50
+    output_usd_per_mtoken: 10.00
+  gpt-4o-mini:
+    input_usd_per_mtoken: 0.15
+    output_usd_per_mtoken: 0.60
+
+gemini:
+  gemini-1.5-pro:
+    input_usd_per_mtoken: 1.25
+    output_usd_per_mtoken: 5.00
+  gemini-1.5-flash:
+    input_usd_per_mtoken: 0.075
+    output_usd_per_mtoken: 0.30
+
+# Ollama uses a single configurable rate (no per-model pricing).
+# Customer overrides via OLLAMA_OUTPUT_USD_PER_MTOKEN env var.
+ollama:
+  default:
+    input_usd_per_mtoken: 0.00
+    output_usd_per_mtoken: 0.30
