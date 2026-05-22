@@ -124,8 +124,8 @@ def _assign_nc_cohorts(count: int) -> list[str]:
     non_ai = count - (gift_only + chatbot_only + both)
 
     cohorts = (
-        ["non-ai"] * non_ai
-        + ["gift-finder"] * gift_only
+        ["non_ai"] * non_ai
+        + ["gift_finder"] * gift_only
         + ["chatbot"] * chatbot_only
         + ["both"] * both
     )
@@ -134,8 +134,8 @@ def _assign_nc_cohorts(count: int) -> list[str]:
     # Interleave by modulo so cohorts are spread evenly through the list.
     interleaved = [""] * count
     bucket_sizes = {
-        "non-ai": non_ai,
-        "gift-finder": gift_only,
+        "non_ai": non_ai,
+        "gift_finder": gift_only,
         "chatbot": chatbot_only,
         "both": both,
     }
@@ -205,14 +205,14 @@ def render_yaml(nc_users: list[dict], sb_users: list[dict]) -> str:
     lines.append("# Hand-edits survive across loadgen restarts; only re-running the")
     lines.append("# regen script clobbers this file.")
     lines.append("")
-    lines.append("neoncart:")
+    lines.append("nc_users:")
     for u in nc_users:
         lines.append(f"  - id: {u['id']}")
         lines.append(f"    name: {u['name']}")
         lines.append(f"    email: {u['email']}")
         lines.append(f"    cohort: {u['cohort']}")
     lines.append("")
-    lines.append("supportbot:")
+    lines.append("sb_users:")
     for u in sb_users:
         lines.append(f"  - id: {u['id']}")
         lines.append(f"    name: {u['name']}")
@@ -222,7 +222,7 @@ def render_yaml(nc_users: list[dict], sb_users: list[dict]) -> str:
 
 
 def summarize(nc_users: list[dict], sb_users: list[dict]) -> str:
-    buckets = {"non-ai": 0, "gift-finder": 0, "chatbot": 0, "both": 0}
+    buckets = {"non_ai": 0, "gift_finder": 0, "chatbot": 0, "both": 0}
     for u in nc_users:
         buckets[u["cohort"]] = buckets.get(u["cohort"], 0) + 1
     return (
