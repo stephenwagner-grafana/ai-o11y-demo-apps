@@ -165,11 +165,15 @@ When Claude reopens: resume spawning normally.
 | `SB_USER_DOMAIN` | `acme.com` | Email domain for SupportBot synthetic users |
 | `USERS_CONFIG_PATH` | `/etc/loadgen/users.yaml` | Path to the generated users file |
 
+## Built into the base (not deferred)
+
+- **"Show me mice" trap.** Hardcoded in `apps/neoncart-chatbot/`: when a user message contains "mice" (case-insensitive), the chatbot tries a Postgres query against a non-existent `species` column → DB error → cascading trace. Signature demo moment of AI o11y. Always on. Loadgen scenarios can optionally trigger it occasionally (e.g., 1-2% of nc-chatbot users send "show me mice") to keep the trace populated.
+
 ## Out of scope for the BASE (extensions add these later)
 
 - Scripted bad actors (Tim-as-data-thief, etc.)
-- Outlier traffic spikes (mice cascade)
+- Outlier traffic spikes
 - Domain-specific bursts
 - Adversarial prompts / prompt injection
 - High-volume stress patterns
-- Specific failure-mode triggers
+- Other specific failure-mode triggers
