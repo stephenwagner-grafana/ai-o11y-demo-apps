@@ -27,7 +27,7 @@ from .base import ProviderRequest, ProviderResponse
 log = logging.getLogger(__name__)
 
 PROVIDER_NAME = "ollama"
-DEFAULT_MODEL = os.getenv("OLLAMA_DEFAULT_MODEL", "qwen2.5:32b")
+DEFAULT_MODEL = os.getenv("OLLAMA_DEFAULT_MODEL", "qwen2.5:14b")
 DEFAULT_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")
 DEFAULT_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
 DEFAULT_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "120"))

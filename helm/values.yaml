@@ -43,7 +43,7 @@ global:
     anthropicModel: claude-haiku-4-5-20251001
     openaiModel: gpt-4o-mini
     geminiModel: gemini-1.5-flash
-    ollamaModel: qwen2.5:32b
+    ollamaModel: qwen2.5:14b
 
   # Sigil credentials (required — populated by install.sh)
   sigil:
