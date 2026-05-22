@@ -3,8 +3,8 @@
 Lazy-initialised AsyncConnectionPool so the web app starts even if
 Postgres isn't ready yet (it just 503s catalog requests until ready).
 
-Schema lives in postgres/schema.sql and is loaded by the seed Job
-during helm install.
+Schema lives in postgres/seed-loader/schema.sql and is loaded by the
+seed Job during helm install.
 """
 from __future__ import annotations
 
