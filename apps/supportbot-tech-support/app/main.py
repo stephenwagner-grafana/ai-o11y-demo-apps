@@ -1,25 +1,16 @@
-"""sb-tech-support — Acme support bot tech specialist.
-
-Handles IT / hardware / software / network questions routed in by
-sb-router. Will call the LLM gateway in Phase 2 to generate answers
-grounded in Acme's IT runbooks + knowledge base (the RAG store).
-
-Endpoints:
-  POST /chat    -> answer a tech-support question
-  GET  /health  -> liveness
-  GET  /readyz  -> readiness
-  GET  /metrics -> Prometheus
-"""
+"""sb-tech-support — Acme support bot IT-domain specialist (real impl)."""
 from __future__ import annotations
 
 import logging
 import os
 from typing import Any
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from .gateway_client import call_gateway
 from .tools import SCHEMAS, execute_tool
 
 log = logging.getLogger(__name__)
@@ -29,6 +20,16 @@ AGENT_NAME = "sb-tech-support"
 DOMAIN = "tech-support"
 
 app = FastAPI(title=AGENT_NAME, version=os.getenv("APP_VERSION", "0.1.0"))
+
+SYSTEM_PROMPT = """You are Acme's internal IT support assistant for employees. \
+You help with laptops, VPN, wifi, office software, dev tools, and other tech issues. \
+Available tools:
+
+- search_runbook: find relevant runbook entries from the IT knowledge base
+- create_ticket: file an IT support ticket when the runbooks don't solve the issue
+
+Be concise (2-3 sentences). Use search_runbook first to find a documented solution. \
+Only create a ticket if no runbook covers the issue. Never invent answers."""
 
 
 @app.get("/health")
@@ -46,6 +47,11 @@ def metrics() -> str:
     return f"# HELP {AGENT_NAME.replace('-', '_')}_up 1 if up\n{AGENT_NAME.replace('-', '_')}_up 1\n"
 
 
+@app.get("/tools")
+def list_tools() -> dict[str, Any]:
+    return {"tools": SCHEMAS}
+
+
 class ChatRequest(BaseModel):
     question: str
     role: str | None = None
@@ -55,27 +61,48 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
 
 
-@app.get("/tools")
-def list_tools() -> dict[str, Any]:
-    return {"tools": SCHEMAS}
-
-
 @app.post("/chat")
-def chat(req: ChatRequest) -> dict[str, Any]:
-    log.info("%s answering: %r", AGENT_NAME, req.question[:80])
-    tool_result = execute_tool("search_runbook", {"query": req.question, "max_results": 3})
-    tool_calls = [{"tool": "search_runbook", "result": tool_result}]
+async def chat(
+    req: ChatRequest,
+    x_caller_type: str | None = Header(default=None, alias="X-Caller-Type"),
+) -> dict[str, Any]:
+    caller_type = (x_caller_type or "interactive").lower()
+    if caller_type not in ("synthetic", "interactive"):
+        caller_type = "interactive"
 
-    # TODO Phase 2: pull relevant runbooks from the RAG store
-    # (pgvector inside the shared Postgres), build a system prompt,
-    # POST to GATEWAY_URL/v1/llm with agent_name=sb-tech-support.
+    employee = req.employee_email or "anonymous@acme.com"
+    user_text = f"Employee: {employee}\nRole: {req.role or 'unknown'}\n\n{req.question}"
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_text},
+    ]
+
+    try:
+        result = await call_gateway(
+            messages=messages,
+            tools=SCHEMAS,
+            execute_tool_fn=execute_tool,
+            agent_name=AGENT_NAME,
+            agent_version=os.getenv("APP_VERSION", "0.1.0"),
+            app="supportbot",
+            session_id=req.session_id or "",
+            conversation_id=req.conversation_id or "",
+            user_id=employee,
+            caller_type=caller_type,
+        )
+    except httpx.HTTPError as e:
+        log.warning("gateway call failed: %s", e)
+        raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
+
     return {
         "ok": True,
         "specialist": AGENT_NAME,
         "domain": DOMAIN,
-        "reply": f"[stub] {AGENT_NAME} would answer tech questions via the LLM gateway. "
-                 f"You asked: {req.question[:80]!r}",
-        "model": None,
+        "reply": result["content"],
+        "model": result.get("model"),
+        "provider": result.get("provider"),
+        "usage": result.get("usage"),
+        "tool_calls": result.get("tool_calls"),
         "conversation_id": req.conversation_id or "conv_stub",
-        "tool_calls": tool_calls,
     }

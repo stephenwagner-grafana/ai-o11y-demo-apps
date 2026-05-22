@@ -1,23 +1,19 @@
-"""nc-chatbot specialist.
+"""nc-chatbot specialist — real implementation.
 
 Handles general chatbot conversations on NeonCart. Receives /chat
-requests from nc-web, calls tools as needed, calls the LLM gateway,
-returns a reply.
+requests from nc-web, sends them to the LLM gateway with the tool
+schemas from app/tools.py, executes any tool calls the LLM picks
+locally, returns the final reply.
 
-Tools available (see app/tools.py):
-- search_products: searches the catalog (contains the "show me mice" trap)
-- navigate_to_page: tells the frontend to navigate to main/search/product/cart/checkout
-
-For Phase 1: the /chat handler invokes tools directly based on simple
-keyword heuristics so traces and the mice trap behave correctly without
-a real LLM call yet. In Phase 2 the LLM picks which tools to invoke.
+The "show me mice" demo trap lives in the `search_products` tool:
+when the LLM uses that tool with a mouse/mice query, the tool tries
+a Postgres query against a column that doesn't exist (`species`)
+and the resulting error bubbles through the trace.
 
 Endpoints:
   POST /chat       -> respond to a chatbot message
-  GET  /tools      -> list available tool schemas (debug aid)
-  GET  /health     -> liveness
-  GET  /readyz     -> readiness
-  GET  /metrics    -> Prometheus metrics
+  GET  /tools      -> list available tool schemas
+  GET  /health     /readyz /metrics
 """
 from __future__ import annotations
 
@@ -25,16 +21,29 @@ import logging
 import os
 from typing import Any
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from .gateway_client import call_gateway
 from .tools import SCHEMAS, execute_tool
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
 app = FastAPI(title="nc-chatbot", version=os.getenv("APP_VERSION", "0.1.0"))
+
+SYSTEM_PROMPT = """You are NeonCart's helpful AI chatbot. NeonCart is a neon-themed \
+e-commerce store selling premium tech (peripherals, displays, audio gear, gaming, \
+smart home). Be friendly and concise. You have tools available:
+
+- search_products: search the catalog by free-text query
+- get_product_detail: look up a specific product by SKU
+- navigate_to_page: tell the frontend to navigate (main/search/product/cart/checkout)
+- add_to_cart: add a product to the user's cart
+
+Use tools whenever the user asks about a product. Always respond in 1-3 short sentences."""
 
 
 @app.get("/health")
@@ -49,7 +58,7 @@ def readyz() -> dict[str, str]:
 
 @app.get("/metrics", response_class=PlainTextResponse)
 def metrics() -> str:
-    return "# HELP nc_chatbot_up 1 if the chatbot specialist is up\nnc_chatbot_up 1\n"
+    return "# HELP nc_chatbot_up 1 if up\nnc_chatbot_up 1\n"
 
 
 @app.get("/tools")
@@ -65,34 +74,47 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/chat")
-def chat(req: ChatRequest) -> dict[str, Any]:
+async def chat(
+    req: ChatRequest,
+    x_caller_type: str | None = Header(default=None, alias="X-Caller-Type"),
+) -> dict[str, Any]:
     msg = req.message or ""
-    msg_lower = msg.lower()
+    caller_type = (x_caller_type or "interactive").lower()
+    if caller_type not in ("synthetic", "interactive"):
+        caller_type = "interactive"
 
-    # ── Phase 1 heuristic tool dispatch ──────────────────────────────────────
-    # Phase 2: the LLM (via gateway) picks the tool. For now we mimic that
-    # decision with simple keyword matching so the trace shape is realistic
-    # (chatbot -> tool -> downstream) even before the LLM is wired.
-    tool_results: list[dict[str, Any]] = []
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": msg},
+    ]
 
-    # search_products — fires for searches, "show me X", and the mice trap
-    if any(k in msg_lower for k in ("search", "show me", "find", "looking for", "mice", "mouse")):
-        result = execute_tool("search_products", {"query": msg, "max_results": 3})
-        tool_results.append({"tool": "search_products", "result": result})
+    try:
+        result = await call_gateway(
+            messages=messages,
+            tools=SCHEMAS,
+            execute_tool_fn=execute_tool,
+            agent_name="nc-chatbot",
+            agent_version=os.getenv("APP_VERSION", "0.1.0"),
+            app="neoncart",
+            session_id=req.session_id or "",
+            conversation_id=req.conversation_id or "",
+            user_id=req.user_id or "",
+            caller_type=caller_type,
+        )
+    except HTTPException:
+        # Mice trap fired inside execute_tool — propagate the 500 unchanged
+        raise
+    except httpx.HTTPError as e:
+        log.warning("gateway call failed: %s", e)
+        raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
 
-    # navigate_to_page — fires for explicit navigation requests
-    if "cart" in msg_lower and "show" in msg_lower:
-        result = execute_tool("navigate_to_page", {"page": "cart"})
-        tool_results.append({"tool": "navigate_to_page", "result": result})
-
-    # ── Normal path — proxy to LLM gateway (stub for Phase 1) ────────────────
-    # TODO Phase 2: call POST {GATEWAY_URL}/v1/llm with messages + the tools
-    # array from SCHEMAS, then execute whatever tools the LLM picks.
     return {
         "ok": True,
-        "reply": f"[stub] nc-chatbot will reply to {msg[:60]!r} via the gateway",
+        "reply": result["content"],
         "specialist": "nc-chatbot",
-        "model": None,
+        "model": result.get("model"),
+        "provider": result.get("provider"),
+        "usage": result.get("usage"),
+        "tool_calls": result.get("tool_calls"),
         "conversation_id": req.conversation_id or "conv_stub",
-        "tool_calls": tool_results,
     }

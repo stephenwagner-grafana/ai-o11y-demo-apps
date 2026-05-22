@@ -1,25 +1,16 @@
-"""sb-billing — Acme support bot billing specialist.
-
-Handles billing questions routed in by sb-router (charges, refunds,
-invoices, payment methods). Will call the LLM gateway in Phase 2 to
-generate real answers grounded in Acme's billing knowledge base.
-
-Endpoints:
-  POST /chat    -> answer a billing question
-  GET  /health  -> liveness
-  GET  /readyz  -> readiness
-  GET  /metrics -> Prometheus
-"""
+"""sb-billing — Acme support bot billing-domain specialist (real impl)."""
 from __future__ import annotations
 
 import logging
 import os
 from typing import Any
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from .gateway_client import call_gateway
 from .tools import SCHEMAS, execute_tool
 
 log = logging.getLogger(__name__)
@@ -29,6 +20,16 @@ AGENT_NAME = "sb-billing"
 DOMAIN = "billing"
 
 app = FastAPI(title=AGENT_NAME, version=os.getenv("APP_VERSION", "0.1.0"))
+
+SYSTEM_PROMPT = """You are Acme's internal billing-domain assistant for employees. \
+You help with expense reports, corporate-card charges, reimbursements, and \
+payroll-related billing questions. Available tools:
+
+- lookup_employee_expense: pull recent expense / corp-card charges for an employee
+- submit_reimbursement_request: file a reimbursement on behalf of the employee
+
+Be concise (2-3 sentences). Always use tools when the employee asks about specific \
+charges or wants to file a reimbursement. Never make up amounts or dates."""
 
 
 @app.get("/health")
@@ -46,6 +47,11 @@ def metrics() -> str:
     return f"# HELP {AGENT_NAME.replace('-', '_')}_up 1 if up\n{AGENT_NAME.replace('-', '_')}_up 1\n"
 
 
+@app.get("/tools")
+def list_tools() -> dict[str, Any]:
+    return {"tools": SCHEMAS}
+
+
 class ChatRequest(BaseModel):
     question: str
     role: str | None = None
@@ -55,27 +61,48 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
 
 
-@app.get("/tools")
-def list_tools() -> dict[str, Any]:
-    return {"tools": SCHEMAS}
-
-
 @app.post("/chat")
-def chat(req: ChatRequest) -> dict[str, Any]:
-    log.info("%s answering: %r", AGENT_NAME, req.question[:80])
-    tool_result = execute_tool("lookup_employee_expense", {"employee_email": req.employee_email or "anonymous@acme.com"})
-    tool_calls = [{"tool": "lookup_employee_expense", "result": tool_result}]
+async def chat(
+    req: ChatRequest,
+    x_caller_type: str | None = Header(default=None, alias="X-Caller-Type"),
+) -> dict[str, Any]:
+    caller_type = (x_caller_type or "interactive").lower()
+    if caller_type not in ("synthetic", "interactive"):
+        caller_type = "interactive"
 
-    # TODO Phase 2: build a system prompt with billing-domain context
-    # (recent invoices, payment methods, refund policy) and POST to
-    # GATEWAY_URL/v1/llm with agent_name=sb-billing.
+    employee = req.employee_email or "anonymous@acme.com"
+    user_text = f"Employee: {employee}\nRole: {req.role or 'unknown'}\n\n{req.question}"
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_text},
+    ]
+
+    try:
+        result = await call_gateway(
+            messages=messages,
+            tools=SCHEMAS,
+            execute_tool_fn=execute_tool,
+            agent_name=AGENT_NAME,
+            agent_version=os.getenv("APP_VERSION", "0.1.0"),
+            app="supportbot",
+            session_id=req.session_id or "",
+            conversation_id=req.conversation_id or "",
+            user_id=employee,
+            caller_type=caller_type,
+        )
+    except httpx.HTTPError as e:
+        log.warning("gateway call failed: %s", e)
+        raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
+
     return {
         "ok": True,
         "specialist": AGENT_NAME,
         "domain": DOMAIN,
-        "reply": f"[stub] {AGENT_NAME} would answer billing questions via the LLM gateway. "
-                 f"You asked: {req.question[:80]!r}",
-        "model": None,
+        "reply": result["content"],
+        "model": result.get("model"),
+        "provider": result.get("provider"),
+        "usage": result.get("usage"),
+        "tool_calls": result.get("tool_calls"),
         "conversation_id": req.conversation_id or "conv_stub",
-        "tool_calls": tool_calls,
     }

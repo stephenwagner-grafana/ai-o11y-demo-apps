@@ -1,25 +1,16 @@
-"""sb-account-management — Acme support bot account/profile specialist.
-
-Handles account, password, profile, email-change, permissions, and role
-questions routed in by sb-router. Phase 2 will call the LLM gateway with
-relevant HR/IAM policy context for grounded answers.
-
-Endpoints:
-  POST /chat    -> answer an account-management question
-  GET  /health  -> liveness
-  GET  /readyz  -> readiness
-  GET  /metrics -> Prometheus
-"""
+"""sb-account-management — Acme support bot account/IAM specialist (real impl)."""
 from __future__ import annotations
 
 import logging
 import os
 from typing import Any
 
-from fastapi import FastAPI
+import httpx
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from .gateway_client import call_gateway
 from .tools import SCHEMAS, execute_tool
 
 log = logging.getLogger(__name__)
@@ -29,6 +20,16 @@ AGENT_NAME = "sb-account-management"
 DOMAIN = "account-management"
 
 app = FastAPI(title=AGENT_NAME, version=os.getenv("APP_VERSION", "0.1.0"))
+
+SYSTEM_PROMPT = """You are Acme's internal account/IAM assistant for employees. \
+You help with SSO passwords, login issues, profile updates, role/permission changes, \
+and group membership. Available tools:
+
+- lookup_employee_profile: pull an employee's profile (role, manager, groups, SSO)
+- request_password_reset: trigger a password-reset email for the employee
+
+Be concise (2-3 sentences). Always lookup profile when asked about access or roles. \
+Trigger a password reset only when the employee explicitly asks for one."""
 
 
 @app.get("/health")
@@ -46,6 +47,11 @@ def metrics() -> str:
     return f"# HELP {AGENT_NAME.replace('-', '_')}_up 1 if up\n{AGENT_NAME.replace('-', '_')}_up 1\n"
 
 
+@app.get("/tools")
+def list_tools() -> dict[str, Any]:
+    return {"tools": SCHEMAS}
+
+
 class ChatRequest(BaseModel):
     question: str
     role: str | None = None
@@ -55,26 +61,48 @@ class ChatRequest(BaseModel):
     session_id: str | None = None
 
 
-@app.get("/tools")
-def list_tools() -> dict[str, Any]:
-    return {"tools": SCHEMAS}
-
-
 @app.post("/chat")
-def chat(req: ChatRequest) -> dict[str, Any]:
-    log.info("%s answering: %r", AGENT_NAME, req.question[:80])
-    tool_result = execute_tool("lookup_employee_profile", {"employee_email": req.employee_email or "anonymous@acme.com"})
-    tool_calls = [{"tool": "lookup_employee_profile", "result": tool_result}]
+async def chat(
+    req: ChatRequest,
+    x_caller_type: str | None = Header(default=None, alias="X-Caller-Type"),
+) -> dict[str, Any]:
+    caller_type = (x_caller_type or "interactive").lower()
+    if caller_type not in ("synthetic", "interactive"):
+        caller_type = "interactive"
 
-    # TODO Phase 2: pull relevant policy/IAM context and POST to
-    # GATEWAY_URL/v1/llm with agent_name=sb-account-management.
+    employee = req.employee_email or "anonymous@acme.com"
+    user_text = f"Employee: {employee}\nRole: {req.role or 'unknown'}\n\n{req.question}"
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_text},
+    ]
+
+    try:
+        result = await call_gateway(
+            messages=messages,
+            tools=SCHEMAS,
+            execute_tool_fn=execute_tool,
+            agent_name=AGENT_NAME,
+            agent_version=os.getenv("APP_VERSION", "0.1.0"),
+            app="supportbot",
+            session_id=req.session_id or "",
+            conversation_id=req.conversation_id or "",
+            user_id=employee,
+            caller_type=caller_type,
+        )
+    except httpx.HTTPError as e:
+        log.warning("gateway call failed: %s", e)
+        raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
+
     return {
         "ok": True,
         "specialist": AGENT_NAME,
         "domain": DOMAIN,
-        "reply": f"[stub] {AGENT_NAME} would answer account questions via the LLM gateway. "
-                 f"You asked: {req.question[:80]!r}",
-        "model": None,
+        "reply": result["content"],
+        "model": result.get("model"),
+        "provider": result.get("provider"),
+        "usage": result.get("usage"),
+        "tool_calls": result.get("tool_calls"),
         "conversation_id": req.conversation_id or "conv_stub",
-        "tool_calls": tool_calls,
     }
