@@ -172,6 +172,7 @@ async def generate(
             "reasoning_tokens": resp.reasoning_tokens,
             "cost_usd": round(resp.cost_usd, 6),
         },
+        "tool_calls": resp.tool_calls,
         "finish_reason": resp.finish_reason,
         "response_id": resp.response_id,
         "generation_id": resp.generation_id,

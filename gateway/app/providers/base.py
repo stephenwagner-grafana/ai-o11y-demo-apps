@@ -42,3 +42,7 @@ class ProviderResponse:
     cache_read_input_tokens: int = 0
     cache_creation_input_tokens: int = 0
     reasoning_tokens: int = 0
+    # Tool calls the LLM picked. Each entry: {"id", "name", "input"}.
+    # Caller is responsible for executing them and feeding results back
+    # in a follow-up call with role=tool messages.
+    tool_calls: list[dict] = field(default_factory=list)
