@@ -11,9 +11,10 @@ opentelemetry-exporter-otlp-proto-http==1.28.0
 opentelemetry-instrumentation-fastapi==0.49b0
 opentelemetry-instrumentation-httpx==0.49b0
 
-# Sigil SDK + provider wrappers
-sigil-sdk==0.1.0
-# Provider wrappers — actual version numbers TBD on first install
+# Sigil SDK (latest stable on PyPI as of 2026-05-22; earliest published is 0.1.2)
+sigil-sdk==0.4.0
+# Provider wrappers — pinned versions TBD; we currently use the raw `anthropic`
+# SDK (below) + manual generation export via sigil_sdk.Client
 # sigil-sdk-anthropic
 # sigil-sdk-openai
 # sigil-sdk-gemini
