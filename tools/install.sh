@@ -169,6 +169,27 @@ collect_required() {
     '^[0-9]+$' \
     "Expected numeric instance id."
 
+  # OTLP token — many Grafana Cloud stacks issue a SEPARATE Cloud Access Policy
+  # token for OTLP ingestion (metrics + logs + traces) vs Sigil's plugin token.
+  # If you use the same token for both, hit Enter to reuse SIGIL_AUTH_TOKEN.
+  # Otherwise paste the token from the "Send to OpenTelemetry" / OTLP card.
+  #
+  # How to tell them apart: in Grafana Cloud → Connections → Add new connection,
+  # the Sigil plugin and the OTLP endpoint each show their own access-policy
+  # token field. If those tokens differ (visually or copy-pasted from different
+  # pages), you NEED to enter the OTLP one here.
+  say ""
+  say "─── OTLP write token ───"
+  say "Required separately when your stack issues distinct tokens for Sigil"
+  say "and OTLP. Press Enter to REUSE the Sigil token above (the common case)."
+  prompt_value OTEL_OTLP_TOKEN "OTEL_OTLP_TOKEN (Enter = reuse SIGIL_AUTH_TOKEN)" "${OTEL_OTLP_TOKEN:-}"
+  if [ -z "${OTEL_OTLP_TOKEN:-}" ]; then
+    OTEL_OTLP_TOKEN="${SIGIL_AUTH_TOKEN}"
+    ok "Reusing SIGIL_AUTH_TOKEN for OTLP."
+  else
+    ok "Using separate OTLP token."
+  fi
+
   # Constants (not prompted, but written to .env so customer can see them)
   SIGIL_PROTOCOL="${SIGIL_PROTOCOL:-http}"
   SIGIL_AUTH_MODE="${SIGIL_AUTH_MODE:-basic}"
@@ -210,7 +231,7 @@ collect_tunables() {
 # tr -d '\n' is critical: a trailing newline silently breaks the header.
 compute_otel_headers() {
   local b64
-  b64=$(printf '%s' "${OTEL_OTLP_INSTANCE_ID}:${SIGIL_AUTH_TOKEN}" | base64 | tr -d '\n')
+  b64=$(printf '%s' "${OTEL_OTLP_INSTANCE_ID}:${OTEL_OTLP_TOKEN}" | base64 | tr -d '\n')
   OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic ${b64}"
 }
 
@@ -260,9 +281,13 @@ SIGIL_AUTH_MODE="${SIGIL_AUTH_MODE}"
 SIGIL_AUTH_TENANT_ID="${SIGIL_AUTH_TENANT_ID}"
 SIGIL_AUTH_TOKEN="${SIGIL_AUTH_TOKEN}"
 
-# ── OTLP (computed from OTEL_OTLP_INSTANCE_ID + SIGIL_AUTH_TOKEN) ────────────
+# ── OTLP ─────────────────────────────────────────────────────────────────────
+# OTEL_OTLP_TOKEN can be the same as SIGIL_AUTH_TOKEN or a separate token —
+# stacks that use distinct Cloud Access Policies for Sigil ingest vs OTLP
+# ingest need two tokens. OTEL_EXPORTER_OTLP_HEADERS is base64(instance_id:token).
 OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT}"
 OTEL_OTLP_INSTANCE_ID="${OTEL_OTLP_INSTANCE_ID}"
+OTEL_OTLP_TOKEN="${OTEL_OTLP_TOKEN}"
 OTEL_EXPORTER_OTLP_HEADERS="${OTEL_EXPORTER_OTLP_HEADERS}"
 
 # ── Tunables ─────────────────────────────────────────────────────────────────
