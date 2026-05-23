@@ -94,6 +94,31 @@ session_used_ai_total = _LabeledCounter(
     "Sessions where the AI gift-finder or chatbot was invoked >= 1 time.",
 )
 
+# AI-attributed revenue: incremented by product price whenever an add-to-cart
+# event fires with source != "manual". Labels: source (ai_chatbot|ai_gift_finder)
+# and gen_ai_agent_name (nc-chatbot|nc-gift-finder) so this can be ratio'd
+# against gen_ai_client_cost_usd_total{gen_ai_agent_name=X} for the
+# "is the AI agent paying for itself?" KPI. Ratio > 1.0 means the agent
+# generated more cart value than it cost in LLM tokens.
+ai_attributed_revenue_usd_total = _LabeledCounter(
+    "neoncart_ai_attributed_revenue_usd_total",
+    "Cart-value (product price at time of ATC) attributed to AI-initiated adds. "
+    "Ratio'd against gen_ai_client_cost_usd_total to compute per-agent ROI.",
+)
+
+
+# Map ATC source → Sigil agent name so the metric joins cleanly against
+# gen_ai_*{gen_ai_agent_name=X}.
+_SOURCE_TO_AGENT = {
+    "ai_chatbot": "nc-chatbot",
+    "ai_gift_finder": "nc-gift-finder",
+}
+
+
+def agent_from_source(source: str) -> str:
+    """Map ATC source value → Sigil agent name. Empty string for manual ATCs."""
+    return _SOURCE_TO_AGENT.get(source, "")
+
 
 def domain_from_email(email: str | None) -> str:
     """Extract the email domain for cohort labels. Returns 'unknown' if absent."""

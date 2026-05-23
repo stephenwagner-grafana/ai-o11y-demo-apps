@@ -233,6 +233,20 @@ async def add_to_cart(
     ).inc()
     if req.source.startswith("ai_"):
         m.session_used_ai_total.labels(user_domain=m.domain_from_email(req.user_email)).inc()
+        # Look up the product's current price and attribute that value to the
+        # agent that drove the ATC. Powers the "AI ROI" panel: cart-value /
+        # llm-cost per agent. Falls back to zero if the price is missing.
+        price_row = await db.fetchone(
+            "SELECT price_usd FROM products WHERE sku = %s",
+            (req.sku,),
+        )
+        price = float(price_row.get("price_usd") or 0) if price_row else 0.0
+        if price > 0:
+            agent = m.agent_from_source(req.source) or "unknown"
+            m.ai_attributed_revenue_usd_total.labels(
+                source=req.source,
+                gen_ai_agent_name=agent,
+            ).inc(price * max(1, req.quantity))
     return {"ok": True, "sku": req.sku}
 
 
