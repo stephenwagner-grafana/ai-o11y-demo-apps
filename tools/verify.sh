@@ -104,24 +104,34 @@ check_nc_chat() {
   hdr "NeonCart /api/copilot/chat smoke test"
 
   local nc_pod
-  nc_pod=$(kubectl get pods -n neoncart -l app=neoncart-web -o name 2>/dev/null | head -n1 || true)
-  if [[ -z "$nc_pod" ]]; then
-    nc_pod=$(kubectl get pods -n neoncart -o name 2>/dev/null | head -n1 || true)
-  fi
-  [[ -n "$nc_pod" ]] || fail "No neoncart-web pod found"
+  # Use the chart's label scheme (app.kubernetes.io/name). The old `app=`
+  # selector matches nothing → kubectl falls through to `head -n1` of ALL
+  # neoncart pods, which alphabetises to nc-chatbot, NOT neoncart-web,
+  # so the smoke request goes to the wrong service.
+  nc_pod=$(kubectl get pods -n neoncart -l app.kubernetes.io/name=neoncart-web -o name 2>/dev/null | head -n1 || true)
+  [[ -n "$nc_pod" ]] || fail "No neoncart-web pod found (looked for app.kubernetes.io/name=neoncart-web)"
   info "Using ${nc_pod}"
 
   # Exec curl/wget from inside the pod against its own port — avoids us needing
   # to know the service port from outside.
+  # Retry loop: nc-chatbot's first LLM call (incl. building the connection
+  # pool to api.anthropic.com) can take 3-5s, which races verify.sh when run
+  # right after install.sh.
   local payload='{"message":"hi"}'
-  local out
-  if out=$(kubectl exec -n neoncart "$nc_pod" -- sh -c "
-        wget -qO- --post-data='${payload}' \
-          --header='Content-Type: application/json' \
-          http://localhost:8000/api/copilot/chat 2>/dev/null \
-        || curl -sf -X POST -H 'Content-Type: application/json' \
-          -d '${payload}' http://localhost:8000/api/copilot/chat
-      " 2>/dev/null); then
+  local out=""
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    if out=$(kubectl exec -n neoncart "$nc_pod" -- sh -c "
+          curl -sf --max-time 15 -X POST -H 'Content-Type: application/json' \
+            -d '${payload}' http://localhost:8000/api/copilot/chat 2>/dev/null \
+          || wget -qO- --post-data='${payload}' --header='Content-Type: application/json' \
+              --timeout=15 http://localhost:8000/api/copilot/chat 2>/dev/null
+        " 2>/dev/null) && [[ -n "$out" ]]; then
+      break
+    fi
+    [[ "$attempt" -lt 5 ]] && sleep 5
+  done
+  if [[ -n "$out" ]]; then
     # Response shape: expect a JSON object with at minimum a "reply" or "content" field.
     if [[ "$out" == *'reply'* || "$out" == *'content'* || "$out" == *'message'* ]]; then
       pass "NC /api/copilot/chat returned a reply-shaped payload"
