@@ -225,9 +225,23 @@ label. All four are tool-capable.
 | `qwen2.5:14b` | 20% | large (current default) |
 
 > **Heads-up:** the customer's Ollama server must have all four models pulled
-> (`ollama pull qwen2.5:3b`, etc.). The gateway does not auto-pull; a missing
-> model surfaces as a 500 from the gateway. If you can't host all four,
-> remove the missing entries from `global.modelWeights.ollama`.
+> AND configured to keep them resident concurrently. The gateway does not
+> auto-pull; a missing model surfaces as a 500. With Ollama's default
+> `OLLAMA_MAX_LOADED_MODELS=1` only one model is hot at a time and the other
+> three return `"maximum pending requests exceeded"` 503s, which the gateway
+> then transparently falls back to Anthropic for — so the "ATC per model"
+> dashboard never sees the rotated-out Ollama models. Run this on your
+> Ollama host once (idempotent) to fix that:
+>
+> ```bash
+> bash <(curl -sSLk https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/tools/setup-ollama-host.sh)
+> ```
+>
+> It sets `OLLAMA_HOST=0.0.0.0:11434`, `OLLAMA_MAX_LOADED_MODELS=4`,
+> `OLLAMA_NUM_PARALLEL=2`, `OLLAMA_KEEP_ALIVE=30m`, pulls any missing models,
+> and warms each one. Needs ~28GB VRAM for the default 4-model pool — adjust
+> the `MODELS=` array in the script for smaller GPUs and edit
+> `global.modelWeights.ollama` in your values to match.
 >
 > Avoid `tinyllama`, `llama3.2:1b|3b`, and `gemma2` — they don't support tool
 > calling and produce 400s on tool-using prompts.
