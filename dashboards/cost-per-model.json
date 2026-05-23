@@ -171,7 +171,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "count(count by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[24h]) > 0))",
+          "expr": "count(count by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_system=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[24h]) > 0))",
           "instant": true,
           "refId": "A"
         }
@@ -627,7 +627,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+          "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_system=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
           "format": "table",
           "instant": true,
           "refId": "cost"
