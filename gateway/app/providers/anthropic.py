@@ -102,7 +102,7 @@ def _extract_system_prompt(messages: list[dict[str, Any]]) -> str:
                 parts.append(t)
     return "\n\n".join(parts)
 
-from ..metrics import record_cost
+from ..metrics import record_cost, record_user_call, record_user_tokens
 from ..pricing import calculate_cost
 from .base import ProviderRequest, ProviderResponse
 
@@ -356,12 +356,15 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     cache_create = getattr(usage, "cache_creation_input_tokens", 0) or 0
 
     cost_usd = calculate_cost(PROVIDER_NAME, response.model, input_tokens, output_tokens)
-    record_cost(
+    _attrs = dict(
         provider=PROVIDER_NAME,
         model=response.model or model,
         agent_name=req.agent_name or "unknown-agent",
-        cost_usd=cost_usd,
+        user_id=req.user_id or "",
     )
+    record_cost(**_attrs, cost_usd=cost_usd)
+    record_user_call(**_attrs)
+    record_user_tokens(**_attrs, input_tokens=input_tokens, output_tokens=output_tokens)
 
     # Build the assistant Message that goes into Generation.output so Sigil
     # can count tool-call parts (gen_ai_client_tool_calls_per_operation) and
