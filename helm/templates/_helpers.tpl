@@ -77,6 +77,14 @@ Usage in a Deployment:
 # crashes at startup with "otlp_proto_grpc not found".
 - name: OTEL_EXPORTER_OTLP_PROTOCOL
   value: http/protobuf
+# Disable exemplars on metrics. The default `trace_based` filter still
+# generates an Exemplar struct on observable-gauge callbacks fired
+# outside any trace (span_id=None, trace_id=None) — which the OTLP/HTTP
+# proto encoder cannot serialize and throws EncodingException on,
+# poisoning the whole metric batch. Loadgen + nc-web were both losing
+# their entire metric export to this bug.
+- name: OTEL_METRICS_EXEMPLAR_FILTER
+  value: always_off
 # Enable OTLP log export so application logs ship to Grafana Cloud Loki
 # (or Alloy) via the same OTLP pipeline as traces + metrics. Default for
 # opentelemetry-distro is "console" (stdout only), which means logs only
