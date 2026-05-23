@@ -137,6 +137,7 @@ async def generate(
             caller_type=caller_type,
             preferred_provider=req.preferred_provider,
             strict=req.strict,
+            sticky_key=f"{req.session_id or ''}|{req.conversation_id or ''}",
         )
     except RoutingError as e:
         # All providers closed (or strict + preferred closed) → 503
