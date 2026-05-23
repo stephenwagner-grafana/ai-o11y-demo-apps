@@ -16,13 +16,24 @@ Anthropic rejects OpenAI-style `role: "tool"` messages and expects
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
 import random
 from typing import Any
 
 from anthropic import AsyncAnthropic
-from sigil_sdk import Generation, GenerationStart, ModelRef, TokenUsage
+from sigil_sdk import (
+    Generation,
+    GenerationStart,
+    Message,
+    MessageRole,
+    ModelRef,
+    ToolCall,
+    TokenUsage,
+    text_part,
+    tool_call_part,
+)
 
 
 def _first_user_text(messages: list[dict[str, Any]]) -> str:
@@ -43,6 +54,7 @@ def _first_user_text(messages: list[dict[str, Any]]) -> str:
                     return (block.get("text") or "")[:80]
     return ""
 
+from ..metrics import record_cost
 from ..pricing import calculate_cost
 from .base import ProviderRequest, ProviderResponse
 
@@ -291,6 +303,35 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     cache_create = getattr(usage, "cache_creation_input_tokens", 0) or 0
 
     cost_usd = calculate_cost(PROVIDER_NAME, response.model, input_tokens, output_tokens)
+    record_cost(
+        provider=PROVIDER_NAME,
+        model=response.model or req.model or "",
+        agent_name=req.agent_name or "unknown-agent",
+        cost_usd=cost_usd,
+    )
+
+    # Build the assistant Message that goes into Generation.output so Sigil
+    # can count tool-call parts (gen_ai_client_tool_calls_per_operation) and
+    # tag the gen_ai_tool_name label. Empty parts -> zero tool calls, which
+    # is the correct outcome for text-only responses.
+    output_parts = []
+    if content_text:
+        output_parts.append(text_part(content_text))
+    for tc in tool_calls:
+        try:
+            input_json = json.dumps(tc.get("input") or {}).encode()
+        except (TypeError, ValueError):
+            input_json = b"{}"
+        output_parts.append(tool_call_part(ToolCall(
+            name=tc.get("name") or "unknown",
+            id=tc.get("id") or "",
+            input_json=input_json,
+        )))
+    output_messages = (
+        [Message(role=MessageRole.ASSISTANT, parts=output_parts)]
+        if output_parts
+        else []
+    )
 
     if rec is not None:
         try:
@@ -299,6 +340,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
                 response_id=response.id or "",
                 response_model=response.model or "",
                 stop_reason=response.stop_reason or "",
+                output=output_messages,
                 usage=TokenUsage(
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,

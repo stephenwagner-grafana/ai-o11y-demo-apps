@@ -17,8 +17,8 @@ gateway throttle semantics), see [docs/LOADGEN.md](../docs/LOADGEN.md).
 ```
             ┌─────────────────────────────┐
             │  loadgen-orchestrator (py)  │
-            │  FastAPI on :8080           │
-            │  /health, /readyz, /metrics │
+            │  FastAPI on :8000           │
+            │  /health, /readyz, /status  │
             └──────────────┬──────────────┘
                            │ supervises (spawn/SIGTERM)
             ┌──────────────┼──────────────┐
@@ -130,12 +130,17 @@ re-reads the file — there's no hot reload.
 | `GET` | `/health` | Liveness for k8s |
 | `GET` | `/readyz` | Readiness — 503 until the orchestrator has started |
 | `GET` | `/status` | JSON: per-scenario running state + user count + gateway state |
-| `GET` | `/metrics` | Prometheus: `loadgen_gateway_anthropic_open`, `loadgen_k6_processes_running{scenario=…}`, `loadgen_k6_restarts_total{scenario=…}`, `loadgen_k6_terminations_total{scenario=…}`, `loadgen_gateway_poll_failures_total` |
 
-The orchestrator's `/metrics` is intentionally narrow: only loadgen
-internal accounting. The interesting metrics (LLM cost, token usage,
-journey outcomes) come from the gateway and the apps themselves — those
-are what dashboards consume.
+The orchestrator no longer exposes `/metrics`. Custom metrics
+(`loadgen_gateway_anthropic_open`, `loadgen_k6_processes_running{scenario=…}`,
+`loadgen_k6_restarts_total{scenario=…}`, `loadgen_k6_terminations_total{scenario=…}`,
+`loadgen_gateway_poll_failures_total`) ride the OTLP push pipeline that
+`opentelemetry-instrument` sets up — same path as the apps. There is no
+in-cluster Prometheus scrape for this pod.
+
+Orchestrator-internal accounting is intentionally narrow. The interesting
+metrics (LLM cost, token usage, journey outcomes) come from the gateway
+and the apps themselves — those are what dashboards consume.
 
 ## Local dev
 
