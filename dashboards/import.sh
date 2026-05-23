@@ -5,15 +5,23 @@
 #   GRAFANA_URL          e.g. https://your-stack.grafana.net
 #   GRAFANA_API_TOKEN    Grafana Cloud service-account token (glsa_...)
 #
-# Currently the canonical way to create the use-case dashboard is to paste
-# `use-cases-prompt.md` into Grafana Assistant — this script is the path
-# for when JSON snapshots exist in this directory.
+# Optional env:
+#   PROM_DS_UID          UID of the Prometheus datasource to bind to ${DS_PROMETHEUS}.
+#                        Defaults to "grafanacloud-prom" (the standard Grafana Cloud
+#                        Prometheus datasource UID). Override if your stack uses a
+#                        different UID.
+#
+# Each *.json file in this directory is POSTed to /api/dashboards/import (which
+# resolves __inputs placeholders) when it has an `__inputs` block, falling back to
+# /api/dashboards/db (raw upsert) otherwise. This handles both portable exports
+# (with __inputs/__requires, e.g. use-cases.json) and direct snapshots.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 : "${GRAFANA_URL:?GRAFANA_URL is required, e.g. https://your-stack.grafana.net}"
 : "${GRAFANA_API_TOKEN:?GRAFANA_API_TOKEN is required (glsa_... service-account token)}"
+PROM_DS_UID="${PROM_DS_UID:-grafanacloud-prom}"
 
 shopt -s nullglob
 JSON_FILES=("$SCRIPT_DIR"/*.json)
@@ -27,22 +35,82 @@ fi
 for fp in "${JSON_FILES[@]}"; do
   name=$(basename "$fp" .json)
   echo "Importing $name..."
-  # Wrap the dashboard JSON in the {"dashboard": ..., "overwrite": true} envelope
-  # expected by /api/dashboards/db.
-  body=$(python3 -c "
-import json, sys
-d = json.load(open('$fp'))
-# Strip server-set fields so the import is portable
-d.pop('id', None)
-print(json.dumps({'dashboard': d, 'overwrite': True, 'message': 'Imported by dashboards/import.sh'}))
-")
-  curl -fsS \
-    -H "Authorization: Bearer ${GRAFANA_API_TOKEN}" \
-    -H 'Content-Type: application/json' \
-    -X POST \
-    -d "$body" \
-    "${GRAFANA_URL}/api/dashboards/db" \
-  | python3 -c "import json,sys; d=json.load(sys.stdin); print(f\"  -> {d.get('url','OK')} (uid={d.get('uid','?')})\")"
+  # Detect whether this dashboard is a portable export (has __inputs) and pick
+  # the right endpoint + envelope. Strip server-set fields (id, version) so the
+  # import is idempotent.
+  result=$(PROM_DS_UID="$PROM_DS_UID" GRAFANA_URL="$GRAFANA_URL" \
+    GRAFANA_API_TOKEN="$GRAFANA_API_TOKEN" FP="$fp" python3 <<'PYEOF'
+import json, os, sys, urllib.request, urllib.error
+
+fp = os.environ["FP"]
+url = os.environ["GRAFANA_URL"].rstrip("/")
+token = os.environ["GRAFANA_API_TOKEN"]
+prom_uid = os.environ["PROM_DS_UID"]
+
+with open(fp) as f:
+    d = json.load(f)
+
+# Strip server-set fields so re-imports are clean upserts.
+d.pop("id", None)
+d.pop("version", None)
+
+inputs = d.get("__inputs") or []
+if inputs:
+    # Portable export — use /api/dashboards/import with resolved inputs.
+    resolved = []
+    for inp in inputs:
+        if inp.get("type") == "datasource" and inp.get("pluginId") == "prometheus":
+            resolved.append({
+                "name": inp["name"],
+                "type": "datasource",
+                "pluginId": "prometheus",
+                "value": prom_uid,
+            })
+        else:
+            # Pass through other inputs as-is — caller would need to extend
+            # this script to bind Loki/Tempo/etc.
+            resolved.append({
+                "name": inp["name"],
+                "type": inp.get("type", "datasource"),
+                "pluginId": inp.get("pluginId", ""),
+                "value": "",
+            })
+    body = {
+        "dashboard": d,
+        "overwrite": True,
+        "inputs": resolved,
+    }
+    endpoint = "/api/dashboards/import"
+else:
+    body = {
+        "dashboard": d,
+        "overwrite": True,
+        "message": "Imported by dashboards/import.sh",
+    }
+    endpoint = "/api/dashboards/db"
+
+req = urllib.request.Request(
+    url + endpoint,
+    data=json.dumps(body).encode(),
+    headers={
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+    },
+    method="POST",
+)
+try:
+    with urllib.request.urlopen(req) as resp:
+        out = json.loads(resp.read().decode())
+except urllib.error.HTTPError as e:
+    sys.stderr.write(f"  HTTP {e.code}: {e.read().decode()}\n")
+    sys.exit(1)
+
+uid = out.get("uid") or out.get("importedUid") or "?"
+slug = out.get("slug") or out.get("importedUrl") or out.get("url") or "OK"
+print(f"  -> uid={uid}  {slug}")
+PYEOF
+  )
+  echo "$result"
 done
 
 echo
