@@ -314,6 +314,44 @@ Specialists ship with proper LLM tool schemas (Anthropic + OpenAI shapes both su
 
 The mice trap lives inside `search_products`. `navigate_to_search` is what the chatbot picks for "show me X" / "take me to Y" intents — it returns a search-results URL rather than performing the query, keeping navigation snappy. All tools call real Postgres queries (where applicable) and emit OTel spans for tool execution.
 
+### Default loadgen behavior
+
+The K6 loadgen runs in the `k6-loadgen` namespace and starts immediately after install. It hits both apps via in-cluster URLs and tags every request with `X-Caller-Type: synthetic` so the gateway can route loadgen traffic across all open providers while keeping browser users always on Anthropic. Full details in [`docs/LOADGEN.md`](./docs/LOADGEN.md); the OOTB shape is:
+
+**Default user pool — 230 users total** (regenerable via `tools/regenerate-users.py --seed N`):
+
+| Cohort | Count | Behavior |
+|---|---:|---|
+| NeonCart non-AI shoppers | 150 | Browse, search, add-to-cart, checkout — never use chatbot/gift-finder |
+| NeonCart gift-finder only | 30 | Always use the gift-finder, never the chatbot |
+| NeonCart chatbot only | 15 | Always use the chatbot, never the gift-finder |
+| NeonCart both | 5 | Alternate gift-finder + chatbot per session |
+| SupportBot (Acme employees) | 30 | 100% use the internal Ask Acme bot |
+
+Cohort assignment is **stable per user** — same user always uses the same feature, so per-user metrics tell a coherent story.
+
+**Default rate: ~3-5 LLM calls/minute total.** Not a stress test — sized to populate dashboards with realistic-looking traffic.
+
+**Journey weights** (configured in the k6 scripts under `loadgen/k6/scripts/`):
+
+| Scenario | Journeys |
+|---|---|
+| `neoncart-chatbot` | 40% quick-QA, 35% navigation-driven, 20% multi-turn, 5% frustrated |
+| `neoncart-gift-finder` | 50% single-shot, 25% refining, 20% **converting** (adds to cart + checkout), 5% browse-and-go |
+| `supportbot` | role-coherent — billing employees ask expense questions, IT employees ask tech-support questions, etc. |
+| `neoncart-non-ai` | Pure browse/search/cart/checkout traffic (the 150 non-AI shoppers) |
+
+**Hidden bug trap**: ~1.5% of navigation-driven chatbot journeys send the exact prompt `"show me mice"` — fires a Postgres `column "species" does not exist` error visible in the trace cascade. Always-on demo signature.
+
+**Loadgen self-throttles** by polling `GET /llm-gateway/open` every 5s. When Anthropic's daily cap closes, AI-cohort VUs stop spawning (visible as a clean drop in synthetic traffic on every dashboard).
+
+**Sizing knobs** in `helm/values.yaml` → `loadgen:` (or `.env` for installs):
+- `NC_TOTAL_USERS` (default 200)
+- `NC_AI_ADOPTION_RATE` (default 0.25 — i.e., 25% of 200 = 50 AI users split into the 3 cohorts above)
+- `NC_SESSIONS_PER_HOUR` (default 60 — per-user; total NC AI sessions ≈ 50 users × 60 = 3000/hr at saturation, throttled by cap-closure)
+- `SB_TOTAL_USERS` (default 30)
+- `SB_SESSIONS_PER_HOUR` (default 30)
+
 ### Loadgen variety
 
 The K6 loadgen ships **~140 distinct prompts** across three AI scenarios (`neoncart-chatbot`, `neoncart-gift-finder`, `supportbot`), with multi-turn flows and persona-aware shaping (gift-finder prompts pack who+occasion+hint; SupportBot picks role-coherent journeys). Conversations span multiple turns where appropriate, so per-conversation history actually gets exercised in the dashboards.
