@@ -54,6 +54,51 @@ def _first_user_text(messages: list[dict[str, Any]]) -> str:
                     return (block.get("text") or "")[:80]
     return ""
 
+
+_ROLE_MAP = {
+    "user": MessageRole.USER,
+    "assistant": MessageRole.ASSISTANT,
+    "tool": MessageRole.TOOL,
+}
+
+
+def _extract_text(content: Any) -> str:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return " ".join(
+            b.get("text", "") for b in content
+            if isinstance(b, dict) and b.get("type") == "text"
+        )
+    return ""
+
+
+def _to_sigil_input(messages: list[dict[str, Any]]) -> list[Message]:
+    """Convert request messages → sigil_sdk Messages for Generation.input.
+
+    Captures the user's prompt + prior turns so Sigil's Conversation Thread
+    view shows the back-and-forth, not just the assistant's output.
+    """
+    out: list[Message] = []
+    for m in messages:
+        role = _ROLE_MAP.get(m.get("role", ""))
+        if role is None:
+            continue
+        text = _extract_text(m.get("content", ""))
+        if text:
+            out.append(Message(role=role, parts=[text_part(text)]))
+    return out
+
+
+def _extract_system_prompt(messages: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    for m in messages:
+        if m.get("role") == "system":
+            t = _extract_text(m.get("content", ""))
+            if t:
+                parts.append(t)
+    return "\n\n".join(parts)
+
 from ..metrics import record_cost
 from ..pricing import calculate_cost
 from .base import ProviderRequest, ProviderResponse
@@ -216,6 +261,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
                 agent_version=req.agent_version or "",
                 conversation_id=req.conversation_id or "",
                 conversation_title=_first_user_text(req.messages),
+                system_prompt=_extract_system_prompt(req.messages),
                 user_id=req.user_id or "",
                 parent_generation_ids=req.parent_generation_ids or [],
                 tags={
@@ -293,6 +339,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
                 model=ModelRef(provider=PROVIDER_NAME, name=response_model or req.model or ""),
                 response_model=response_model or "",
                 stop_reason=data.get("done_reason") or ("stop" if data.get("done") else ""),
+                input=_to_sigil_input(req.messages),
                 output=output_messages,
                 usage=TokenUsage(
                     input_tokens=input_tokens,
