@@ -18,7 +18,7 @@ from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .caps import caps
 from .otel import init_otel, shutdown_otel
@@ -91,8 +91,15 @@ def open_state() -> dict[str, Any]:
 # ── /v1/llm — the core inference endpoint ─────────────────────────────────────
 
 class Message(BaseModel):
+    # extra="allow" preserves Anthropic tool-call linkage fields that specialists
+    # send on multi-turn conversations: `tool_call_id` on role=tool messages and
+    # `tool_calls` on role=assistant messages. Default Pydantic behavior strips
+    # unknown fields silently → providers/anthropic.py falls through to the
+    # literal "toolu_unknown" tool_use_id → Anthropic 400s the request.
+    model_config = ConfigDict(extra="allow")
+
     role: str
-    content: str | list[dict[str, Any]]
+    content: str | list[dict[str, Any]] = ""
 
 
 class LLMRequest(BaseModel):

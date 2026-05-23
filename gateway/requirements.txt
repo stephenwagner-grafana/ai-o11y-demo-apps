@@ -9,6 +9,11 @@ prometheus-client==0.21.0
 # Pinned to 1.36.0 / 0.57b0 because sigil-sdk 0.4.0 requires
 # protobuf >= 6.31.1, and only opentelemetry-proto >= 1.36.0 allows
 # protobuf 6.x (earlier versions pin to protobuf < 6).
+# `opentelemetry-distro` provides the `opentelemetry-instrument` CLI wrapper.
+# Without it the auto-instrumentation entry points never fire and inbound
+# FastAPI requests start fresh trace IDs — breaking cross-service cascading
+# at the gateway boundary.
+opentelemetry-distro==0.57b0
 opentelemetry-sdk==1.36.0
 opentelemetry-exporter-otlp-proto-http==1.36.0
 opentelemetry-instrumentation-fastapi==0.57b0
