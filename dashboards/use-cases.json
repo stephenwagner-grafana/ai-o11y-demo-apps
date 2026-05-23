@@ -5,8 +5,8 @@
     "name": "c77ff540-d9fb-468f-8026-7c7dd52d6292",
     "namespace": "stacks-1372178",
     "uid": "81428f4d-dd1a-493c-a79c-ac4603ef6f9a",
-    "resourceVersion": "1779566296101795",
-    "generation": 15,
+    "resourceVersion": "1779566477008061",
+    "generation": 17,
     "creationTimestamp": "2026-05-23T02:41:40Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "4374045522309120"
@@ -16,7 +16,7 @@
       "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana Cloud",
       "grafana.app/updatedBy": "user:eexm63g36yku8c",
-      "grafana.app/updatedTimestamp": "2026-05-23T19:58:16Z"
+      "grafana.app/updatedTimestamp": "2026-05-23T20:01:16Z"
     }
   },
   "spec": {
@@ -271,7 +271,8 @@
                     ]
                   },
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "palette-classic",
+                    "seriesBy": "max"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -281,23 +282,26 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.97,
-                    "drawStyle": "bars",
-                    "fillOpacity": 100,
-                    "gradientMode": "opacity",
+                    "barWidthFactor": 0.9,
+                    "drawStyle": "line",
+                    "fillOpacity": 50,
+                    "gradientMode": "none",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
                       "viz": false
                     },
                     "insertNulls": false,
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 0,
-                    "pointSize": 5,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 2,
+                    "pointSize": 1,
                     "scaleDistribution": {
                       "type": "linear"
                     },
-                    "showPoints": "never",
+                    "showPoints": "always",
                     "showValues": false,
                     "spanNulls": false,
                     "stacking": {
@@ -6746,7 +6750,7 @@
                         "x": 0,
                         "y": 0,
                         "width": 8,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-9"
@@ -6759,7 +6763,7 @@
                         "x": 8,
                         "y": 0,
                         "width": 8,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-10"
@@ -6772,7 +6776,7 @@
                         "x": 16,
                         "y": 0,
                         "width": 8,
-                        "height": 8,
+                        "height": 10,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-11"
