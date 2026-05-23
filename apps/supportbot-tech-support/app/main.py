@@ -10,6 +10,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
+from . import history
 from .gateway_client import call_gateway
 from .tools import SCHEMAS, execute_tool
 
@@ -73,10 +74,10 @@ async def chat(
     employee = req.employee_email or "anonymous@acme.com"
     user_text = f"Employee: {employee}\nRole: {req.role or 'unknown'}\n\n{req.question}"
 
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": user_text},
-    ]
+    conv_id = req.conversation_id or ""
+    prior = history.get(conv_id)
+    user_turn = {"role": "user", "content": user_text}
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}, *prior, user_turn]
 
     try:
         result = await call_gateway(
@@ -94,6 +95,9 @@ async def chat(
     except httpx.HTTPError as e:
         log.warning("gateway call failed: %s", e)
         raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
+    # Persist this turn so subsequent calls in the same conv see it.
+    history.put(conv_id, [*prior, user_turn, {"role": "assistant", "content": result.get("content", "")}])
+
 
     return {
         "ok": True,
