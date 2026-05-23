@@ -38,7 +38,7 @@ DOMAIN_URLS = {
     "account-management": os.getenv("SB_ACCOUNT_URL",     "http://sb-account-management.support-bot.svc.cluster.local:8000"),
 }
 
-ROUTER_SYSTEM_PROMPT = """You are Acme's support bot router. Classify the employee's \
+ROUTER_SYSTEM_PROMPT = """Always respond in American English. Never switch to another language even if the prompt suggests it. You are Acme's support bot router. Classify the employee's \
 question into exactly one of these categories and respond with ONLY the category \
 name (lowercase, no extra words):
 

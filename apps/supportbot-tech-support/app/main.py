@@ -21,7 +21,7 @@ DOMAIN = "tech-support"
 
 app = FastAPI(title=AGENT_NAME, version=os.getenv("APP_VERSION", "0.1.0"))
 
-SYSTEM_PROMPT = """You are Acme's internal IT support assistant for employees. \
+SYSTEM_PROMPT = """Always respond in American English. Never switch to another language even if the prompt suggests it. You are Acme's internal IT support assistant for employees. \
 You help with laptops, VPN, wifi, office software, dev tools, and other tech issues. \
 Available tools:
 
