@@ -155,11 +155,23 @@ This is the signature "tada" moment of the demo. Always on. Type it in the chatb
 
 ### Weighted model pools (sticky per session)
 
-Configure the LLM gateway to randomize across multiple Claude models, biased however you like:
+The LLM gateway randomizes across a configurable pool of models per provider. The shipped Anthropic default mixes six Claude models, biased hard toward cheap/fast Haiku with Opus kept rare (tight rate limits + ~25× the cost of Haiku):
+
+| Model | Weight | Tier |
+|---|---|---|
+| `claude-haiku-4-5-20251001` | 55% | workhorse |
+| `claude-sonnet-4-6` | 23% | latest sonnet |
+| `claude-sonnet-4-5` | 12% | older sonnet (label diversity) |
+| `claude-opus-4-7` | 5% | latest opus (rare) |
+| `claude-opus-4-6` | 3% | older opus (rare) |
+| `claude-opus-4-1` | 2% | very rare |
+
+Override the pool via `ANTHROPIC_MODEL_WEIGHTS` in your `.env` (picked up by `tools/install.sh`), or edit `global.modelWeights.anthropic` in your values file:
 
 ```yaml
 global:
   modelWeights:
+    # Format: "model_a:weight_a,model_b:weight_b,..." (weights normalized)
     anthropic: "claude-haiku-4-5-20251001:0.6,claude-sonnet-4-6:0.35,claude-opus-4-7:0.05"
     ollama:    "qwen2.5:14b:0.5,mistral-nemo:12b:0.3,granite3.1-dense:8b:0.2"
 ```

@@ -317,11 +317,32 @@ global:
   caps:
     anthropic:
       usdPerDay: ${ANTHROPIC_CAP_USD_PER_DAY:-20}
-  modelWeights:
-    anthropic: "${ANTHROPIC_MODEL_WEIGHTS:-}"
-    openai:    "${OPENAI_MODEL_WEIGHTS:-}"
-    gemini:    "${GEMINI_MODEL_WEIGHTS:-}"
-    ollama:    "${OLLAMA_MODEL_WEIGHTS:-}"
+  # Only emit a modelWeights override when the user actually set an env var —
+  # otherwise the chart's helm/values.yaml default (a weighted Claude pool)
+  # would get clobbered with "" and the gateway would fall back to a single
+  # default model. The block is built up conditionally below.
+EOF
+  # Append only the weight overrides the user actually set, so empty env vars
+  # don't clobber the chart's bundled defaults.
+  local _wrote_header=0
+  _emit_weight() {
+    local key="$1"
+    local val="$2"
+    if [[ -n "$val" ]]; then
+      if [[ "$_wrote_header" -eq 0 ]]; then
+        printf '  modelWeights:\n' >> "${VALUES_OVERRIDE}"
+        _wrote_header=1
+      fi
+      printf '    %s: "%s"\n' "$key" "$val" >> "${VALUES_OVERRIDE}"
+    fi
+  }
+  _emit_weight anthropic "${ANTHROPIC_MODEL_WEIGHTS:-}"
+  _emit_weight openai    "${OPENAI_MODEL_WEIGHTS:-}"
+  _emit_weight gemini    "${GEMINI_MODEL_WEIGHTS:-}"
+  _emit_weight ollama    "${OLLAMA_MODEL_WEIGHTS:-}"
+
+  # Resume the heredoc-style append for the loadgen section.
+  cat >> "${VALUES_OVERRIDE}" <<EOF
 loadgen:
   ncTotalUsers: ${NC_TOTAL_USERS:-200}
   ncAiAdoptionRate: ${NC_AI_ADOPTION_RATE:-0.25}

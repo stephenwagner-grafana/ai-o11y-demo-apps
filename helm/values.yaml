@@ -48,18 +48,36 @@ global:
     geminiModel: gemini-1.5-flash
     ollamaModel: qwen2.5:14b
 
-  # Optional weighted model pools. When set, the provider picks one of these
-  # per request — sticky by (session_id + conversation_id) for conversation
-  # coherence. Format: "model_a:weight_a,model_b:weight_b,..." (weights
-  # normalized; need not sum to 1.0).
+  # Weighted model pools. The provider picks one model per request — sticky by
+  # (session_id + conversation_id) so a single conversation stays on one model
+  # end-to-end (better UX, cleaner per-model dashboard slices).
   #
-  # Example for Anthropic — use all three Claude models but bias away from
-  # the expensive Opus:
-  #   anthropicWeights: "claude-haiku-4-5-20251001:0.6,claude-sonnet-4-6:0.35,claude-opus-4-7:0.05"
+  # Format: "model_a:weight_a,model_b:weight_b,..." (weights are relative and
+  # normalized to 1.0 by the gateway — they need not sum to anything specific).
   #
-  # Leave blank to always use the matching `*Model` default above.
+  # Anthropic default below: a mixed Claude pool that biases hard toward
+  # cheap/fast Haiku, sprinkles in Sonnet, and keeps Opus rare (Opus has tight
+  # rate limits + ~25x the cost of Haiku). Target distribution:
+  #   Haiku 4.5  — 55% (workhorse)
+  #   Sonnet 4.5 — 12% (mid-tier, common)
+  #   Sonnet 4.6 — 23% (latest sonnet, the headline mid-tier model)
+  #   Opus 4.7   —  5% (latest opus, rare)
+  #   Opus 4.6   —  3% (rare)
+  #   Opus 4.1   —  2% (very rare, mostly for label diversity)
+  #
+  # Override at install time via the `ANTHROPIC_MODEL_WEIGHTS` env var (see
+  # tools/install.sh — picked up into .helm-values-overrides.yaml), or edit
+  # this file directly. Set to "" to fall back to global.defaults.anthropicModel.
+  #
+  # Model ID certainty (as of 2026-05-22):
+  #   KNOWN-good (also in gateway/config/pricing.yaml):
+  #     claude-haiku-4-5-20251001, claude-sonnet-4-6, claude-opus-4-7
+  #   PRESUMED (Anthropic's undated snapshot form for newer models; if the
+  #   gateway logs a 400 "model not found" for any of these, replace with
+  #   the dated form like claude-opus-4-1-YYYYMMDD or comment it out):
+  #     claude-sonnet-4-5, claude-opus-4-6, claude-opus-4-1
   modelWeights:
-    anthropic: ""
+    anthropic: "claude-haiku-4-5-20251001:55,claude-sonnet-4-6:23,claude-sonnet-4-5:12,claude-opus-4-7:5,claude-opus-4-6:3,claude-opus-4-1:2"
     openai: ""
     gemini: ""
     ollama: ""

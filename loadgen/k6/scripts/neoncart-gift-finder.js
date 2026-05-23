@@ -43,29 +43,56 @@ export const options = {
   },
 };
 
-// ── prompt pool (~20 prompts) ─────────────────────────────────────────────────
+// ── prompt pool (30+ prompts) ─────────────────────────────────────────────────
+//
+// Real gift-finder prompts almost always pack (a) who, (b) occasion, (c) hint
+// at interest/budget. We bias the pool toward that shape so Sigil reviewers
+// see contextual prompts instead of "gift for a person."
 
 const PROMPTS = [
-  "birthday gift for my dad",
-  "anniversary present under $100",
-  "gift for a teenager who likes gaming",
-  "graduation gift for someone going into engineering",
-  "small thoughtful gift for a coworker",
-  "wedding present for friends, budget $200",
-  "gift for my wife, she likes audio gear",
-  "gift for mom, she works from home a lot",
-  "housewarming gift for a couple in their 30s",
-  "birthday gift for my nephew, he likes PC gaming",
-  "father's day gift, my dad is a tinkerer",
-  "mother's day gift, she loves cooking",
-  "stocking stuffer ideas under $40",
-  "secret santa gift under $30",
+  // — occasion + relationship + interest —
+  "birthday gift for my 12-year-old nephew who loves gaming",
+  "anniversary gift for my husband, he's into smart home stuff",
+  "graduation gift under $200 for my niece, going to art school",
+  "secret santa for office, $25 limit, gender-neutral",
+  "wedding present for friends in their 30s, they love cooking",
+  "housewarming gift for a couple who just bought a fixer-upper",
+  "father's day gift, my dad is a tinkerer who fixes everything",
+  "mother's day gift, she loves cooking but already has every gadget",
+  "valentine's day gift for my girlfriend, not flowers or chocolate",
+  "birthday gift for my dad who recently got into vinyl records",
+  "anniversary gift under $100 for my wife, she's an audiophile",
+  "retirement gift for my boss, 35 years at the company",
+  "baby shower gift, the parents are super into tech",
+  "promotion gift for my best friend, just made VP",
+  "thank-you gift for the neighbor who watched our dog all week",
+
+  // — specific recipients without a holiday —
+  "gift for my mom, she works from home and complains about her back",
+  "gift for my brother who works in finance and travels constantly",
+  "gift for my college roommate, she just moved to a tiny NYC apartment",
+  "gift for my teenage daughter who's obsessed with K-pop and her phone",
+  "gift for my grandpa who's 78 and just got his first smart tv",
+  "gift for my sister who's a new mom and never sleeps",
+  "gift for a friend who just started running marathons",
+  "small thoughtful gift for a coworker I barely know but should",
+  "gift for my partner, they're into mechanical keyboards",
+  "tech gift for someone who hates tech",
   "gift for a friend who just got their first apartment",
-  "thank you gift for someone who helped me move",
-  "tech gift for someone who doesn't like tech",
-  "graduation gift for a high schooler heading to college",
-  "valentine's day gift, not flowers",
-  "gift for my brother who works in finance",
+  "thank-you gift under $50 for someone who helped me move",
+
+  // — budget-led —
+  "stocking stuffer ideas under $40, something they'd actually use",
+  "secret santa gift under $30 that doesn't look like secret santa",
+  "white elephant gift, $20, funny but actually useful",
+  "$500 splurge gift for my husband's 40th birthday",
+  "under $75 birthday gift for a 10-year-old who likes Minecraft",
+  "gift around $150 for my best friend, she has expensive taste",
+
+  // — hard mode —
+  "gift for someone who has literally everything",
+  "gift for my mother-in-law and I don't really know her",
+  "gift for a long-distance friend, has to ship by friday",
 ];
 
 // Some "refinement" follow-up prompts for the refining journey
@@ -78,6 +105,11 @@ const REFINEMENTS = [
   "something they could use every day",
   "a gift that feels personal",
   "less generic — they have everything",
+  "can you compare those?",
+  "show me something that ships fast",
+  "anything more giftable — better packaging",
+  "what if my budget were a bit higher?",
+  "I want something nicer, splurge mode",
 ];
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -85,6 +117,43 @@ const REFINEMENTS = [
 function pickUser() {
   // Stable: cohort already filtered by orchestrator; we just pick uniformly.
   return users[Math.floor(Math.random() * users.length)];
+}
+
+/**
+ * Optionally append a small persona-flavored hint to a gift prompt. AOL/Yahoo
+ * cohorts read as older-shoppers and lean toward "for the grandkids" / lower
+ * budgets; gmail mostly leaves the prompt untouched. Kept short so we always
+ * stay under the 200-char chat budget.
+ */
+function shapeByPersona(user, prompt) {
+  if (!user || !user.email) return prompt;
+  if (Math.random() < 0.6) return prompt;
+  const email = user.email.toLowerCase();
+  let suffix = null;
+  if (email.endsWith('@aol.com')) {
+    suffix = pickOne([
+      ' — keep it simple please',
+      ' — something easy to set up',
+      ' — under $50 if you can',
+    ]);
+  } else if (email.endsWith('@yahoo.com')) {
+    suffix = pickOne([
+      ' — for the grandkids',
+      ' — they aren\'t very techy',
+      ' — has to be useful, not flashy',
+    ]);
+  } else if (email.endsWith('@gmail.com')) {
+    if (Math.random() < 0.4) {
+      suffix = pickOne([
+        ' — bonus if it ships prime-fast',
+        ' — looks nice unboxed',
+        ' — eco-friendly is a plus',
+      ]);
+    }
+  }
+  if (!suffix) return prompt;
+  const combined = prompt + suffix;
+  return combined.length > 200 ? prompt : combined;
 }
 
 function callGiftFinder(user, sessionId, conversationId, prompt) {
@@ -145,9 +214,16 @@ function journeySingleShot(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    const recs = callGiftFinder(user, sessionId, conversationId, pickOne(PROMPTS));
+    const recs = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepStep();
     browseRecs(user, sessionId, recs);
+    // ~30% of even "single-shot" gift-finder sessions follow up with a
+    // refinement after seeing the first round — keeps multi-turn density up
+    // and avoids the prompt feed looking one-turn-per-session.
+    if (Math.random() < 0.3) {
+      callGiftFinder(user, sessionId, conversationId, pickOne(REFINEMENTS));
+      sleepStep();
+    }
   });
 }
 
@@ -157,12 +233,16 @@ function journeyRefining(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    callGiftFinder(user, sessionId, conversationId, pickOne(PROMPTS));
+    callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepPonder();
     // Refine using a new prompt within the same conversation_id (sigil sees
     // it as a multi-turn convo). The specialist doesn't have history today,
     // but the conversation_id reuse still gives us proper grouping in Sigil.
-    const refined = `${pickOne(PROMPTS)} — ${pickOne(REFINEMENTS)}`;
+    // Half the time it's a straight refinement ("cheaper options"), half it
+    // re-anchors with a new full prompt + a clarifier.
+    const refined = Math.random() < 0.5
+      ? pickOne(REFINEMENTS)
+      : `${shapeByPersona(user, pickOne(PROMPTS))} — ${pickOne(REFINEMENTS)}`;
     const recs2 = callGiftFinder(user, sessionId, conversationId, refined);
     sleepStep();
     browseRecs(user, sessionId, recs2);
@@ -175,7 +255,7 @@ function journeyConverting(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    const recs = callGiftFinder(user, sessionId, conversationId, pickOne(PROMPTS));
+    const recs = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepStep();
     const viewed = browseRecs(user, sessionId, recs);
     if (viewed.length > 0) {
@@ -195,7 +275,7 @@ function journeyBrowseAndGo(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    const recs = callGiftFinder(user, sessionId, conversationId, pickOne(PROMPTS));
+    const recs = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepStep();
     if (recs.length > 0) {
       const sku = recs[0].sku || recs[0].id;

@@ -312,7 +312,11 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     if sigil_client is not None:
         try:
             rec = sigil_client.start_generation(GenerationStart(
-                model=ModelRef(provider=PROVIDER_NAME, name=req.model or ""),
+                # Always pass the RESOLVED model (via _pick_model) so error-path
+                # generations carry a real `gen_ai.request.model` attribute.
+                # Otherwise sigil-sdk drops empty-string attributes and the
+                # error series renders as "unknown" in dashboards.
+                model=ModelRef(provider=PROVIDER_NAME, name=model),
                 agent_name=req.agent_name or "unknown-agent",
                 agent_version=req.agent_version or "",
                 conversation_id=req.conversation_id or "",
@@ -354,7 +358,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     cost_usd = calculate_cost(PROVIDER_NAME, response.model, input_tokens, output_tokens)
     record_cost(
         provider=PROVIDER_NAME,
-        model=response.model or req.model or "",
+        model=response.model or model,
         agent_name=req.agent_name or "unknown-agent",
         cost_usd=cost_usd,
     )
@@ -385,7 +389,7 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     if rec is not None:
         try:
             rec.set_result(generation=Generation(
-                model=ModelRef(provider=PROVIDER_NAME, name=response.model or req.model or ""),
+                model=ModelRef(provider=PROVIDER_NAME, name=response.model or model),
                 response_id=response.id or "",
                 response_model=response.model or "",
                 stop_reason=response.stop_reason or "",

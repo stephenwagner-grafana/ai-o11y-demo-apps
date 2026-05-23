@@ -53,6 +53,11 @@ export const options = {
 };
 
 // ── question pools ────────────────────────────────────────────────────────────
+//
+// Pools are intentionally large (25-40 each) so that a Sigil reviewer scanning
+// the prompt feed doesn't see the same 5 sentences over and over. New entries
+// should read like quick chat messages a real shopper would type — lowercase,
+// short, occasional typos and casual phrasing are fine.
 
 const QUICK_QUESTIONS = [
   "what's your return policy?",
@@ -65,6 +70,24 @@ const QUICK_QUESTIONS = [
   "what is your warranty?",
   "do you have a physical store?",
   "how do I track my order?",
+  "do you offer financing on big-ticket items?",
+  "is there a student discount?",
+  "do gift cards expire?",
+  "can I exchange a gift without a receipt?",
+  "where's my refund? you said 5-7 days",
+  "do you have black friday deals coming up?",
+  "is two-day shipping really two days?",
+  "can I add insurance to my package?",
+  "do you have signature-required delivery?",
+  "what's the difference between your standard and premium support?",
+  "can I subscribe & save on accessories?",
+  "what does the holiday return window look like?",
+  "are open-box items still under warranty?",
+  "do you take old electronics for trade-in?",
+  "can I pick up an order in store?",
+  "are your batteries OEM or aftermarket?",
+  "what happens if my package gets stolen off my porch?",
+  "is it cheaper to buy a bundle or each piece separately?",
 ];
 
 const NAV_QUESTIONS = [
@@ -78,6 +101,26 @@ const NAV_QUESTIONS = [
   "show me standing desks",
   "show me bluetooth speakers",
   "show me smart bulbs",
+  "do you have wireless earbuds under $100?",
+  "what's the difference between mechanical and membrane keyboards?",
+  "I need a monitor for video editing, color-accurate",
+  "show me something with rgb",
+  "I'm looking for a gift for my dad who likes podcasts",
+  "best mouse for someone with big hands?",
+  "what mics do streamers use?",
+  "I want a thunderbolt 4 dock that runs cool",
+  "anything cheap that works with sonos?",
+  "ultrawide monitor recommendations under $600",
+  "I need a webcam that doesn't suck in low light",
+  "what tablet do you recommend for note-taking?",
+  "looking for an all-in-one printer that does duplex",
+  "show me ssds — fastest under $150",
+  "any quiet mechanical switches you carry?",
+  "what's a good gaming headset that won't crush my glasses?",
+  "I want a vertical mouse to help my wrist",
+  "show me your most-reviewed standing desk",
+  "show me a router that handles 50+ devices",
+  "what's the best budget e-reader you have?",
 ];
 
 const MULTI_TURN_OPENERS = [
@@ -86,6 +129,13 @@ const MULTI_TURN_OPENERS = [
   "what's the best monitor for me?",
   "help me pick headphones",
   "I want a webcam for streaming",
+  "I need a laptop bag that fits a 16-inch macbook",
+  "help me set up a home office",
+  "I'm building my first gaming pc",
+  "I need a new desk chair, my back is killing me",
+  "looking to upgrade my whole audio setup",
+  "I want to start podcasting from my apartment",
+  "I need a second monitor for working from home",
 ];
 
 const MULTI_TURN_CLARIFICATIONS = [
@@ -98,6 +148,15 @@ const MULTI_TURN_CLARIFICATIONS = [
   "I'd like good battery life",
   "I work from home",
   "I have a small desk",
+  "can you compare those?",
+  "show me cheaper options",
+  "what about something more powerful?",
+  "any that ship by friday?",
+  "must be quiet — I have meetings all day",
+  "do any of them come in white?",
+  "which one has the best warranty?",
+  "I have a mac, will those still work?",
+  "what's the most popular one of those?",
 ];
 
 const FRUSTRATED_FOLLOWUPS = [
@@ -106,6 +165,10 @@ const FRUSTRATED_FOLLOWUPS = [
   "let me try again",
   "I'll just look myself",
   "never mind",
+  "no I said wireless, not wired",
+  "you keep recommending stuff outside my budget",
+  "I literally just said no apple",
+  "can you just give me a straight answer?",
 ];
 
 const GIFT_PROMPTS = [
@@ -113,12 +176,75 @@ const GIFT_PROMPTS = [
   "gift for a teenager who likes gaming",
   "anniversary present under $100",
   "graduation gift",
+  "secret santa for the office, $25 limit",
+  "thank-you gift for my neighbor",
+  "thoughtful gift for my sister who just had a baby",
+];
+
+// Stock follow-ups used by the ~30% quick-QA + nav-driven sessions that
+// continue talking instead of bouncing. Kept generic so any opener flows
+// naturally into them.
+const STOCK_FOLLOWUPS = [
+  "can you compare those?",
+  "show me cheaper options",
+  "what about something more powerful?",
+  "any that have better reviews?",
+  "which one ships fastest?",
+  "do you have any in stock at my store?",
+  "tell me more about the first one",
+  "what color options does it come in?",
+  "is there a newer model?",
+  "what's the return window on that?",
 ];
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 function pickUser() {
   return users[Math.floor(Math.random() * users.length)];
+}
+
+/**
+ * Lightly shape a base prompt by persona. We don't rewrite the prompt — just
+ * occasionally suffix a small persona-flavored hint. This keeps the prompt
+ * pool from feeling like a fixed list of 30 strings while staying under the
+ * 200-char budget.
+ *
+ * Heuristic: @aol.com / @yahoo.com lean older-shopper ("for my husband",
+ * "for the grandkids", price-sensitive); @gmail.com leans mainstream and we
+ * usually leave the prompt untouched.
+ */
+function shapeByPersona(user, prompt) {
+  if (!user || !user.email) return prompt;
+  if (Math.random() < 0.55) return prompt; // most of the time, leave it alone
+  const email = user.email.toLowerCase();
+  let suffix = null;
+  if (email.endsWith('@aol.com')) {
+    suffix = pickOne([
+      ' — easy to use please',
+      ' — something my husband would like',
+      " — nothing too complicated",
+      ' — keep it under $75 if you can',
+    ]);
+  } else if (email.endsWith('@yahoo.com')) {
+    suffix = pickOne([
+      ' — for the grandkids',
+      ' — has to be reliable',
+      ' — no subscription stuff',
+    ]);
+  } else if (email.endsWith('@gmail.com')) {
+    // mainstream — only a small flavor sometimes
+    if (Math.random() < 0.4) {
+      suffix = pickOne([
+        ' (work from home)',
+        ' — bonus if it pairs with my phone',
+        ' — open to refurb',
+      ]);
+    }
+  }
+  if (!suffix) return prompt;
+  const combined = prompt + suffix;
+  // Stay under the 200-char chat budget.
+  return combined.length > 200 ? prompt : combined;
 }
 
 function callChatbot(user, sessionId, conversationId, message) {
@@ -191,8 +317,16 @@ function journeyQuickQA(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    callChatbot(user, sessionId, conversationId, pickOne(QUICK_QUESTIONS));
+    const opener = shapeByPersona(user, pickOne(QUICK_QUESTIONS));
+    callChatbot(user, sessionId, conversationId, opener);
     sleepStep();
+    // ~30% of "quick" sessions aren't actually one-and-done: the user reads
+    // the answer and follows up with a clarifying question in the same
+    // conversation. This produces real multi-turn transcripts in Sigil.
+    if (Math.random() < 0.3) {
+      callChatbot(user, sessionId, conversationId, pickOne(STOCK_FOLLOWUPS));
+      sleepStep();
+    }
   });
 }
 
@@ -203,9 +337,16 @@ function journeyNavigationDriven(user) {
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
     // ~1.5% of these flips to "show me mice" — the canonical demo prompt.
-    const msg = Math.random() < 0.015 ? mouseTrapMessage() : pickOne(NAV_QUESTIONS);
+    const msg = Math.random() < 0.015
+      ? mouseTrapMessage()
+      : shapeByPersona(user, pickOne(NAV_QUESTIONS));
     callChatbot(user, sessionId, conversationId, msg);
     sleepStep();
+    // ~30% of nav sessions keep talking — "show me cheaper", "compare", etc.
+    if (Math.random() < 0.3) {
+      callChatbot(user, sessionId, conversationId, pickOne(STOCK_FOLLOWUPS));
+      sleepStep();
+    }
     // Pretend we click the suggested product
     request('GET', `${BASE}/api/products`, null, user, sessionId);
     sleepStep();
@@ -222,10 +363,13 @@ function journeyMultiTurn(user) {
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
     const turns = randInt(3, 5);
-    callChatbot(user, sessionId, conversationId, pickOne(MULTI_TURN_OPENERS));
+    callChatbot(user, sessionId, conversationId, shapeByPersona(user, pickOne(MULTI_TURN_OPENERS)));
     sleepStep();
+    // Mix clarifications with stock follow-ups so multi-turn doesn't read like
+    // a templated form ("under $200" → "for office use" → "for gaming"...).
     for (let i = 1; i < turns; i++) {
-      callChatbot(user, sessionId, conversationId, pickOne(MULTI_TURN_CLARIFICATIONS));
+      const pool = Math.random() < 0.65 ? MULTI_TURN_CLARIFICATIONS : STOCK_FOLLOWUPS;
+      callChatbot(user, sessionId, conversationId, pickOne(pool));
       sleepStep();
     }
     if (Math.random() < 0.4) {
