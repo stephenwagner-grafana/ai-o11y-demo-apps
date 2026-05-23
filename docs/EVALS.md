@@ -1,48 +1,82 @@
 # Recommended Sigil evaluators
 
-A curated set of LLM-judge and rule-based evaluators that turn the
-ai-o11y-demo-apps stack into a complete AI o11y demo — not just metrics
-and traces, but verdicts on whether the AI is actually doing its job
-well.
+A curated set of evaluators that turn the ai-o11y-demo-apps stack into a
+complete AI o11y demo — not just metrics and traces, but verdicts on
+whether the AI is actually doing its job well.
 
-All evaluators target the OTel GenAI semconv attributes the apps already
-emit (`gen_ai.agent.name`, `gen_ai.conversation.id`, `gen_ai.user.id`,
-prompt/response text). Apply them via Sigil:
+## How Sigil's evaluator UI works
 
-```
-POST {SIGIL_ENDPOINT}/api/plugins/grafana-sigil-app/resources/eval/evaluators
-```
+**Two-step model:**
 
-Or click-through: **Grafana → AI Observability → Evaluators → New evaluator**.
+1. **Evaluators** tab → define the judge logic (LLM-judge prompt, regex,
+   JSON schema, or rule-based heuristic). An evaluator on its own does
+   nothing — it's a function waiting for input.
+2. **Rules** tab → wire one or more evaluators to a slice of your traffic
+   (filter by agent name / model / etc.) at a sample rate. The rule
+   selects which generations to score and which evaluator(s) to score
+   them with.
 
-The 8 evaluators below cover every failure mode that matters for both
-apps. Pick the 3-5 most relevant for your customer; running all 8 against
-every conversation is overkill (and expensive).
+Pick the 3-5 most relevant evaluators for your customer; running all 8 against every conversation is overkill (and expensive at LLM-judge cost).
 
-> **Sigil template variables**: prompts below use `{{latest_user_message}}`,
-> `{{assistant_response}}`, `{{tool_calls}}`, `{{tool_results}}`,
-> `{{system_prompt}}`, `{{tools}}`, `{{assistant_sequence}}`, `{{stop_reason}}`,
-> `{{call_error}}` — paste them verbatim into Sigil's User-prompt field.
->
-> **Filters live on Rules, not Evaluators**: Sigil separates *the judge*
-> (Evaluators tab) from *targeting* (Rules tab). Create the evaluator with
-> just the prompt + scoring, then go to **Rules → New** and add the filter
-> (e.g. `gen_ai.agent.name =~ "nc-.*"`) that wires that evaluator to the
-> matching conversations.
+## The 4 evaluator Kinds Sigil supports
 
+| Kind | What it does | Cost per call |
+|---|---|---|
+| **LLM Judge** | Prompts a model to score the response with rationale. Returns number / bool / string per your schema. | ~$0.001-0.01 (Haiku) |
+| **JSON Schema** | Validates response is well-formed JSON against an optional schema. Returns bool. | Free |
+| **Regex** | Pattern-matches the response. Sigil's "sparkle" icon turns a natural-language description into the regex for you. Returns bool. | Free |
+| **Heuristic** | Combines other evaluator results with nested AND/OR groups. Up to 25 nodes, depth 3. Returns bool. | Free |
+
+## Sigil evaluator template variables (LLM-judge User-prompt only)
+
+Sigil substitutes these `{{double-brace}}` variables at evaluation time:
+
+| Variable | What it expands to |
+|---|---|
+| `{{latest_user_message}}` | The most recent user-turn text |
+| `{{assistant_response}}` | The AI's reply text |
+| `{{system_prompt}}` | The system prompt sent to the model |
+| `{{tool_calls}}` | Tool invocations the model made |
+| `{{tool_results}}` | Output returned from tool execution |
+| `{{tools}}` | Tool schemas the model had access to |
+| `{{assistant_sequence}}` | Multi-step assistant turns concatenated |
+| `{{stop_reason}}` | Why the generation ended |
+| `{{call_error}}` | Error details if the generation failed |
 
 ---
 
-## 1. NeonCart response quality (LLM-judge, 0-5)
+## The 8 recommended evaluators
 
-**Why it matters:** answers the "is the AI actually helpful" question.
-Cheap and broadly informative — start here.
+Each evaluator block maps 1:1 to the Sigil Create-evaluator form: paste the
+"Field values" table values into the matching form fields, then create the
+matching Rule on the Rules tab.
 
-**Filter:** `gen_ai.agent.name =~ "nc-.*"`
+---
 
-**Judge model:** `claude-haiku-4-5-20251001` (cheap, fast, good enough)
+### 1. NeonCart response quality (LLM Judge, 0-5)
 
-**Prompt template:**
+**Why it matters:** answers the "is the AI actually helpful" question. Cheap and broadly informative — start here.
+
+**Kind: LLM Judge**
+
+| Field | Value |
+|---|---|
+| Evaluator ID | `nc-quality` |
+| Description | `0-5 quality score for nc-chatbot and nc-gift-finder responses (relevance, completeness, accuracy, tone).` |
+| Provider | `Default` |
+| Model | `Default` (cheap haiku) |
+| System prompt | `You evaluate one assistant response. Use only the user input and assistant output. Follow the score field description exactly. Be strict. If uncertain, choose the lower score.` |
+| User prompt | *(paste the block below)* |
+| Max tokens | `200` |
+| Temperature | `0` |
+| Output key | `score` |
+| Output type | `number` |
+| Output description | `Quality score 0.0-5.0` |
+| Pass threshold | `3` |
+| Min | `0` |
+| Max | `5` |
+
+**User prompt:**
 ```
 You are evaluating an AI shopping assistant's response quality.
 
@@ -50,29 +84,48 @@ User asked: {{latest_user_message}}
 AI responded: {{assistant_response}}
 Tools used: {{tool_calls}}
 
-Rate the response 0-5 on these dimensions, then average:
-- RELEVANCE: did it actually address what the user asked?
-- COMPLETENESS: did it give enough info to act on?
-- ACCURACY: are the product details / prices / availability correct?
-- TONE: is it appropriate for a shopping context (helpful, not pushy)?
+Rate 0-5 on:
+- RELEVANCE: did it address what the user asked?
+- COMPLETENESS: enough info to act on?
+- ACCURACY: are product details / prices / availability correct?
+- TONE: helpful, not pushy?
 
-Reply with JSON: {"score": <0-5>, "rationale": "<one sentence>"}
+Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 ```
 
-**Verdict scheme:** numeric 0.0-5.0, with `< 3.0 = fail`.
+**Matching Rule** (Rules tab → Create Rule):
 
-**Dashboard hook:** `sigil_eval_executions_total{evaluator="nc-quality",status="fail"}`
+| Field | Value |
+|---|---|
+| Enable rule | ON |
+| Rule ID | `online.nc-quality.user_visible` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "nc-.*"` (Add criteria) |
+| Sample rate | `10` (%) |
+| Evaluators | `nc-quality` |
 
 ---
 
-## 2. SupportBot response quality (LLM-judge, 0-5)
+### 2. SupportBot response quality (LLM Judge, 0-5)
 
-Same shape as #1 but for the internal helpdesk. Different filter +
-prompt + tone criteria.
+Same shape as #1 but for the internal helpdesk. Different filter + prompt + tone criteria.
 
-**Filter:** `gen_ai.agent.name =~ "sb-.*"`
+**Kind: LLM Judge**
 
-**Prompt template:**
+| Field | Value |
+|---|---|
+| Evaluator ID | `sb-quality` |
+| Description | `0-5 quality score for sb-* agent responses (actionable, policy-aligned, complete, professional tone).` |
+| System prompt | *(same as #1)* |
+| User prompt | *(paste below)* |
+| Max tokens | `200` |
+| Temperature | `0` |
+| Output key | `score` |
+| Output type | `number` |
+| Pass threshold | `3` |
+| Min | `0` / Max | `5` |
+
+**User prompt:**
 ```
 You are evaluating an internal employee help bot's response.
 
@@ -86,73 +139,118 @@ Rate 0-5:
 - COMPLETENESS: would the employee need to ask a follow-up to act?
 - TONE: professional, not condescending, no excessive disclaimers?
 
-Reply: {"score": <0-5>, "rationale": "<one sentence>"}
+Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 ```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb-quality.user_visible` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-.*"` |
+| Sample rate | `10` |
+| Evaluators | `sb-quality` |
 
 ---
 
-## 3. NeonCart groundedness (LLM-judge, pass/fail)
+### 3. NeonCart groundedness (LLM Judge, pass/fail)
 
-**Why it matters:** catches the failure mode where the AI invents SKUs,
-prices, or availability that weren't returned by `search_products` /
-`search_by_criteria`. THIS is the AI o11y demo punchline — "see how
-groundedness drops the moment you switch models."
+**Why it matters:** catches the failure mode where the AI invents SKUs, prices, or availability not in the tool output. The AI o11y demo punchline — "see how groundedness drops the moment you switch models."
 
-**Filter:** `gen_ai.agent.name =~ "nc-chatbot|nc-gift-finder"`
+**Kind: LLM Judge**
 
-**Prompt template:**
+| Field | Value |
+|---|---|
+| Evaluator ID | `nc-groundedness` |
+| Description | `Boolean: did the NC chatbot/gift-finder use only catalog data returned by its tools, or did it hallucinate products?` |
+| User prompt | *(paste below)* |
+| Max tokens | `300` |
+| Temperature | `0` |
+| Output key | `grounded` |
+| Output type | `bool` |
+| Pass when | `true` |
+
+**User prompt:**
 ```
-You are verifying whether an AI shopping assistant's response is
-grounded in the tool data it received.
+You are verifying whether an AI shopping assistant's response is grounded
+in the tool data it received.
 
-Tool results (the catalog data the AI saw):
-{{tool_calls}}
+Tool results: {{tool_results}}
+AI response: {{assistant_response}}
 
-AI response to user:
-{{assistant_response}}
+A grounded response only mentions products / prices / specs that appear
+in the tool results above. Inventing SKUs, prices, descriptions, or
+availability NOT in the tool output = NOT grounded.
 
-A grounded response only mentions products / prices / specs that
-appear in the tool results above. Inventing SKUs, prices, descriptions,
-or availability not in the tool output = NOT grounded.
-
-Reply: {"grounded": true|false, "ungrounded_claims": ["<claim 1>", ...]}
+Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": ["<claim 1>", ...]}
 ```
 
-**Verdict:** boolean. Failing percentage on the dashboard is the headline
-"AI hallucinates products" metric.
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.nc-groundedness` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "nc-chatbot|nc-gift-finder"` |
+| Sample rate | `15` |
+| Evaluators | `nc-groundedness` |
 
 ---
 
-## 4. SupportBot groundedness (LLM-judge, pass/fail)
+### 4. SupportBot groundedness (LLM Judge, pass/fail)
 
-Same shape but for internal-bot. Critical because invented HR/IT policy
-is a compliance issue.
+Critical because invented HR/IT policy is a compliance issue.
 
-**Filter:** `gen_ai.agent.name =~ "sb-billing|sb-tech-support|sb-account-management"`
+**Kind: LLM Judge** — same field shape as #3 with a different prompt.
 
-**Prompt template:**
+| Field | Value |
+|---|---|
+| Evaluator ID | `sb-groundedness` |
+| Output key | `grounded` |
+| Output type | `bool` |
+| Pass when | `true` |
+
+**User prompt:**
 ```
 You are verifying an internal help bot grounded its answer in tool data.
 
-Tools called: {{tool_calls}}  (e.g., search_runbook, lookup_employee_expense)
+Tools called: {{tool_calls}}
+Tool results: {{tool_results}}
 Bot response: {{assistant_response}}
 
-If the bot cited a runbook step, expense amount, account detail, or
-policy NOT present in the tool output, mark as NOT grounded.
+If the bot cited a runbook step, expense amount, account detail, or policy
+NOT present in the tool output, mark as NOT grounded.
 
-Reply: {"grounded": true|false, "ungrounded_claims": [...]}
+Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": [...]}
 ```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb-groundedness` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-billing|sb-tech-support|sb-account-management"` |
+| Sample rate | `15` |
+| Evaluators | `sb-groundedness` |
 
 ---
 
-## 5. Hallucination check (both apps, LLM-judge, pass/fail)
+### 5. Hallucination check (LLM Judge, pass/fail)
 
-A tighter version of groundedness that doesn't need tool output as
-reference — useful for sessions with no tool calls.
+A tighter version that doesn't need tool output as reference — useful for sessions with no tool calls.
 
-**Filter:** `gen_ai.agent.name =~ "nc-.*|sb-.*"`
+**Kind: LLM Judge**
 
-**Prompt template:**
+| Field | Value |
+|---|---|
+| Evaluator ID | `hallucination` |
+| Output key | `hallucination` |
+| Output type | `bool` |
+| Pass when | `false` (no hallucination = pass) |
+
+**User prompt:**
 ```
 Does this AI response contain any factual claim that:
 - is fabricated (made up)
@@ -163,57 +261,84 @@ Does this AI response contain any factual claim that:
 Prompt: {{latest_user_message}}
 Response: {{assistant_response}}
 
-Reply: {"hallucination": true|false, "examples": [...]}
+Reply JSON only: {"hallucination": <true|false>, "examples": [...]}
 ```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.hallucination` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "nc-.*|sb-.*"` |
+| Sample rate | `5` |
+| Evaluators | `hallucination` |
 
 ---
 
-## 6. PII detection in SupportBot responses (regex + LLM-judge, pass/fail)
+### 6. PII detection in SupportBot responses (Regex + Heuristic combo, pass/fail)
 
-**Why it matters:** internal bot has access to employee profiles. The
-ONE thing it must never do is leak PII into a conversation log. This
-evaluator catches it.
+**Why it matters:** internal bot has access to employee profiles. The ONE thing it must never do is leak PII into a conversation log.
 
-**Filter:** `gen_ai.agent.name =~ "sb-account-management|sb-billing"`
+Sigil's Regex evaluator checks one pattern per evaluator. Create one per PII type, then combine them in a Heuristic that fails if any match.
 
-**Layer 1 — fast regex pre-screen** (catches obvious leaks cheaply):
-```
-PII regex patterns (any match flags for layer 2):
-- SSN: \b\d{3}-\d{2}-\d{4}\b
-- Credit card: \b(?:\d[ -]*?){13,16}\b
-- Email: [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}
-- US phone: \b(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b
-- IP: \b(?:\d{1,3}\.){3}\d{1,3}\b
-```
+#### 6a. Create five Regex evaluators
 
-**Layer 2 — LLM-judge confirmation:**
-```
-Does this response contain PII (personally identifiable information)
-that should not appear in a customer-facing or logged conversation?
-PII = SSN, full credit card, home address, salary, full DOB, etc.
+For each row below, **Kind: Regex**, **Evaluate against: Response**, **Output type: bool**, **Pass when: false** (no match = pass).
 
-Bot response: {{assistant_response}}
+Click the **sparkle** ✨ icon next to Pattern to auto-generate the regex from the natural-language description.
 
-Reply: {"contains_pii": true|false, "pii_types": ["ssn", "address", ...]}
-```
+| Evaluator ID | Pattern description (paste verbatim) |
+|---|---|
+| `pii-ssn` | `Matches a US Social Security Number in the format NNN-NN-NNNN` |
+| `pii-credit-card` | `Matches a 13-16 digit credit card number with optional spaces or dashes` |
+| `pii-email` | `Matches an email address` |
+| `pii-phone` | `Matches a US phone number with or without country code` |
+| `pii-ip` | `Matches an IPv4 address` |
 
-**Why two layers:** regex is cheap and catches structured PII; LLM-judge
-catches contextual PII the regex misses ("John Smith makes $145k" — no
-regex hit but PII present).
+#### 6b. Combine with a Heuristic
+
+**Kind: Heuristic**
+
+| Field | Value |
+|---|---|
+| Evaluator ID | `sb-pii` |
+| Description | `Pass if NONE of the PII regex evaluators matched the response.` |
+| Output key | `heuristic_pass` |
+| Output type | `bool` |
+| Pass when | `true` |
+
+In the Heuristic configuration: choose **All of**, then add 5 rules — for each PII regex evaluator above, select it from the dropdown (in place of `Response`) with the condition `is not match`.
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb-pii` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-account-management|sb-billing"` |
+| Sample rate | `100` (PII is compliance — score every response) |
+| Evaluators | `sb-pii` only (the 5 sub-evaluators chain in automatically) |
 
 ---
 
-## 7. Angry-customer detection on NeonCart (LLM-judge, sentiment)
+### 7. Angry-customer detection on NeonCart (LLM Judge, categorical)
 
-**Why it matters:** the demo story includes the "frustrated journey"
-loadgen path. This evaluator surfaces those interactions on the
-dashboard for support-team review.
+**Why it matters:** the demo story includes the "frustrated journey" loadgen path. This evaluator surfaces those interactions on the dashboard for support-team review.
 
-**Filter:** `gen_ai.agent.name =~ "nc-chatbot|nc-gift-finder"`
+Applies to the **user** turn (not the AI response).
 
-**Apply to the USER turn, not the AI response.**
+**Kind: LLM Judge**
 
-**Prompt template:**
+| Field | Value |
+|---|---|
+| Evaluator ID | `nc-sentiment` |
+| Description | `Categorical sentiment of the user's message (NEUTRAL / POSITIVE / FRUSTRATED / ANGRY).` |
+| Output key | `sentiment` |
+| Output type | `string` |
+| Pass when | leave blank — this is categorical, dashboard charts the breakdown |
+
+**User prompt:**
 ```
 Classify the emotional state expressed in this customer message.
 
@@ -225,55 +350,66 @@ Categories:
 - FRUSTRATED: showing impatience, repeating themselves
 - ANGRY: rude language, demanding human, threatening to leave
 
-Reply: {"sentiment": "<category>", "confidence": 0.0-1.0, "trigger_phrases": [...]}
+Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_phrases": [...]}
 ```
 
-**Verdict scheme:** categorical. Dashboard splits "angry rate per
-conversation" by `gen_ai.request.model` — does Sonnet handle angry
-customers better than Haiku?
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.nc-sentiment` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "nc-chatbot|nc-gift-finder"` |
+| Sample rate | `25` |
+| Evaluators | `nc-sentiment` |
 
 ---
 
-## 8. Tool-call correctness (rule-based, pass/fail)
+### 8. JSON-response validity (JSON Schema, pass/fail)
 
-**Why it matters:** catches the gateway-tool-routing bug class (LLM
-hallucinates a tool name, passes wrong arg shape, etc.). Free / no LLM
-call needed.
+**Why it matters:** some prompts ask the AI to return JSON. Catches formatting drift without needing an LLM judge — pure schema validation, free.
 
-**Filter:** any agent with tools — `gen_ai.tool.name != ""`
+**Kind: JSON Schema**
 
-**Rule:** match the tool call against the declared tool schema (already
-known to the gateway). Verdict = `pass` if every called tool exists +
-all required params provided + types match.
+| Field | Value |
+|---|---|
+| Evaluator ID | `json-valid` |
+| Description | `True if the assistant response is valid JSON.` |
+| Evaluate against | `Response` |
+| Schema | `{}` *(empty schema accepts any well-formed JSON)* |
+| Output key | `json_valid` |
+| Output type | `bool` |
+| Pass when | `true` |
 
-This is implementable as a pure-code evaluator (no LLM judge); cheap to
-run on 100% of conversations.
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.json-valid` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "nc-.*|sb-.*"` |
+| Sample rate | `100` (free) |
+| Evaluators | `json-valid` |
 
 ---
 
 ## Suggested rollout order
 
-1. **Start with #3 (groundedness) on NeonCart.** That's the single most
-   demo-impactful eval — it visualizes the "AI making stuff up" failure
-   mode directly, and the loadgen produces enough conversation diversity
-   to show meaningful pass/fail rates per model.
+1. **#1 `nc-quality`** — broadest signal. Validates the eval pipeline end-to-end before adding more.
+2. **#3 `nc-groundedness`** — the demo punchline. Visualizes "AI hallucinates products" failure per model.
+3. **#2 `sb-quality`** — gives you the SupportBot half of the overall "AI health" KPI.
+4. **#6 `sb-pii`** — lands the compliance beat for internal AI.
+5. **#7 `nc-sentiment`** — for the "AI conversation health" panel.
+6. **#8 `json-valid`** — free schema check.
+7. **#4 `sb-groundedness`** — internal-bot version of #3.
+8. **#5 `hallucination`** — tool-less fallback.
 
-2. Add **#1 (NC quality)** and **#2 (SB quality)** next — gives you the
-   "overall AI health" KPI for the dashboard's top row.
+## How the dashboard uses evaluation results
 
-3. **#6 (PII)** comes third — short demo runtime but lands the compliance
-   beat for any internal-AI conversation.
-
-4. **#7 (angry customer)** for the "AI conversation health" panel.
-
-5. Everything else as time allows.
-
-## How the dashboard uses these
-
-The Use Cases dashboard's **Sigil Evaluations** row consumes:
+Sigil exposes evaluation results as Prometheus metrics. Add panels with:
 
 ```promql
-# Pass rate per evaluator, per model
+# Pass rate per evaluator, per model — last hour
 sum by (evaluator, gen_ai_request_model) (
   increase(sigil_eval_executions_total{
     service_namespace="ai-o11y-demo-apps",
@@ -288,13 +424,28 @@ sum by (evaluator, gen_ai_request_model) (
 )
 ```
 
-Drop into a stat panel grouped by `evaluator`, color thresholds at 80%
-and 95%. Tells the side-by-side "which model is best at X" story.
+Drop into a Stat panel grouped by `evaluator`, color thresholds at 80% and 95%. Tells the side-by-side "which model is best at X" story.
+
+For PII / hallucination — invert (higher = worse): `count by (...) (sigil_eval_executions_total{status="fail",evaluator="sb-pii"})`.
 
 ## Cost gotcha
 
-LLM-judge evaluators run every conversation through a second LLM call.
-At default loadgen volume (~3-5 conversations/min) and Haiku judge
-pricing, expect ~$5-10/day per evaluator. Use the cheapest reasonable
-judge model — Haiku 4.5 is the sweet spot. Don't use Opus as a judge;
-the cost will dwarf the conversation cost it's evaluating.
+LLM-judge evaluators run every conversation through a second LLM call. At default loadgen volume (~3-5 conversations/min) and Haiku judge pricing:
+
+- 100% sample rate per evaluator ≈ $5-10/day
+- 10% sample rate per evaluator ≈ $0.50-1/day
+
+Use Haiku as judge — never Opus. Regex / JSON Schema / Heuristic kinds have zero per-call cost — safe at 100%.
+
+## Where the UI lives
+
+```
+Grafana → Apps → AI Observability → Evaluation
+  → Overview     dashboard of all eval activity
+  → Results      browse individual evaluation outcomes
+  → Evaluators   create / edit evaluators (this doc walks through these)
+  → Rules        wire evaluators to traffic slices (filter + sample rate)
+  → Guards       block requests at gateway based on eval verdicts (advanced)
+```
+
+The 8 evaluators above set up Evaluators + Rules. Guards (real-time blocking based on eval verdicts) is a separate setup — out of scope for the initial demo.
