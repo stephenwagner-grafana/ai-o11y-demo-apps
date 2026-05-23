@@ -88,6 +88,19 @@ def calculate_cost(
     """
     rates = _pricing.get(provider, {}).get(model)
     if rates is None:
+        # Try longest-prefix match: Anthropic returns dated forms like
+        # "claude-opus-4-1-20250805" but pricing.yaml may only list the
+        # undated "claude-opus-4-1". Walk all keys, find the longest one
+        # that is a prefix of the requested model. This also handles new
+        # snapshot dates without needing to update pricing.yaml.
+        provider_rates = _pricing.get(provider, {})
+        best_match = ""
+        for known in provider_rates:
+            if model.startswith(known) and len(known) > len(best_match):
+                best_match = known
+        if best_match:
+            rates = provider_rates[best_match]
+    if rates is None:
         # Try a wildcard / default model entry
         rates = _pricing.get(provider, {}).get("default")
     if rates is None:

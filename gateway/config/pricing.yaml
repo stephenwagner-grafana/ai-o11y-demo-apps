@@ -12,13 +12,28 @@
 # All rates are USD per 1,000,000 tokens.
 
 anthropic:
+  # Opus tier — $15/Mtok input, $75/Mtok output
   claude-opus-4-7:
     input_usd_per_mtoken: 15.00
     output_usd_per_mtoken: 75.00
+  claude-opus-4-6:
+    input_usd_per_mtoken: 15.00
+    output_usd_per_mtoken: 75.00
+  claude-opus-4-1:
+    input_usd_per_mtoken: 15.00
+    output_usd_per_mtoken: 75.00
+  # Sonnet tier — $3/Mtok input, $15/Mtok output
   claude-sonnet-4-6:
     input_usd_per_mtoken: 3.00
     output_usd_per_mtoken: 15.00
+  claude-sonnet-4-5:
+    input_usd_per_mtoken: 3.00
+    output_usd_per_mtoken: 15.00
+  # Haiku tier — $1/Mtok input, $5/Mtok output
   claude-haiku-4-5-20251001:
+    input_usd_per_mtoken: 1.00
+    output_usd_per_mtoken: 5.00
+  claude-haiku-4-5:
     input_usd_per_mtoken: 1.00
     output_usd_per_mtoken: 5.00
 
