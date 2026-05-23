@@ -473,6 +473,31 @@ Full metric catalog: [`docs/METRICS.md`](./docs/METRICS.md).
 
 ---
 
+## Companion dashboards (download + import)
+
+Four portable Grafana dashboards live in [`dashboards/`](./dashboards). **None are installed automatically** — download the JSON, then **Grafana → Dashboards → New → Import** and pick your Prometheus datasource when prompted.
+
+| File | What it tells you |
+|---|---|
+| [`use-cases.json`](./dashboards/use-cases.json) | **The headline dashboard** — 38 panels covering KPI tiles, model diversity, per-agent ROI, the "Top Models by ROI Multiple" ranked table, ATC + revenue funnel, latency p50/p95/p99, tool calls per agent, and SupportBot per-employee usage. Start here. |
+| [`cost-per-model.json`](./dashboards/cost-per-model.json) | Per-model cost & throughput — $/hour stacked bars, per-model leaderboard table with gradient gauge cells, input:output token ratio per model. Useful when comparing 2+ models side-by-side. |
+| [`neoncart-business.json`](./dashboards/neoncart-business.json) | NeonCart business impact — ATC by source + model, AI conversion lift, projected weekly revenue, per-agent ROI table, combined AI agent ROI tile. The "is the AI making us money" view. |
+| [`supportbot-per-employee.json`](./dashboards/supportbot-per-employee.json) | Per-employee SupportBot usage — top-10 employees table (calls, in/out tokens, ratio, cost), calls/min trends, input:output ratio per employee for prompt-hygiene review. The "internal AI chargeback" view. |
+
+Each JSON ships with portable `__inputs` so the Import UI prompts for `DS_PROMETHEUS` — no hand-editing of datasource UIDs required. Setup happens **after** install once you've let the loadgen warm up (~10 min for the main models, 30-60 min for low-weight Anthropic models like Opus 4.7).
+
+Or use the API-driven importer for bulk install:
+
+```bash
+export GRAFANA_API_TOKEN=glsa_<your_service_account_token>
+export GRAFANA_URL=https://<your-org>.grafana.net
+bash dashboards/import.sh   # imports every *.json in the dir
+```
+
+See [`dashboards/README.md`](./dashboards/README.md) for the full import flow.
+
+---
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
