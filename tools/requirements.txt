@@ -1,0 +1,4 @@
+# Python deps for the install + tooling scripts (NOT the running services).
+# Install: pip install -r tools/requirements.txt
+faker>=20.0
+pyyaml>=6.0

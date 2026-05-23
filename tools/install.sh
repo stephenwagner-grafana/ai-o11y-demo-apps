@@ -40,6 +40,25 @@ check_prereqs() {
     die "Missing required commands: ${missing[*]}. Install them and re-run."
   fi
 
+  # Verify Python packages used by regenerate-users.py — fail fast here, not
+  # mid-install after the user has filled in 8 credential prompts.
+  local missing_py=()
+  for pkg in faker yaml; do
+    if ! python3 -c "import ${pkg}" >/dev/null 2>&1; then
+      missing_py+=("$pkg")
+    fi
+  done
+  if [[ ${#missing_py[@]} -gt 0 ]]; then
+    err "Missing Python packages: ${missing_py[*]}"
+    say "  Install with:"
+    say "      pip install -r tools/requirements.txt"
+    say "  Or in a venv (recommended):"
+    say "      python3 -m venv .venv && source .venv/bin/activate"
+    say "      pip install -r tools/requirements.txt"
+    die "Re-run install.sh after the packages are installed."
+  fi
+  ok "Python packages found: faker, pyyaml"
+
   # Verify the current kubeconfig works
   if ! kubectl cluster-info >/dev/null 2>&1; then
     die "kubectl can't reach a cluster. Set KUBECONFIG or kubectl config use-context <ctx>."

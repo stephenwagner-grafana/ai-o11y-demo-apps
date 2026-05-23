@@ -94,7 +94,12 @@ flowchart LR
 2. **Anthropic Claude API key** (`sk-ant-...`) — the only required provider
 3. **Grafana Cloud organization with the Sigil plugin enabled** — Sigil owns canonical pricing and the AI o11y UI
 4. **`kubectl` and `helm`** on your PATH
-5. (Optional) OpenAI / Gemini API keys; Ollama URL for local GPU inference
+5. **Python 3.10+** and the install-script dependencies:
+   ```bash
+   pip install -r tools/requirements.txt
+   ```
+   (in a venv if you prefer: `python3 -m venv .venv && source .venv/bin/activate` first)
+6. (Optional) OpenAI / Gemini API keys; Ollama URL for local GPU inference
 
 ### Install
 
