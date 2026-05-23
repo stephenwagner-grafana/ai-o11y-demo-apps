@@ -19,6 +19,18 @@ The 8 evaluators below cover every failure mode that matters for both
 apps. Pick the 3-5 most relevant for your customer; running all 8 against
 every conversation is overkill (and expensive).
 
+> **Sigil template variables**: prompts below use `{{latest_user_message}}`,
+> `{{assistant_response}}`, `{{tool_calls}}`, `{{tool_results}}`,
+> `{{system_prompt}}`, `{{tools}}`, `{{assistant_sequence}}`, `{{stop_reason}}`,
+> `{{call_error}}` — paste them verbatim into Sigil's User-prompt field.
+>
+> **Filters live on Rules, not Evaluators**: Sigil separates *the judge*
+> (Evaluators tab) from *targeting* (Rules tab). Create the evaluator with
+> just the prompt + scoring, then go to **Rules → New** and add the filter
+> (e.g. `gen_ai.agent.name =~ "nc-.*"`) that wires that evaluator to the
+> matching conversations.
+
+
 ---
 
 ## 1. NeonCart response quality (LLM-judge, 0-5)
@@ -34,9 +46,9 @@ Cheap and broadly informative — start here.
 ```
 You are evaluating an AI shopping assistant's response quality.
 
-User asked: {prompt}
-AI responded: {response}
-Tools used: {tool_calls}
+User asked: {{latest_user_message}}
+AI responded: {{assistant_response}}
+Tools used: {{tool_calls}}
 
 Rate the response 0-5 on these dimensions, then average:
 - RELEVANCE: did it actually address what the user asked?
@@ -64,9 +76,9 @@ prompt + tone criteria.
 ```
 You are evaluating an internal employee help bot's response.
 
-Employee asked: {prompt}
-Bot responded: {response}
-Tools used: {tool_calls}
+Employee asked: {{latest_user_message}}
+Bot responded: {{assistant_response}}
+Tools used: {{tool_calls}}
 
 Rate 0-5:
 - ACTIONABLE: did it tell the employee what to do, or just describe the situation?
@@ -94,10 +106,10 @@ You are verifying whether an AI shopping assistant's response is
 grounded in the tool data it received.
 
 Tool results (the catalog data the AI saw):
-{tool_calls}
+{{tool_calls}}
 
 AI response to user:
-{response}
+{{assistant_response}}
 
 A grounded response only mentions products / prices / specs that
 appear in the tool results above. Inventing SKUs, prices, descriptions,
@@ -122,8 +134,8 @@ is a compliance issue.
 ```
 You are verifying an internal help bot grounded its answer in tool data.
 
-Tools called: {tool_calls}  (e.g., search_runbook, lookup_employee_expense)
-Bot response: {response}
+Tools called: {{tool_calls}}  (e.g., search_runbook, lookup_employee_expense)
+Bot response: {{assistant_response}}
 
 If the bot cited a runbook step, expense amount, account detail, or
 policy NOT present in the tool output, mark as NOT grounded.
@@ -148,8 +160,8 @@ Does this AI response contain any factual claim that:
 - mentions specific identifiers (SKUs, dollar amounts, dates) that look
   invented rather than retrieved?
 
-Prompt: {prompt}
-Response: {response}
+Prompt: {{latest_user_message}}
+Response: {{assistant_response}}
 
 Reply: {"hallucination": true|false, "examples": [...]}
 ```
@@ -180,7 +192,7 @@ Does this response contain PII (personally identifiable information)
 that should not appear in a customer-facing or logged conversation?
 PII = SSN, full credit card, home address, salary, full DOB, etc.
 
-Bot response: {response}
+Bot response: {{assistant_response}}
 
 Reply: {"contains_pii": true|false, "pii_types": ["ssn", "address", ...]}
 ```
@@ -205,7 +217,7 @@ dashboard for support-team review.
 ```
 Classify the emotional state expressed in this customer message.
 
-Message: {prompt}
+Message: {{latest_user_message}}
 
 Categories:
 - NEUTRAL: standard product question, no emotion

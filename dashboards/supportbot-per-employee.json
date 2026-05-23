@@ -35,7 +35,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-BlYlRd"
+            "mode": "fixed",
+            "fixedColor": "#3c8fff"
           },
           "decimals": 0,
           "unit": "short"
@@ -49,7 +50,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "percentChangeColorMode": "standard",
@@ -645,7 +646,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-purples"
+            "mode": "fixed",
+            "fixedColor": "#b537ff"
           },
           "decimals": 2,
           "unit": "none"
@@ -659,14 +661,16 @@
       },
       "id": 11,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ]
         },
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "wideLayout": true
       },
       "targets": [
         {

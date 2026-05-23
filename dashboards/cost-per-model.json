@@ -35,7 +35,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "fixed",
+            "fixedColor": "#ff6b00"
           },
           "decimals": 2,
           "unit": "currencyUSD"
@@ -49,7 +50,7 @@
       },
       "id": 2,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "percentChangeColorMode": "standard",
@@ -85,7 +86,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-YlOrRd"
+            "mode": "fixed",
+            "fixedColor": "#ff3b6b"
           },
           "decimals": 2,
           "unit": "currencyUSD"
@@ -99,7 +101,7 @@
       },
       "id": 3,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "percentChangeColorMode": "standard",
@@ -135,7 +137,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-BlYlRd"
+            "mode": "fixed",
+            "fixedColor": "#00f0ff"
           },
           "decimals": 0,
           "unit": "short"
@@ -149,7 +152,7 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "percentChangeColorMode": "standard",
@@ -699,26 +702,10 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-purples"
+            "mode": "fixed",
+            "fixedColor": "#b537ff"
           },
           "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 20
-              },
-              {
-                "color": "red",
-                "value": 50
-              }
-            ]
-          },
           "unit": "none"
         }
       },
@@ -730,7 +717,7 @@
       },
       "id": 12,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -738,7 +725,8 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value_and_name"
+        "textMode": "value_and_name",
+        "wideLayout": true
       },
       "targets": [
         {

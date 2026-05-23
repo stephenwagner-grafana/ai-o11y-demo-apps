@@ -160,26 +160,10 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "fixed",
+            "fixedColor": "#ff2bd6"
           },
           "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 0.5
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
           "unit": "none"
         }
       },
@@ -191,7 +175,7 @@
       },
       "id": 4,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -199,7 +183,8 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value"
+        "textMode": "value",
+        "wideLayout": true
       },
       "targets": [
         {
@@ -284,7 +269,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "fixed",
+            "fixedColor": "#ff6ad9"
           },
           "decimals": 2,
           "unit": "currencyUSD"
@@ -298,7 +284,7 @@
       },
       "id": 7,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -306,7 +292,8 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value"
+        "textMode": "value",
+        "wideLayout": true
       },
       "targets": [
         {
@@ -331,7 +318,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-purples"
+            "mode": "fixed",
+            "fixedColor": "#00f0ff"
           },
           "decimals": 2,
           "unit": "currencyUSD"
@@ -345,7 +333,7 @@
       },
       "id": 8,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -353,7 +341,8 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value"
+        "textMode": "value",
+        "wideLayout": true
       },
       "targets": [
         {
@@ -636,7 +625,8 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "continuous-GrYlRd"
+            "mode": "fixed",
+            "fixedColor": "#b537ff"
           },
           "decimals": 1,
           "unit": "none"
@@ -650,7 +640,7 @@
       },
       "id": 11,
       "options": {
-        "colorMode": "background_solid",
+        "colorMode": "background",
         "graphMode": "area",
         "justifyMode": "center",
         "reduceOptions": {
@@ -658,7 +648,8 @@
             "lastNotNull"
           ]
         },
-        "textMode": "value"
+        "textMode": "value",
+        "wideLayout": true
       },
       "targets": [
         {
