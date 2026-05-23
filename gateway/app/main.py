@@ -27,6 +27,13 @@ from .providers import ProviderRequest
 from .router import RoutingError, select_provider, PROVIDER_MODULES
 from .sigil_client import init_sigil, shutdown_sigil, get_sigil
 
+
+# When the primary provider raises (upstream 5xx, timeout, etc.) we attempt
+# one fallback to another open provider before giving up. This keeps the demo
+# story coherent — a flaky Ollama backend doesn't blank out the chatbot UX.
+# Set FALLBACK_ON_PROVIDER_ERROR=0 to disable.
+_FALLBACK_ENABLED = os.getenv("FALLBACK_ON_PROVIDER_ERROR", "1") != "0"
+
 log = logging.getLogger(__name__)
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
@@ -144,7 +151,6 @@ async def generate(
         raise HTTPException(status_code=503, detail=str(e))
 
     # Translate to ProviderRequest
-    provider_module = PROVIDER_MODULES[provider_name]
     p_req = ProviderRequest(
         messages=[m.model_dump() for m in req.messages],
         model=req.model or "",  # provider applies its default if empty
@@ -163,9 +169,46 @@ async def generate(
     )
 
     sigil_client = get_sigil()
-    resp = await provider_module.generate(p_req, sigil_client)
 
-    # Record spend against the cap
+    # Try the primary provider. If it raises (and fallback is enabled, and the
+    # caller didn't pin a strict preferred provider), retry once on another
+    # open provider so a flaky upstream doesn't blank out the chatbot UX.
+    # This is critical for the demo: the .240 Ollama box has periodic 503s,
+    # and without fallback every Ollama-routed conversation 502s through to
+    # the storefront, which both breaks the UI and prevents the loadgen from
+    # capturing a real model name for ATC attribution.
+    tried: list[str] = [provider_name]
+    last_error: Exception | None = None
+    resp = None
+
+    try:
+        provider_module = PROVIDER_MODULES[provider_name]
+        resp = await provider_module.generate(p_req, sigil_client)
+    except Exception as e:  # noqa: BLE001 — broad on purpose, see below
+        last_error = e
+        log.warning("provider %s failed: %s", provider_name, e)
+
+    if resp is None and _FALLBACK_ENABLED and not (req.strict and req.preferred_provider):
+        for alt in [p for p in PROVIDER_MODULES if p not in tried and caps.is_open(p)[0]]:
+            tried.append(alt)
+            try:
+                resp = await PROVIDER_MODULES[alt].generate(p_req, sigil_client)
+                provider_name = alt  # for cap recording + response
+                log.info("fallback succeeded on %s after %s failed", alt, tried[0])
+                break
+            except Exception as e:  # noqa: BLE001
+                last_error = e
+                log.warning("fallback %s also failed: %s", alt, e)
+
+    if resp is None:
+        # Re-raise as 502 so callers know it's upstream, not us. Preserve the
+        # original error message so traces still show the root cause.
+        raise HTTPException(
+            status_code=502,
+            detail=f"all providers failed (tried={tried}): {last_error}",
+        ) from last_error
+
+    # Record spend against the cap (whichever provider actually served the call)
     caps.record_spend(provider_name, resp.cost_usd, caller_type=caller_type)
 
     return {
