@@ -4,6 +4,10 @@
 
 Two production-shaped AI applications deploy to any Kubernetes cluster in one command. Both are continuously exercised by realistic synthetic traffic and emit full OpenTelemetry — metrics, logs, traces, plus Sigil generation events — to your Grafana Cloud. Within minutes of `./tools/install.sh` you have a populated AI Observability dashboard, a live Sigil conversation explorer, and a per-agent ROI ratio telling you which AI agents pay for themselves.
 
+![Use Cases dashboard — populated within 10 minutes of install](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/use-cases-dashboard.png)
+
+*The Use Cases dashboard above is the headline view — 38 panels covering cost-per-model, ATC-per-model, AI-agent ROI, per-employee token usage, tool-call patterns, latency p50/p95/p99, and Postgres-trap traces. **Every panel populates with non-zero data within 10-15 minutes** of install.* The dashboard JSON lives at [`dashboards/use-cases.json`](./dashboards/use-cases.json) and imports portably into any Grafana with Prometheus.
+
 ```
 git clone https://github.com/stephenwagner-grafana/ai-o11y-demo-apps
 cd ai-o11y-demo-apps
@@ -11,7 +15,7 @@ cd ai-o11y-demo-apps
 ./tools/verify.sh            # 9 checks, all green
 ```
 
-Open Grafana → AI Observability → done. No manual instrumentation. No fake metrics.
+Then import [`dashboards/use-cases.json`](./dashboards/use-cases.json) into Grafana → done. No manual instrumentation. No fake metrics.
 
 ---
 
