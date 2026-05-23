@@ -1,0 +1,72 @@
+{{- /*
+  Optional Ingress objects to expose neoncart-web + supportbot-web at
+  customer-supplied public hostnames. Off by default — most demo deployers
+  don't have wildcard DNS / cloudflared / wildcard cert wired up.
+
+  Enable by setting in your values overrides:
+    ingress:
+      enabled: true
+      neoncart:
+        host: neoncart.example.com
+      supportbot:
+        host: supportbot.example.com
+*/}}
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.neoncart.host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neoncart-web
+  namespace: neoncart
+  labels:
+    {{- include "aio11y.labels" "neoncart-web" | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.neoncart.host | quote }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: neoncart-web
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+---
+{{- end }}
+{{- if .Values.ingress.supportbot.host }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: supportbot-web
+  namespace: support-bot
+  labels:
+    {{- include "aio11y.labels" "supportbot-web" | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  rules:
+  - host: {{ .Values.ingress.supportbot.host | quote }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: supportbot-web
+            port:
+              number: 8000
+        path: /
+        pathType: Prefix
+{{- end }}
+{{- end }}
