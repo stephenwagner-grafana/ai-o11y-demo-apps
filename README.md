@@ -469,6 +469,7 @@ Full metric catalog: [`docs/METRICS.md`](./docs/METRICS.md).
 - [`docs/METRICS.md`](./docs/METRICS.md) — every metric, log field, span attribute, label
 - [`docs/LOADGEN.md`](./docs/LOADGEN.md) — synthetic user behaviors, journey weights, throttle response
 - [`docs/SIGIL_INTEGRATION.md`](./docs/SIGIL_INTEGRATION.md) — Sigil SDK setup, provider wrappers, workflow steps
+- [`docs/EVALS.md`](./docs/EVALS.md) — 8 recommended Sigil evaluators (quality, groundedness, hallucination, PII, angry-customer, tool-call correctness) with LLM-judge prompts
 
 ---
 
