@@ -287,7 +287,13 @@ function maybeAddAndCheckout(user, sessionId, source) {
   const r = request('GET', `${BASE}/api/products`, null, user, sessionId);
   let sku = null;
   try {
-    const list = r && r.json && r.json();
+    const body = r && r.json && r.json();
+    // /api/products returns {"products":[...]} — NOT a bare array. Previously
+    // we accessed body.length directly which is always undefined for objects,
+    // so the ATC was silently skipped on every call. That kept the
+    // neoncart_ai_attributed_revenue_usd_total counter from ever firing and
+    // the ROI dashboard panels stayed empty. Pull body.products.
+    const list = body && (Array.isArray(body) ? body : body.products);
     if (list && list.length > 0) {
       const p = list[Math.floor(Math.random() * list.length)];
       sku = p && (p.sku || p.id);
