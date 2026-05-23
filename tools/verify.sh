@@ -24,7 +24,9 @@ check_kubectl() {
   hdr "Checking kubectl"
   command -v kubectl >/dev/null 2>&1 || fail "kubectl not found on PATH"
   kubectl cluster-info >/dev/null 2>&1 || fail "kubectl can't reach a cluster"
-  pass "kubectl reaches cluster: $(kubectl config current-context)"
+  local ctx
+  ctx=$(kubectl config current-context 2>/dev/null || echo "<unset>")
+  pass "kubectl reaches cluster: ${ctx}"
 }
 
 # ── 2. All pods Running in expected namespaces ───────────────────────────────

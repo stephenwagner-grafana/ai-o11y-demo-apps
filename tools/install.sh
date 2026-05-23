@@ -63,8 +63,10 @@ check_prereqs() {
   if ! kubectl cluster-info >/dev/null 2>&1; then
     die "kubectl can't reach a cluster. Set KUBECONFIG or kubectl config use-context <ctx>."
   fi
+  # current-context isn't always set (e.g. direct token auth, in-cluster
+  # service account). cluster-info already proved we can reach the API.
   local ctx
-  ctx=$(kubectl config current-context)
+  ctx=$(kubectl config current-context 2>/dev/null || echo "<unset, using direct kubeconfig>")
   ok "kubectl context: ${ctx}"
 }
 
