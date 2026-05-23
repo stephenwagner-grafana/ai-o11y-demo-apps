@@ -196,6 +196,14 @@ collect_tunables() {
   prompt_value NC_AI_ADOPTION_RATE "NC AI adoption rate (0-1)" "${NC_AI_ADOPTION_RATE:-0.25}"
   prompt_value NC_TOTAL_USERS "NC total users" "${NC_TOTAL_USERS:-200}"
   prompt_value SB_TOTAL_USERS "SB total users" "${SB_TOTAL_USERS:-30}"
+  say ""
+  say "Cross-provider traffic split (synthetic loadgen only — interactive traffic is always Anthropic)."
+  say "Format: 'anthropic:N,ollama:N'. Examples:"
+  say "  anthropic:1,ollama:2   tilt 67% toward Ollama (default — cheaper)"
+  say "  anthropic:1,ollama:1   uniform 50/50"
+  say "  anthropic:3,ollama:1   Anthropic-heavy (~75%)"
+  say "  (empty)                fall back to chart default (anthropic:1,ollama:2)"
+  prompt_value PROVIDER_WEIGHTS "PROVIDER_WEIGHTS" "${PROVIDER_WEIGHTS:-}"
 }
 
 # ── Compute OTEL_EXPORTER_OTLP_HEADERS ────────────────────────────────────────
@@ -267,6 +275,9 @@ SB_TOTAL_USERS="${SB_TOTAL_USERS}"
 INGRESS_CLASS_NAME="${INGRESS_CLASS_NAME:-}"
 INGRESS_NEONCART_HOST="${INGRESS_NEONCART_HOST:-}"
 INGRESS_SUPPORTBOT_HOST="${INGRESS_SUPPORTBOT_HOST:-}"
+
+# ── Cross-provider traffic split (empty = chart default anthropic:1,ollama:2) ─
+PROVIDER_WEIGHTS="${PROVIDER_WEIGHTS:-}"
 EOF
   chmod 600 "$ENV_FILE"
   ok "Wrote ${ENV_FILE} (chmod 600)"
