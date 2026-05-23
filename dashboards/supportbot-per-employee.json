@@ -409,14 +409,19 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 30,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "spanNulls": false
+            "lineWidth": 0,
+            "spanNulls": false,
+            "barAlignment": 0,
+            "barWidthFactor": 0.9,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
           },
-          "decimals": 2,
+          "decimals": 0,
           "min": 0,
           "unit": "short"
         }
@@ -445,12 +450,12 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[5m])) * 60)",
+          "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])) * 3600)",
           "legendFormat": "{{user_id}}",
           "refId": "A"
         }
       ],
-      "title": "Calls/min per employee (top 5)",
+      "title": "Calls per hour per employee (top 5)",
       "type": "timeseries"
     },
     {
@@ -526,14 +531,19 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 30,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "spanNulls": false
+            "lineWidth": 0,
+            "spanNulls": false,
+            "barAlignment": 0,
+            "barWidthFactor": 0.9,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
           },
-          "decimals": 1,
+          "decimals": 0,
           "min": 0,
           "unit": "short"
         }
@@ -562,12 +572,12 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[5m])))",
+          "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) * 3600)",
           "legendFormat": "{{user_id}}",
           "refId": "A"
         }
       ],
-      "title": "Input tokens/sec per employee (top 5)",
+      "title": "Input tokens per hour per employee (top 5)",
       "type": "timeseries"
     },
     {
@@ -582,14 +592,19 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 30,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
             "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "spanNulls": false
+            "lineWidth": 0,
+            "spanNulls": false,
+            "barAlignment": 0,
+            "barWidthFactor": 0.9,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
           },
-          "decimals": 1,
+          "decimals": 0,
           "min": 0,
           "unit": "short"
         }
@@ -618,12 +633,12 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[5m])))",
+          "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])) * 3600)",
           "legendFormat": "{{user_id}}",
           "refId": "A"
         }
       ],
-      "title": "Output tokens/sec per employee (top 5)",
+      "title": "Output tokens per hour per employee (top 5)",
       "type": "timeseries"
     },
     {
