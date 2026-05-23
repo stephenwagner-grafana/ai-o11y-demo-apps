@@ -18,9 +18,10 @@ orchestrator's job is:
    allowed to finish their current iteration (gentler) by sending SIGTERM
    and letting K6's own shutdown drain.
 5. When Claude reopens: spawn fresh K6 processes for the AI scenarios.
-6. Expose `/health` (k8s liveness) + `/metrics` (Prometheus for our own
-   internal accounting — NOT the LLM/Sigil metrics, those come from
-   gateway/specialists).
+6. Expose `/health` (k8s liveness). Internal accounting metrics
+   (loadgen_gateway_anthropic_open, loadgen_k6_processes_running, etc.)
+   ride the OTLP push pipeline that opentelemetry-instrument sets up —
+   LLM/Sigil metrics still come from gateway/specialists.
 
 Env vars (all documented in docs/LOADGEN.md):
     NC_TOTAL_USERS               (informational; truth comes from users.yaml)
@@ -54,13 +55,9 @@ from typing import Any, AsyncIterator
 import httpx
 import yaml
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, PlainTextResponse
-from prometheus_client import (
-    CONTENT_TYPE_LATEST,
-    Counter,
-    Gauge,
-    generate_latest,
-)
+from fastapi.responses import JSONResponse
+from opentelemetry import metrics
+from opentelemetry.metrics import Observation
 
 log = logging.getLogger("loadgen.orchestrator")
 logging.basicConfig(
@@ -162,31 +159,98 @@ class UserPool:
         return pool
 
 
-# ── Prometheus metrics (orchestrator-internal) ────────────────────────────────
+# ── Application metrics (orchestrator-internal) ───────────────────────────────
+#
+# These ride the OTLP push pipeline that opentelemetry-instrument sets up.
+# There is no in-cluster Prometheus scraping this pod, so a /metrics endpoint
+# would be invisible. Metric names + label keys are kept identical to the
+# previous prometheus_client definitions so existing dashboards keep working.
 
-m_gateway_anthropic_open = Gauge(
+_meter = metrics.get_meter("loadgen.orchestrator")
+
+# Observable-gauge state ──────────────────────────────────────────────────────
+# OTel observable gauges read their value via callback at collection time.
+# We keep simple dicts that the supervisor/poller update, and the callbacks
+# yield Observations over them.
+_anthropic_open_state: int = 0
+_k6_running_state: dict[str, int] = {}
+
+
+def _set_anthropic_open(value: int) -> None:
+    global _anthropic_open_state
+    _anthropic_open_state = value
+
+
+def _set_k6_running(scenario: str, value: int) -> None:
+    _k6_running_state[scenario] = value
+
+
+def _cb_anthropic_open(_options):  # type: ignore[no-untyped-def]
+    return [Observation(_anthropic_open_state)]
+
+
+def _cb_k6_running(_options):  # type: ignore[no-untyped-def]
+    return [
+        Observation(value, {"scenario": scenario})
+        for scenario, value in _k6_running_state.items()
+    ]
+
+
+m_gateway_anthropic_open = _meter.create_observable_gauge(
     "loadgen_gateway_anthropic_open",
-    "1 if the LLM gateway reports Anthropic open, 0 if closed.",
+    callbacks=[_cb_anthropic_open],
+    description="1 if the LLM gateway reports Anthropic open, 0 if closed.",
 )
-m_gateway_poll_failures = Counter(
-    "loadgen_gateway_poll_failures_total",
-    "Failures polling the LLM gateway /open endpoint.",
-)
-m_k6_processes_running = Gauge(
+m_k6_processes_running = _meter.create_observable_gauge(
     "loadgen_k6_processes_running",
-    "Number of K6 subprocesses currently running, by scenario.",
-    ["scenario"],
+    callbacks=[_cb_k6_running],
+    description="Number of K6 subprocesses currently running, by scenario.",
 )
-m_k6_restarts = Counter(
+
+# Counters ────────────────────────────────────────────────────────────────────
+_c_gateway_poll_failures = _meter.create_counter(
+    "loadgen_gateway_poll_failures_total",
+    description="Failures polling the LLM gateway /open endpoint.",
+)
+_c_k6_restarts = _meter.create_counter(
     "loadgen_k6_restarts_total",
-    "Number of times a K6 scenario was (re)started.",
-    ["scenario"],
+    description="Number of times a K6 scenario was (re)started.",
 )
-m_k6_terminations = Counter(
+_c_k6_terminations = _meter.create_counter(
     "loadgen_k6_terminations_total",
-    "Number of times a K6 scenario was terminated due to gateway close.",
-    ["scenario"],
+    description="Number of times a K6 scenario was terminated due to gateway close.",
 )
+
+
+class _CounterShim:
+    """Tiny shim providing the prometheus_client .labels().inc() surface."""
+
+    def __init__(self, counter, label_keys: tuple[str, ...] = ()):
+        self._counter = counter
+        self._label_keys = label_keys
+
+    def labels(self, **kwargs: str) -> "_BoundCounter":
+        return _BoundCounter(self._counter, kwargs)
+
+    def inc(self, value: float = 1) -> None:
+        # No-label fast path
+        self._counter.add(value)
+
+
+class _BoundCounter:
+    __slots__ = ("_counter", "_attrs")
+
+    def __init__(self, counter, attrs: dict[str, str]):
+        self._counter = counter
+        self._attrs = attrs
+
+    def inc(self, value: float = 1) -> None:
+        self._counter.add(value, attributes=self._attrs)
+
+
+m_gateway_poll_failures = _CounterShim(_c_gateway_poll_failures)
+m_k6_restarts = _CounterShim(_c_k6_restarts, ("scenario",))
+m_k6_terminations = _CounterShim(_c_k6_terminations, ("scenario",))
 
 
 # ── K6 process management ─────────────────────────────────────────────────────
@@ -218,7 +282,7 @@ class K6Supervisor:
 
     def register(self, scenario: Scenario) -> None:
         self._scenarios[scenario.name] = scenario
-        m_k6_processes_running.labels(scenario=scenario.name).set(0)
+        _set_k6_running(scenario.name, 0)
 
     async def start(self, scenario_name: str) -> None:
         """Spawn the K6 subprocess for `scenario_name` if not already running."""
@@ -279,7 +343,7 @@ class K6Supervisor:
                 stderr=asyncio.subprocess.STDOUT,
             )
             self._procs[scenario_name] = proc
-            m_k6_processes_running.labels(scenario=scenario_name).set(1)
+            _set_k6_running(scenario_name, 1)
             m_k6_restarts.labels(scenario=scenario_name).inc()
 
             # Drain stdout in a background task — keeps the pipe from filling.
@@ -331,7 +395,7 @@ class K6Supervisor:
                 sys.stdout.flush()
         finally:
             rc = await proc.wait()
-            m_k6_processes_running.labels(scenario=scenario_name).set(0)
+            _set_k6_running(scenario_name, 0)
             log.info("k6 scenario=%s exited rc=%d", scenario_name, rc)
             # Clean up users file
             path = self._users_files.pop(scenario_name, None)
@@ -374,7 +438,7 @@ class GatewayPoller:
                     ant = providers.get("anthropic") or {}
                     # Treat missing provider entry as closed (defensive).
                     new_open = bool(ant.get("open", False)) if ant else False
-                    m_gateway_anthropic_open.set(1 if new_open else 0)
+                    _set_anthropic_open(1 if new_open else 0)
                     if new_open != self._anthropic_open:
                         log.info(
                             "gateway anthropic state changed: %s -> %s (reason=%s)",
@@ -569,6 +633,6 @@ def status() -> dict[str, Any]:
     return _orch.status()
 
 
-@app.get("/metrics", response_class=PlainTextResponse)
-def metrics() -> PlainTextResponse:
-    return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+# No /metrics endpoint: custom metrics now ride the OTLP push pipeline that
+# opentelemetry-instrument sets up. There is no Prometheus scrape configured
+# for this pod.

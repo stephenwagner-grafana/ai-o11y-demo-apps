@@ -10,8 +10,11 @@ Endpoints:
   GET  /app.js    -> static JS
   GET  /health    -> liveness
   GET  /readyz    -> readiness
-  GET  /metrics   -> Prometheus metrics
   POST /api/ask   -> forwards to sb-router
+
+OTel auto-instrumentation emits http.server.* / http.client.* metrics
+over the OTLP push pipeline; no /metrics endpoint is exposed (nothing
+scrapes these pods).
 """
 from __future__ import annotations
 
@@ -22,7 +25,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 log = logging.getLogger(__name__)
@@ -45,11 +48,6 @@ def health() -> dict[str, str]:
 @app.get("/readyz")
 def readyz() -> dict[str, str]:
     return {"status": "ready"}
-
-
-@app.get("/metrics", response_class=PlainTextResponse)
-def metrics() -> str:
-    return "# HELP supportbot_web_up 1 if the web app is up\nsupportbot_web_up 1\n"
 
 
 @app.get("/")

@@ -16,9 +16,8 @@ from typing import Any, AsyncIterator
 
 import httpx
 from fastapi import Cookie, FastAPI, Header, HTTPException, Request, Response
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel
 
 from . import db
@@ -65,7 +64,11 @@ def _caller_type(header_value: str | None) -> str:
     return ct if ct in ("synthetic", "interactive") else "interactive"
 
 
-# ── Health / readiness / metrics ──────────────────────────────────────────────
+# ── Health / readiness ────────────────────────────────────────────────────────
+#
+# No /metrics endpoint: custom metrics now ride the OTLP push pipeline that
+# opentelemetry-instrument sets up (see app/metrics.py). There is no
+# Prometheus scrape configured for these pods.
 
 @app.get("/health")
 def health() -> dict[str, str]:
@@ -77,11 +80,6 @@ async def readyz() -> dict[str, str]:
     if not db.pool_ready():
         raise HTTPException(status_code=503, detail="postgres pool not ready")
     return {"status": "ready"}
-
-
-@app.get("/metrics", response_class=PlainTextResponse)
-def metrics() -> Response:
-    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 # ── Static frontend ───────────────────────────────────────────────────────────

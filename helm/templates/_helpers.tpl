@@ -77,6 +77,15 @@ Usage in a Deployment:
 # crashes at startup with "otlp_proto_grpc not found".
 - name: OTEL_EXPORTER_OTLP_PROTOCOL
   value: http/protobuf
+# Enable OTLP log export so application logs ship to Grafana Cloud Loki
+# (or Alloy) via the same OTLP pipeline as traces + metrics. Default for
+# opentelemetry-distro is "console" (stdout only), which means logs only
+# reach Loki via cluster-level stdout scraping — without trace_id /
+# span_id correlation in the Loki record.
+- name: OTEL_LOGS_EXPORTER
+  value: otlp
+- name: OTEL_PYTHON_LOG_CORRELATION
+  value: "true"
 - name: SIGIL_ENDPOINT
   valueFrom:
     secretKeyRef:
