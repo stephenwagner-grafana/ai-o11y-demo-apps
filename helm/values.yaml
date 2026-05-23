@@ -112,15 +112,22 @@ global:
     gemini: ""
     ollama: "qwen2.5:3b:25,qwen2.5:7b:30,llama3.1:8b:25,qwen2.5:14b:20"
 
-  # Cross-provider weighting for synthetic loadgen traffic. Empty = uniform
-  # across configured+open providers (~50/50 if both Anthropic + Ollama
-  # configured). Format mirrors the per-provider weights above:
-  #   "anthropic:1,ollama:2"   ollama ~67%, anthropic ~33%
-  #   "anthropic:1,ollama:1"   uniform (same as empty when both are open)
+  # Cross-provider weighting for synthetic loadgen traffic. Tilts toward
+  # Ollama by default (it's ~200x cheaper than Anthropic on the dollar metric)
+  # so the demo doesn't burn cloud credits during long-running sessions.
+  # Customers with only Anthropic configured are unaffected — Ollama isn't
+  # open, so its weight share gets dropped and Anthropic captures all
+  # synthetic traffic.
+  # Interactive traffic (no synthetic header) is always Anthropic regardless.
+  #
+  # Format mirrors the per-provider weights above:
+  #   "anthropic:1,ollama:2"   ollama ~67%, anthropic ~33%   (DEFAULT)
+  #   "anthropic:1,ollama:1"   uniform 50/50
+  #   "anthropic:3,ollama:1"   anthropic-heavy (~75/25)
   #   ""                       uniform fallback
-  # Interactive traffic (no synthetic header) is unaffected — always Anthropic.
+  #
   # Override at install time via PROVIDER_WEIGHTS env var in .env.
-  providerWeights: ""
+  providerWeights: "anthropic:1,ollama:2"
 
   # Sigil credentials (required — populated by install.sh)
   sigil:
