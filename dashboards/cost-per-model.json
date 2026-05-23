@@ -303,7 +303,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_token_type=\"input\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_system=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+          "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_token_type=\"input\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
           "interval": "1h",
           "legendFormat": "{{gen_ai_request_model}}",
           "refId": "A"
@@ -365,7 +365,7 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_token_type=\"output\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_system=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+          "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_token_type=\"output\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
           "interval": "1h",
           "legendFormat": "{{gen_ai_request_model}}",
           "refId": "A"
@@ -871,7 +871,7 @@
     {
       "name": "DS_PROMETHEUS",
       "label": "Prometheus",
-      "description": "Your Grafana Cloud Prometheus datasource (typically named grafanacloud-prom).",
+      "description": "Your Grafana Cloud Prometheus datasource.",
       "type": "datasource",
       "pluginId": "prometheus",
       "pluginName": "Prometheus"
@@ -906,12 +906,6 @@
       "type": "panel",
       "id": "table",
       "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "barchart",
-      "name": "Bar chart",
       "version": ""
     }
   ]
