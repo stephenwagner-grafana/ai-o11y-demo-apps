@@ -5,8 +5,8 @@
     "name": "c77ff540-d9fb-468f-8026-7c7dd52d6292",
     "namespace": "stacks-1372178",
     "uid": "81428f4d-dd1a-493c-a79c-ac4603ef6f9a",
-    "resourceVersion": "1779560233364589",
-    "generation": 11,
+    "resourceVersion": "1779566296101795",
+    "generation": 15,
     "creationTimestamp": "2026-05-23T02:41:40Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "4374045522309120"
@@ -16,7 +16,7 @@
       "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana Cloud",
       "grafana.app/updatedBy": "user:eexm63g36yku8c",
-      "grafana.app/updatedTimestamp": "2026-05-23T18:17:13Z"
+      "grafana.app/updatedTimestamp": "2026-05-23T19:58:16Z"
     }
   },
   "spec": {
@@ -67,7 +67,7 @@
         "kind": "Panel",
         "spec": {
           "id": 10,
-          "title": "Requests/sec by Model",
+          "title": "Requests/hr by Model",
           "description": "Weighted-pool model selection in action. Expect 6 Claude + 4 Ollama models to all be exercised over time (Opus tier is rare per the weights).",
           "links": [],
           "data": {
@@ -85,8 +85,11 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m]))",
-                        "legendFormat": "{{gen_ai_request_model}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_request_model}}",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -110,7 +113,7 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
+                    "sum",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -125,8 +128,8 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "reqps",
-                  "decimals": 3,
+                  "unit": "short",
+                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
@@ -152,9 +155,9 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -163,7 +166,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
-                    "lineWidth": 2,
+                    "lineWidth": 0,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -173,165 +176,14 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "normal"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-chatbot"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-gift-finder"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-router"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-tech-support"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-billing"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-account-management"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "anthropic"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "ollama"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "overrides": []
               }
             }
           }
@@ -341,7 +193,7 @@
         "kind": "Panel",
         "spec": {
           "id": 11,
-          "title": "Requests/sec by Agent",
+          "title": "Requests/hr by Agent",
           "description": "Per-agent throughput. nc-chatbot/nc-gift-finder serve NeonCart shoppers. sb-router routes to sb-{billing, tech-support, account-management}.",
           "links": [],
           "data": {
@@ -359,8 +211,11 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_agent_name) (rate(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m]))",
-                        "legendFormat": "{{gen_ai_agent_name}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_agent_name}}",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -384,7 +239,7 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
+                    "sum",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -399,8 +254,8 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "reqps",
-                  "decimals": 3,
+                  "unit": "short",
+                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
@@ -426,9 +281,9 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -437,7 +292,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
-                    "lineWidth": 2,
+                    "lineWidth": 0,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -447,7 +302,7 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "normal"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
@@ -540,66 +395,6 @@
                         "id": "color",
                         "value": {
                           "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "anthropic"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "ollama"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
                           "mode": "fixed"
                         }
                       }
@@ -1437,7 +1232,7 @@
         "kind": "Panel",
         "spec": {
           "id": 16,
-          "title": "Tokens/sec by Model",
+          "title": "Tokens/hr by Model",
           "description": "Token throughput by model. Lets you see which models are doing the heavy lifting (and consuming budget).",
           "links": [],
           "data": {
@@ -1455,8 +1250,11 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m]))",
-                        "legendFormat": "{{gen_ai_request_model}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_request_model}}",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -1480,7 +1278,7 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
+                    "sum",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -1496,7 +1294,7 @@
               "fieldConfig": {
                 "defaults": {
                   "unit": "short",
-                  "decimals": 1,
+                  "decimals": 0,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
@@ -1522,9 +1320,9 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -1533,7 +1331,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
-                    "lineWidth": 2,
+                    "lineWidth": 0,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -1543,165 +1341,14 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "normal"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-chatbot"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-gift-finder"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-router"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-tech-support"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-billing"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-account-management"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "anthropic"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "ollama"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "overrides": []
               }
             }
           }
@@ -1729,8 +1376,11 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_agent_name) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 3600",
-                        "legendFormat": "{{gen_ai_agent_name}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_agent_name}}",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -1754,7 +1404,7 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
+                    "sum",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -1796,9 +1446,9 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -1807,7 +1457,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
-                    "lineWidth": 2,
+                    "lineWidth": 0,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -1817,7 +1467,7 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "normal"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
@@ -1910,66 +1560,6 @@
                         "id": "color",
                         "value": {
                           "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "anthropic"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "ollama"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
                           "mode": "fixed"
                         }
                       }
@@ -1986,7 +1576,7 @@
         "spec": {
           "id": 19,
           "title": "Spend rate $/hr by Model",
-          "description": "Cost per model — Anthropic models cost ~10–100x more than Ollama (which is ~free per Stephen's local GPU). Watch the demo make this tradeoff visible.",
+          "description": "Cost per model \u2014 Anthropic models cost ~10\u2013100x more than Ollama (which is ~free per Stephen's local GPU). Watch the demo make this tradeoff visible.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2003,8 +1593,11 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_request_model=~\"${model:regex}\",gen_ai_agent_name=~\"${agent:regex}\"}[5m])) * 3600",
-                        "legendFormat": "{{gen_ai_request_model}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_request_model=~\"${model:regex}\",gen_ai_agent_name=~\"${agent:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_request_model}}",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -2028,7 +1621,7 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
+                    "sum",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -2070,9 +1663,9 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -2081,7 +1674,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
-                    "lineWidth": 2,
+                    "lineWidth": 0,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -2091,165 +1684,14 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "normal"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-chatbot"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-gift-finder"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-router"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-tech-support"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-billing"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-account-management"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "anthropic"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "ollama"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                "overrides": []
               }
             }
           }
@@ -2361,8 +1803,11 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_system) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 3600",
-                        "legendFormat": "{{gen_ai_system}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_system) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_system}}",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -2386,7 +1831,7 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
+                    "sum",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -2428,9 +1873,9 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 20,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -2439,7 +1884,7 @@
                     },
                     "insertNulls": false,
                     "lineInterpolation": "smooth",
-                    "lineWidth": 2,
+                    "lineWidth": 0,
                     "pointSize": 5,
                     "scaleDistribution": {
                       "type": "linear"
@@ -2449,7 +1894,7 @@
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
-                      "mode": "none"
+                      "mode": "normal"
                     },
                     "thresholdsStyle": {
                       "mode": "off"
@@ -2457,96 +1902,6 @@
                   }
                 },
                 "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-chatbot"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-gift-finder"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-router"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-tech-support"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-billing"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-account-management"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
                   {
                     "matcher": {
                       "id": "byName",
@@ -2576,36 +1931,6 @@
                         }
                       }
                     ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
                   }
                 ]
               }
@@ -2617,8 +1942,8 @@
         "kind": "Panel",
         "spec": {
           "id": 201,
-          "title": "Top SB employees — calls / tokens / cost (24h)",
-          "description": "Highest-volume SupportBot users in the last hour. Pivot-table of per-employee call count, input tokens, output tokens, and cumulative cost. Acme employees (@acme.com) only — NeonCart shoppers are filtered out via gen_ai_agent_name=sb-*.",
+          "title": "Top SB employees \u2014 calls / tokens / cost (24h)",
+          "description": "Highest-volume SupportBot users in the last hour. Pivot-table of per-employee call count, input tokens, output tokens, and cumulative cost. Acme employees (@acme.com) only \u2014 NeonCart shoppers are filtered out via gen_ai_agent_name=sb-*.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -2983,7 +2308,7 @@
         "kind": "Panel",
         "spec": {
           "id": 202,
-          "title": "Top 10 SB employees — calls/min",
+          "title": "Top 10 SB employees \u2014 calls/min",
           "description": "Call rate for the busiest SupportBot users. Smoothed over a 5m window.",
           "links": [],
           "data": {
@@ -4142,7 +3467,7 @@
         "kind": "Panel",
         "spec": {
           "id": 24,
-          "title": "ROI ratio per model (cart value / token cost) — 24h window",
+          "title": "ROI ratio per model (cart value / token cost) \u2014 24h window",
           "description": "The headline AI o11y story by LLM: did each model pay for itself in cart value generated? Above 1.0 = profitable; below 1.0 = bleeding. Scoped to NeonCart agents (nc-*) since SupportBot has no ATC events.",
           "links": [],
           "data": {
@@ -4481,8 +3806,8 @@
         "kind": "Panel",
         "spec": {
           "id": 25,
-          "title": "Top Models by ROI Multiple — 24h",
-          "description": "Per-model ROI ratio over the last 24 hours: cart value attributed to the AI agent ÷ LLM token cost, grouped by gen_ai_request_model and ranked descending. Uses a fixed 24h window via increase()[24h] + instant — independent of the dashboard time range so the leaderboard is stable as you zoom around.",
+          "title": "Top Models by ROI Multiple \u2014 24h",
+          "description": "Per-model ROI ratio over the last 24 hours: cart value attributed to the AI agent \u00f7 LLM token cost, grouped by gen_ai_request_model and ranked descending. Uses a fixed 24h window via increase()[24h] + instant \u2014 independent of the dashboard time range so the leaderboard is stable as you zoom around.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -4499,7 +3824,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_request_model) (increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h])) / sum by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h]))",
+                        "expr": "sum by (gen_ai_request_model) (last_over_time(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h])) / sum by (gen_ai_request_model) (last_over_time(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h]))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{gen_ai_request_model}}"
@@ -4669,621 +3994,6 @@
                       {
                         "id": "custom.align",
                         "value": "right"
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      "panel-26": {
-        "kind": "Panel",
-        "spec": {
-          "id": 26,
-          "title": "Cart value $/hr vs Token cost $/hr (per model)",
-          "description": "Per-model revenue vs cost rate. Each model has two series: '— cart value' (the AI-attributed revenue it generated) and '— token cost' (what calling that model cost). Both sides share the same model color so you can read pairings at a glance; the cost line is dashed.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 3600",
-                        "legendFormat": "{{gen_ai_request_model}} — cart value"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 3600",
-                        "legendFormat": "{{gen_ai_request_model}} — token cost"
-                      }
-                    },
-                    "refId": "B",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "13.1.0-25668120414",
-            "spec": {
-              "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "placement": "bottom",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "currencyUSD",
-                  "decimals": 4,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisGridShow": true,
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.6,
-                    "drawStyle": "line",
-                    "fillOpacity": 12,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 2,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "never",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "none"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": ".*cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "green",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": ".*token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "red",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-opus-4-7 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-opus-4-6 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-opus-4-1 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#22B8B0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-sonnet-4-6 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-sonnet-4-5 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#A570E8",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-haiku — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^qwen2\\.5:14b — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^qwen2\\.5:7b — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F58A5C",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^qwen2\\.5:3b — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^llama3\\.1 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^llama3\\.2 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#22B8B0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^gemma2 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^phi3 — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F58A5C",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^tinyllama — cart value.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#9CA3AF",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-opus-4-7 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-opus-4-6 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-opus-4-1 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#22B8B0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-sonnet-4-6 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-sonnet-4-5 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#A570E8",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^claude-haiku — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^qwen2\\.5:14b — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^qwen2\\.5:7b — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F58A5C",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^qwen2\\.5:3b — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^llama3\\.1 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^llama3\\.2 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#22B8B0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^gemma2 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^phi3 — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F58A5C",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": "^tinyllama — token cost.*"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#9CA3AF",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byRegexp",
-                      "options": ".* — token cost$"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.lineStyle",
-                        "value": {
-                          "dash": [
-                            10,
-                            6
-                          ],
-                          "fill": "dash"
-                        }
-                      },
-                      {
-                        "id": "custom.fillOpacity",
-                        "value": 0
                       }
                     ]
                   }
@@ -6541,7 +5251,7 @@
         "spec": {
           "id": 36,
           "title": "HTTP request rate by service",
-          "description": "OTel-autoinstrument http_server metrics — request rate per pod. Confirms every Python service is receiving traffic and exporting OTel metrics.",
+          "description": "OTel-autoinstrument http_server metrics \u2014 request rate per pod. Confirms every Python service is receiving traffic and exporting OTel metrics.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -7109,7 +5819,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "<div style=\"padding:4px 6px;font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;\">\n<div style=\"display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px;\">\n  <a href=\"/a/grafana-sigil-app/conversations\" style=\"text-decoration:none;display:block;background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8B46DE,#CF0DD6);\"></div>\n    <div style=\"color:#CF0DD6;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:6px;\">SIGIL · CONVERSATIONS</div>\n    <div style=\"color:#F3F4F6;font-size:16px;font-weight:600;margin-bottom:4px;\">Open conversation viewer →</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.5;\">Every recent conversation across all agents, with model/cost/latency per turn.</div>\n  </a>\n  <a href=\"/a/grafana-sigil-app/analytics\" style=\"text-decoration:none;display:block;background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3274D9,#5BB3F0);\"></div>\n    <div style=\"color:#5BB3F0;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:6px;\">SIGIL · ANALYTICS</div>\n    <div style=\"color:#F3F4F6;font-size:16px;font-weight:600;margin-bottom:4px;\">Open analytics dashboard →</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.5;\">Plugin dashboard: eval scores, model breakdowns, conversation thread viewer.</div>\n  </a>\n</div>\n\n<div style=\"color:#9CA3AF;font-size:11px;letter-spacing:0.18em;font-weight:600;margin:10px 0 8px 2px;\">USE CASES INSTRUMENTED IN THIS DEMO</div>\n\n<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12.5px;line-height:1.55;\">\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #3274D9;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Multi-model routing</div>\n    <div style=\"color:#9CA3AF;\">6 Claude models (Haiku, Sonnet 4.5/4.6, Opus 4.1/4.6/4.7) + 4 Ollama models. Sticky per conversation.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #8B46DE;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Multi-provider routing</div>\n    <div style=\"color:#9CA3AF;\">Anthropic cloud + Ollama local. Deterministic hash per session + conversation_id.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #5BB3F0;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Tool use</div>\n    <div style=\"color:#9CA3AF;\">nc-chatbot: search_products / navigate_to_search / add_to_cart. nc-gift-finder: search_by_criteria. sb-*: search_runbook / create_ticket.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #34D8A9;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Multi-turn conversations</div>\n    <div style=\"color:#9CA3AF;\">Per-conversation history kept in memory (30m TTL, 20-turn cap) so follow-ups remember context.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #FBCA0A;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">AI ROI</div>\n    <div style=\"color:#9CA3AF;\"><code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">neoncart_ai_attributed_revenue_usd_total</code> tracks cart value generated by each AI agent vs LLM cost — the headline KPI.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #CF0DD6;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">The &quot;mice&quot; trap</div>\n    <div style=\"color:#9CA3AF;\">nc-chatbot's search_products tool deliberately queries a non-existent <code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">species</code> column for &quot;mice&quot;, producing a real DB error in the trace cascade.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #F05A28;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Conversion funnel</div>\n    <div style=\"color:#9CA3AF;\">session_starts → page_views → search / product_views → add_to_cart → transactions → revenue. AI-vs-manual sliced via <code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">source</code>.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #22B8B0;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Cost transparency</div>\n    <div style=\"color:#9CA3AF;\"><code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">gen_ai_client_cost_usd_total</code> emitted client-side by the gateway with full attribution (agent, model, provider, user_id).</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #FBCA0A;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Conversations are the 5th signal</div>\n    <div style=\"color:#9CA3AF;\">Metrics, logs, traces, profiles — and conversations. Every conversation is a trace; not every trace is a conversation.</div>\n  </div>\n</div>\n</div>",
+                "content": "<div style=\"padding:4px 6px;font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;\">\n<div style=\"display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px;\">\n  <a href=\"/a/grafana-sigil-app/conversations\" style=\"text-decoration:none;display:block;background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8B46DE,#CF0DD6);\"></div>\n    <div style=\"color:#CF0DD6;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:6px;\">SIGIL \u00b7 CONVERSATIONS</div>\n    <div style=\"color:#F3F4F6;font-size:16px;font-weight:600;margin-bottom:4px;\">Open conversation viewer \u2192</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.5;\">Every recent conversation across all agents, with model/cost/latency per turn.</div>\n  </a>\n  <a href=\"/a/grafana-sigil-app/analytics\" style=\"text-decoration:none;display:block;background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3274D9,#5BB3F0);\"></div>\n    <div style=\"color:#5BB3F0;font-size:11px;letter-spacing:0.16em;font-weight:600;margin-bottom:6px;\">SIGIL \u00b7 ANALYTICS</div>\n    <div style=\"color:#F3F4F6;font-size:16px;font-weight:600;margin-bottom:4px;\">Open analytics dashboard \u2192</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.5;\">Plugin dashboard: eval scores, model breakdowns, conversation thread viewer.</div>\n  </a>\n</div>\n\n<div style=\"color:#9CA3AF;font-size:11px;letter-spacing:0.18em;font-weight:600;margin:10px 0 8px 2px;\">USE CASES INSTRUMENTED IN THIS DEMO</div>\n\n<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:10px;font-size:12.5px;line-height:1.55;\">\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #3274D9;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Multi-model routing</div>\n    <div style=\"color:#9CA3AF;\">6 Claude models (Haiku, Sonnet 4.5/4.6, Opus 4.1/4.6/4.7) + 4 Ollama models. Sticky per conversation.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #8B46DE;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Multi-provider routing</div>\n    <div style=\"color:#9CA3AF;\">Anthropic cloud + Ollama local. Deterministic hash per session + conversation_id.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #5BB3F0;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Tool use</div>\n    <div style=\"color:#9CA3AF;\">nc-chatbot: search_products / navigate_to_search / add_to_cart. nc-gift-finder: search_by_criteria. sb-*: search_runbook / create_ticket.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #34D8A9;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Multi-turn conversations</div>\n    <div style=\"color:#9CA3AF;\">Per-conversation history kept in memory (30m TTL, 20-turn cap) so follow-ups remember context.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #FBCA0A;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">AI ROI</div>\n    <div style=\"color:#9CA3AF;\"><code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">neoncart_ai_attributed_revenue_usd_total</code> tracks cart value generated by each AI agent vs LLM cost \u2014 the headline KPI.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #CF0DD6;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">The &quot;mice&quot; trap</div>\n    <div style=\"color:#9CA3AF;\">nc-chatbot's search_products tool deliberately queries a non-existent <code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">species</code> column for &quot;mice&quot;, producing a real DB error in the trace cascade.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #F05A28;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Conversion funnel</div>\n    <div style=\"color:#9CA3AF;\">session_starts \u2192 page_views \u2192 search / product_views \u2192 add_to_cart \u2192 transactions \u2192 revenue. AI-vs-manual sliced via <code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">source</code>.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #22B8B0;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Cost transparency</div>\n    <div style=\"color:#9CA3AF;\"><code style=\"background:rgba(255,255,255,0.06);padding:1px 5px;border-radius:3px;color:#E5E7EB;font-size:11.5px;\">gen_ai_client_cost_usd_total</code> emitted client-side by the gateway with full attribution (agent, model, provider, user_id).</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.45);border:1px solid rgba(255,255,255,0.05);border-left:3px solid #FBCA0A;border-radius:8px;padding:12px 14px;\">\n    <div style=\"color:#F3F4F6;font-weight:600;margin-bottom:4px;\">Conversations are the 5th signal</div>\n    <div style=\"color:#9CA3AF;\">Metrics, logs, traces, profiles \u2014 and conversations. Every conversation is a trace; not every trace is a conversation.</div>\n  </div>\n</div>\n</div>",
                 "mode": "html"
               },
               "fieldConfig": {
@@ -7462,8 +6172,8 @@
         "kind": "Panel",
         "spec": {
           "id": 9,
-          "title": "Requests/sec by Provider",
-          "description": "Random-but-sticky routing — each conversation is hashed to one provider. Use this to confirm the gateway is exercising both Anthropic + Ollama.",
+          "title": "Requests/hr by Provider",
+          "description": "Random-but-sticky routing \u2014 each conversation is hashed to one provider. Use this to confirm the gateway is exercising both Anthropic + Ollama.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -7480,8 +6190,169 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_provider_name) (rate(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m]))",
-                        "legendFormat": "{{gen_ai_provider_name}}"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_provider_name) (increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_provider_name}}",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "sum",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic",
+                    "seriesBy": "max"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisGridShow": true,
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.97,
+                    "drawStyle": "bars",
+                    "fillOpacity": 100,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 0,
+                    "pointSize": 1,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "anthropic"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#F05A28",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "ollama"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#5BB3F0",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-9002": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9002,
+          "title": "Token cost $/min (per model)",
+          "description": "Per-model token cost rate.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 60",
+                        "instant": false,
+                        "legendFormat": "{{gen_ai_request_model}}",
+                        "queryType": "range",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -7520,8 +6391,8 @@
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "reqps",
-                  "decimals": 3,
+                  "unit": "currencyUSD",
+                  "decimals": 4,
                   "min": 0,
                   "thresholds": {
                     "mode": "absolute",
@@ -7529,10 +6400,6 @@
                       {
                         "value": 0,
                         "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
                       }
                     ]
                   },
@@ -7543,13 +6410,12 @@
                     "axisBorderShow": false,
                     "axisCenteredZero": false,
                     "axisColorMode": "text",
-                    "axisGridShow": true,
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
                     "barWidthFactor": 0.6,
                     "drawStyle": "line",
-                    "fillOpacity": 20,
+                    "fillOpacity": 12,
                     "gradientMode": "opacity",
                     "hideFrom": {
                       "legend": false,
@@ -7575,158 +6441,130 @@
                     }
                   }
                 },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-chatbot"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-9003": {
+        "kind": "Panel",
+        "spec": {
+          "id": 9003,
+          "title": "Cart value $/min (per model)",
+          "description": "Per-model AI-attributed revenue rate.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 60",
+                        "instant": false,
+                        "legendFormat": "{{gen_ai_request_model}}",
+                        "queryType": "range",
+                        "range": true
                       }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "nc-gift-finder"
                     },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-router"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#34D8A9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-tech-support"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#8B46DE",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-billing"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "sb-account-management"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#CF0DD6",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "anthropic"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#F05A28",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "ollama"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#5BB3F0",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "input"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#FBCA0A",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "output"
-                    },
-                    "properties": [
-                      {
-                        "id": "color",
-                        "value": {
-                          "fixedColor": "#3274D9",
-                          "mode": "fixed"
-                        }
-                      }
-                    ]
+                    "refId": "A",
+                    "hidden": false
                   }
-                ]
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 4,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisGridShow": true,
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 12,
+                    "gradientMode": "opacity",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -7758,7 +6596,7 @@
                   "showLineNumbers": false,
                   "showMiniMap": false
                 },
-                "content": "<div style=\"padding:6px 4px 0 4px;font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;\">\n<div style=\"display:flex;gap:3px;width:100%;align-items:flex-end;padding:6px 0 14px 0;\"><div style=\"flex:1;height:18px;background:#3274D9;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#3672D9;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#3970D9;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#3D6EDA;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#416CDA;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#456ADA;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#4868DA;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#4C66DA;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#5065DB;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#5463DB;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#5761DB;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#5B5FDB;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#5F5DDC;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#635BDC;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#6659DC;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#6A57DC;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#6E55DC;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#7253DD;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#7551DD;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#794FDD;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#7D4DDD;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#814BDD;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#8449DE;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#8847DE;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#8C45DE;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#8F43DE;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#9141DD;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#943EDD;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#973CDD;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#9A39DC;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#9D37DC;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#A035DC;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#A332DB;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#A530DB;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#A82DDB;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#AB2BDA;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#AE29DA;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#B126DA;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#B424D9;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#B721D9;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#BA1FD9;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#BC1DD8;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#BF1AD8;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#C218D8;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#C515D7;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#C813D7;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#CB11D7;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#CE0ED6;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#D00FD2;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#D112CB;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#D215C4;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#D418BC;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#D51CB5;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#D71FAE;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#D822A6;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#D9259F;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#DB2998;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#DC2C90;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#DE2F89;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#DF3282;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#E0367A;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#E23973;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#E33C6C;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#E53F64;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#E6425D;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#E74656;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#E9494E;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#EA4C47;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#EB4F40;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#ED5338;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#EE5631;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F0592A;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F05E27;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F16226;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F16725;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F26C23;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F27022;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F37521;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F37A1F;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F47F1E;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F4831D;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F5881C;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F58D1A;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F59119;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F69618;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F69B17;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F7A015;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F7A414;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F8A913;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F8AE12;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F9B210;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F9B70F;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#FABC0E;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#FAC10D;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#FBC50B;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#FBCA0A;border-radius:3px;\"></div></div>\n<div style=\"display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-top:6px;\">\n  <div>\n    <div style=\"color:#5BB3F0;font-size:11px;letter-spacing:0.18em;font-weight:600;margin-bottom:8px;\">INTRODUCING</div>\n    <div style=\"color:#F9FAFB;font-size:36px;font-weight:700;line-height:1.05;letter-spacing:-0.02em;\">Grafana AI Observability</div>\n  </div>\n  <div style=\"color:#9CA3AF;font-size:14px;padding-bottom:6px;\">Actually useful AI O11y · use-case driven view of the <code style=\"background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;color:#E5E7EB;\">ai-o11y-demo-apps</code> demo</div>\n</div>\n\n<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px;\">\n  <div style=\"background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3274D9,#5BB3F0);\"></div>\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;\">\n      <span style=\"background:rgba(50,116,217,0.18);color:#5BB3F0;border-radius:6px;padding:6px 8px;font-family:ui-monospace,Menlo,monospace;font-size:13px;\">&lt;/&gt;</span>\n      <span style=\"color:#E5E7EB;font-weight:600;font-size:15px;\">Instrument</span>\n    </div>\n    <div style=\"color:#F3F4F6;font-size:18px;font-weight:600;margin-bottom:6px;\">Zero-config tracing</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.55;\">Drop-in SDKs for Go, Python, TypeScript, Java, and .NET. Capture every LLM call, token, and latency.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8B46DE,#CF0DD6);\"></div>\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;\">\n      <span style=\"background:rgba(139,70,222,0.20);color:#CF0DD6;border-radius:6px;padding:6px 8px;font-size:13px;\">🔍</span>\n      <span style=\"color:#E5E7EB;font-weight:600;font-size:15px;\">Explore</span>\n    </div>\n    <div style=\"color:#F3F4F6;font-size:18px;font-weight:600;margin-bottom:6px;\">AI observability</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.55;\">Track latency, tokens, cost, and errors across providers and models. Follow conversations, agents, and generations in real time.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#F05A28,#FBCA0A);\"></div>\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;\">\n      <span style=\"background:rgba(251,202,10,0.18);color:#FBCA0A;border-radius:6px;padding:6px 8px;font-size:13px;\">✓</span>\n      <span style=\"color:#E5E7EB;font-weight:600;font-size:15px;\">Evaluate</span>\n      <span style=\"margin-left:auto;background:rgba(251,202,10,0.12);color:#FBCA0A;border:1px solid rgba(251,202,10,0.40);border-radius:4px;padding:2px 7px;font-size:10px;letter-spacing:0.05em;font-weight:600;\">LEVEL UP</span>\n    </div>\n    <div style=\"color:#F3F4F6;font-size:18px;font-weight:600;margin-bottom:6px;\">Automatic quality scoring</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.55;\">Use LLM judges, regex, JSON schema, or custom heuristics. Turn quality signals into dashboards and alerts.</div>\n  </div>\n</div>\n\n</div>",
+                "content": "<div style=\"padding:6px 4px 0 4px;font-family:Inter,-apple-system,Segoe UI,Roboto,sans-serif;\">\n<div style=\"display:flex;gap:3px;width:100%;align-items:flex-end;padding:6px 0 14px 0;\"><div style=\"flex:1;height:18px;background:#3274D9;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#3672D9;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#3970D9;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#3D6EDA;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#416CDA;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#456ADA;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#4868DA;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#4C66DA;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#5065DB;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#5463DB;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#5761DB;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#5B5FDB;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#5F5DDC;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#635BDC;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#6659DC;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#6A57DC;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#6E55DC;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#7253DD;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#7551DD;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#794FDD;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#7D4DDD;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#814BDD;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#8449DE;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#8847DE;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#8C45DE;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#8F43DE;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#9141DD;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#943EDD;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#973CDD;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#9A39DC;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#9D37DC;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#A035DC;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#A332DB;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#A530DB;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#A82DDB;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#AB2BDA;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#AE29DA;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#B126DA;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#B424D9;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#B721D9;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#BA1FD9;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#BC1DD8;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#BF1AD8;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#C218D8;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#C515D7;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#C813D7;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#CB11D7;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#CE0ED6;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#D00FD2;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#D112CB;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#D215C4;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#D418BC;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#D51CB5;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#D71FAE;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#D822A6;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#D9259F;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#DB2998;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#DC2C90;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#DE2F89;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#DF3282;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#E0367A;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#E23973;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#E33C6C;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#E53F64;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#E6425D;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#E74656;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#E9494E;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#EA4C47;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#EB4F40;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#ED5338;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#EE5631;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F0592A;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F05E27;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F16226;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F16725;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F26C23;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F27022;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F37521;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F37A1F;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F47F1E;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F4831D;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F5881C;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F58D1A;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F59119;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F69618;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F69B17;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F7A015;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#F7A414;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#F8A913;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#F8AE12;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#F9B210;border-radius:3px;\"></div><div style=\"flex:1;height:20px;background:#F9B70F;border-radius:3px;\"></div><div style=\"flex:1;height:22px;background:#FABC0E;border-radius:3px;\"></div><div style=\"flex:1;height:24px;background:#FAC10D;border-radius:3px;\"></div><div style=\"flex:1;height:26px;background:#FBC50B;border-radius:3px;\"></div><div style=\"flex:1;height:18px;background:#FBCA0A;border-radius:3px;\"></div></div>\n<div style=\"display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-top:6px;\">\n  <div>\n    <div style=\"color:#5BB3F0;font-size:11px;letter-spacing:0.18em;font-weight:600;margin-bottom:8px;\">INTRODUCING</div>\n    <div style=\"color:#F9FAFB;font-size:36px;font-weight:700;line-height:1.05;letter-spacing:-0.02em;\">Grafana AI Observability</div>\n  </div>\n  <div style=\"color:#9CA3AF;font-size:14px;padding-bottom:6px;\">Actually useful AI O11y \u00b7 use-case driven view of the <code style=\"background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;color:#E5E7EB;\">ai-o11y-demo-apps</code> demo</div>\n</div>\n\n<div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:8px;\">\n  <div style=\"background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3274D9,#5BB3F0);\"></div>\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;\">\n      <span style=\"background:rgba(50,116,217,0.18);color:#5BB3F0;border-radius:6px;padding:6px 8px;font-family:ui-monospace,Menlo,monospace;font-size:13px;\">&lt;/&gt;</span>\n      <span style=\"color:#E5E7EB;font-weight:600;font-size:15px;\">Instrument</span>\n    </div>\n    <div style=\"color:#F3F4F6;font-size:18px;font-weight:600;margin-bottom:6px;\">Zero-config tracing</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.55;\">Drop-in SDKs for Go, Python, TypeScript, Java, and .NET. Capture every LLM call, token, and latency.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8B46DE,#CF0DD6);\"></div>\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;\">\n      <span style=\"background:rgba(139,70,222,0.20);color:#CF0DD6;border-radius:6px;padding:6px 8px;font-size:13px;\">\ud83d\udd0d</span>\n      <span style=\"color:#E5E7EB;font-weight:600;font-size:15px;\">Explore</span>\n    </div>\n    <div style=\"color:#F3F4F6;font-size:18px;font-weight:600;margin-bottom:6px;\">AI observability</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.55;\">Track latency, tokens, cost, and errors across providers and models. Follow conversations, agents, and generations in real time.</div>\n  </div>\n  <div style=\"background:rgba(20,25,45,0.55);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:18px 20px;position:relative;overflow:hidden;\">\n    <div style=\"position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#F05A28,#FBCA0A);\"></div>\n    <div style=\"display:flex;align-items:center;gap:10px;margin-bottom:10px;\">\n      <span style=\"background:rgba(251,202,10,0.18);color:#FBCA0A;border-radius:6px;padding:6px 8px;font-size:13px;\">\u2713</span>\n      <span style=\"color:#E5E7EB;font-weight:600;font-size:15px;\">Evaluate</span>\n      <span style=\"margin-left:auto;background:rgba(251,202,10,0.12);color:#FBCA0A;border:1px solid rgba(251,202,10,0.40);border-radius:4px;padding:2px 7px;font-size:10px;letter-spacing:0.05em;font-weight:600;\">LEVEL UP</span>\n    </div>\n    <div style=\"color:#F3F4F6;font-size:18px;font-weight:600;margin-bottom:6px;\">Automatic quality scoring</div>\n    <div style=\"color:#9CA3AF;font-size:13px;line-height:1.55;\">Use LLM judges, regex, JSON schema, or custom heuristics. Turn quality signals into dashboards and alerts.</div>\n  </div>\n</div>\n\n</div>",
                 "mode": "html"
               },
               "fieldConfig": {
@@ -7804,7 +6642,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "🎯 KPI Headlines",
+              "title": "\ud83c\udfaf KPI Headlines",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -7896,7 +6734,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "🤖 Provider & Model Diversity",
+              "title": "\ud83e\udd16 Provider & Model Diversity",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -7949,7 +6787,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "📊 Performance — latency & tokens",
+              "title": "\ud83d\udcca Performance \u2014 latency & tokens",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8015,7 +6853,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "💰 Cost economics",
+              "title": "\ud83d\udcb0 Cost economics",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8068,7 +6906,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "🔧 Tool Calls",
+              "title": "\ud83d\udd27 Tool Calls",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8095,7 +6933,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "💎 AI Model Economics",
+              "title": "\ud83d\udc8e AI Model Economics",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8132,11 +6970,24 @@
                       "spec": {
                         "x": 0,
                         "y": 9,
-                        "width": 24,
-                        "height": 8,
+                        "width": 12,
+                        "height": 18,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-26"
+                          "name": "panel-9003"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 9,
+                        "width": 12,
+                        "height": 18,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9002"
                         }
                       }
                     }
@@ -8148,7 +6999,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "🛒 NeonCart Business Funnel",
+              "title": "\ud83d\uded2 NeonCart Business Funnel",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8253,7 +7104,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "🩺 Service Health (HTTP)",
+              "title": "\ud83e\ude7a Service Health (HTTP)",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8293,7 +7144,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "🔗 Deep-dive — Sigil AI Observability",
+              "title": "\ud83d\udd17 Deep-dive \u2014 Sigil AI Observability",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8320,7 +7171,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "👥 SupportBot — per-employee usage",
+              "title": "\ud83d\udc65 SupportBot \u2014 per-employee usage",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -8454,7 +7305,7 @@
       "hideTimepicker": false,
       "fiscalYearStartMonth": 0
     },
-    "title": "Grafana AI Observability — ai-o11y-demo-apps",
+    "title": "Grafana AI Observability \u2014 ai-o11y-demo-apps",
     "variables": [
       {
         "kind": "QueryVariable",

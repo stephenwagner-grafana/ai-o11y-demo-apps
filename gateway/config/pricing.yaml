@@ -56,9 +56,27 @@ gemini:
     input_usd_per_mtoken: 0.075
     output_usd_per_mtoken: 0.30
 
-# Ollama uses a single configurable rate (no per-model pricing).
-# Customer overrides via OLLAMA_OUTPUT_USD_PER_MTOKEN env var.
+# Ollama prices model the all-in compute cost (electricity + GPU amortization
+# spread across actual throughput). These are demo-realistic — small models
+# are genuinely cheaper because they're 2-5× faster on the same GPU. Customers
+# can override any rate via env vars like OLLAMA_QWEN2_5_14B_OUTPUT_USD_PER_MTOKEN.
+# Without per-model entries Ollama costs would all be ~$0.0001 and dashboards
+# would round them to 0 in dollar panels.
 ollama:
   default:
-    input_usd_per_mtoken: 0.00
-    output_usd_per_mtoken: 0.30
+    input_usd_per_mtoken: 0.50
+    output_usd_per_mtoken: 2.00
+  # Small / fastest — lowest amortized cost per token
+  qwen2.5:3b:
+    input_usd_per_mtoken: 0.20
+    output_usd_per_mtoken: 0.80
+  qwen2.5:7b:
+    input_usd_per_mtoken: 0.40
+    output_usd_per_mtoken: 1.60
+  llama3.1:8b:
+    input_usd_per_mtoken: 0.50
+    output_usd_per_mtoken: 2.00
+  # Larger / slower — highest amortized cost per token
+  qwen2.5:14b:
+    input_usd_per_mtoken: 0.80
+    output_usd_per_mtoken: 3.20
