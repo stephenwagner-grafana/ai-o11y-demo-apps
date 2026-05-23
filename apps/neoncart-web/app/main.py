@@ -97,6 +97,66 @@ def index(
 
 # ── Product catalog (real Postgres queries) ───────────────────────────────────
 
+# Map DB category names → frontend category slugs used by static/index.html's
+# HOME_CATEGORIES table. Anything not listed falls back to the slugified name.
+_CATEGORY_SLUG_OVERRIDES = {
+    "Smart Home": "smart-home",
+    "Electronics": "ai-gear",
+    "Computers": "components",
+    "Mobile": "accessories",
+    "Gaming": "peripherals",
+    "Cables": "accessories",
+}
+# Emoji per frontend slug, kept in sync with HOME_CATEGORIES in index.html so
+# the storefront cards have a glyph even for the categories that lack an
+# image_url that resolves publicly.
+_CATEGORY_EMOJI = {
+    "peripherals": "⌨️", "displays": "🖥️", "audio": "🎧", "storage": "💾",
+    "accessories": "🔌", "networking": "📡", "components": "🧩",
+    "wearables": "⌚", "lighting": "💡", "ergonomics": "🧍",
+    "smart-home": "🏠", "ai-gear": "🤖",
+}
+_PRODUCTS_SELECT = (
+    "SELECT p.sku, p.name, p.description, p.price_usd, p.category_id, "
+    "p.brand_id, p.image_url, p.stock_qty, c.name AS category_name "
+    "FROM products p LEFT JOIN categories c ON c.id = p.category_id"
+)
+
+
+def _slug(s: str) -> str:
+    return s.lower().replace(" ", "-")
+
+
+def _enrich(row: dict[str, Any]) -> dict[str, Any]:
+    """Map DB row → frontend product shape (id/price/category/rating/stock/emoji).
+
+    The storefront JS expects `id`, `price` (number), `category` (slug string),
+    `rating`, `stock`, `image_emoji`. The Postgres schema only carries `sku`,
+    `price_usd` (string), `category_id`, `stock_qty`. We synthesize the rest
+    deterministically from sku so a product's rating is stable across reloads.
+    """
+    sku = row.get("sku") or ""
+    cat_name = row.get("category_name") or ""
+    slug = _CATEGORY_SLUG_OVERRIDES.get(cat_name, _slug(cat_name) if cat_name else "")
+    # Stable rating in 3.5–5.0 derived from sku.
+    h = sum(ord(c) for c in sku) % 16
+    rating = round(3.5 + h * 0.1, 1)
+    try:
+        price = float(row.get("price_usd") or 0)
+    except (TypeError, ValueError):
+        price = 0.0
+    return {
+        **row,
+        "id": sku,
+        "product_id": sku,
+        "price": price,
+        "category": slug,
+        "rating": rating,
+        "stock": int(row.get("stock_qty") or 0),
+        "image_emoji": _CATEGORY_EMOJI.get(slug, "📦"),
+    }
+
+
 @app.get("/api/products")
 async def list_products(
     response: Response,
@@ -109,17 +169,15 @@ async def list_products(
         raise HTTPException(status_code=503, detail="postgres not ready")
     if category_id is not None:
         rows = await db.fetch(
-            "SELECT sku, name, description, price_usd, category_id, brand_id, image_url, stock_qty "
-            "FROM products WHERE category_id = %s LIMIT %s",
+            f"{_PRODUCTS_SELECT} WHERE p.category_id = %s LIMIT %s",
             (category_id, max(1, min(limit, 100))),
         )
     else:
         rows = await db.fetch(
-            "SELECT sku, name, description, price_usd, category_id, brand_id, image_url, stock_qty "
-            "FROM products LIMIT %s",
+            f"{_PRODUCTS_SELECT} LIMIT %s",
             (max(1, min(limit, 100)),),
         )
-    return {"products": rows, "session_id": sid}
+    return {"products": [_enrich(r) for r in rows], "session_id": sid}
 
 
 @app.get("/api/products/{sku}")
@@ -132,14 +190,13 @@ async def get_product(
     if not db.pool_ready():
         raise HTTPException(status_code=503, detail="postgres not ready")
     row = await db.fetchone(
-        "SELECT sku, name, description, price_usd, category_id, brand_id, image_url, stock_qty "
-        "FROM products WHERE sku = %s",
+        f"{_PRODUCTS_SELECT} WHERE p.sku = %s",
         (sku,),
     )
     if row is None:
         raise HTTPException(status_code=404, detail=f"product {sku} not found")
     m.product_views_total.labels(product_sku=sku, user_domain="unknown").inc()
-    return {**row, "session_id": sid}
+    return {**_enrich(row), "session_id": sid}
 
 
 @app.get("/api/search")
@@ -156,11 +213,10 @@ async def search(
     if not db.pool_ready():
         raise HTTPException(status_code=503, detail="postgres not ready")
     rows = await db.fetch(
-        "SELECT sku, name, description, price_usd, category_id, brand_id, image_url "
-        "FROM products WHERE name ILIKE %s OR description ILIKE %s LIMIT %s",
+        f"{_PRODUCTS_SELECT} WHERE p.name ILIKE %s OR p.description ILIKE %s LIMIT %s",
         (f"%{q}%", f"%{q}%", max(1, min(limit, 50))),
     )
-    return {"query": q, "results": rows, "session_id": sid}
+    return {"query": q, "results": [_enrich(r) for r in rows], "session_id": sid}
 
 
 @app.get("/api/recommendations/popular")
@@ -174,11 +230,10 @@ async def popular(
         raise HTTPException(status_code=503, detail="postgres not ready")
     # No real popularity signal yet — surface the highest-priced products as "trending".
     rows = await db.fetch(
-        "SELECT sku, name, description, price_usd, category_id, brand_id, image_url "
-        "FROM products ORDER BY price_usd DESC LIMIT %s",
+        f"{_PRODUCTS_SELECT} ORDER BY p.price_usd DESC LIMIT %s",
         (max(1, min(limit, 20)),),
     )
-    return {"products": rows}
+    return {"products": [_enrich(r) for r in rows]}
 
 
 # ── Cart (real Postgres-backed, session via cookie) ───────────────────────────
@@ -206,6 +261,10 @@ class CartAddRequest(BaseModel):
     quantity: int = 1
     source: str = "manual"  # manual | ai_gift_finder | ai_chatbot
     user_email: str | None = None
+    # Optional model attribution — populated by the loadgen / frontend when an
+    # AI agent drove the ATC, so dashboards can answer "ATC per model"
+    # (e.g., does claude-sonnet-4-6 convert better than qwen2.5:3b?).
+    model: str | None = None
 
 
 @app.post("/api/cart/add")
@@ -226,10 +285,12 @@ async def add_to_cart(
         "source   = EXCLUDED.source",
         (sid, req.sku, max(1, req.quantity), req.source, req.user_email),
     )
+    model_label = req.model or "unknown"
     m.add_to_cart_total.labels(
         product_sku=req.sku,
         source=req.source,
         user_domain=m.domain_from_email(req.user_email),
+        gen_ai_request_model=model_label,
     ).inc()
     if req.source.startswith("ai_"):
         m.session_used_ai_total.labels(user_domain=m.domain_from_email(req.user_email)).inc()
@@ -246,6 +307,7 @@ async def add_to_cart(
             m.ai_attributed_revenue_usd_total.labels(
                 source=req.source,
                 gen_ai_agent_name=agent,
+                gen_ai_request_model=model_label,
             ).inc(price * max(1, req.quantity))
     return {"ok": True, "sku": req.sku}
 
