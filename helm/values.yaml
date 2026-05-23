@@ -76,11 +76,41 @@ global:
   #   gateway logs a 400 "model not found" for any of these, replace with
   #   the dated form like claude-opus-4-1-YYYYMMDD or comment it out):
   #     claude-sonnet-4-5, claude-opus-4-6, claude-opus-4-1
+  #
+  # Ollama default below: a 4-model weighted pool spanning the practical
+  # parameter-count range customers see on a single-GPU box. Mixing sizes
+  # gives the demo visible model variety (different latency/cost/quality
+  # tiers showing up as distinct slices in dashboards) without leaving
+  # the qwen2.5 family except for one llama3.1 entry that adds vendor
+  # diversity in the model-name label. Target distribution:
+  #   qwen2.5:3b   — 25% (small, fast feedback, ~2GB VRAM)
+  #   qwen2.5:7b   — 30% (medium workhorse)
+  #   llama3.1:8b  — 25% (medium, different family — vendor diversity)
+  #   qwen2.5:14b  — 20% (large, slower, equals previous default)
+  #
+  # REQUIREMENTS:
+  #   * The customer's Ollama server (OLLAMA_BASE_URL) must have ALL FOUR
+  #     models pulled in advance. `ollama pull qwen2.5:3b` etc. The gateway
+  #     does NOT auto-pull; a missing model returns a 404 from Ollama and
+  #     the gateway propagates it as a 500 to the caller (no in-process
+  #     fallback to a different weight bucket). To recover, either pull
+  #     the missing model or remove its entry from this weighted string.
+  #   * All four are tool-capable (qwen2.5 family across all sizes,
+  #     llama3.1:8b). DO NOT add tinyllama / llama3.2:1b|3b / gemma2 —
+  #     they 400 with "does not support tools" on tool-using prompts.
+  #     (The provider retries once WITHOUT tools on that 400, but the
+  #     specialist's expected tool call is then lost, which corrupts the
+  #     demo flow.)
+  #
+  # Override at install time via the `OLLAMA_MODEL_WEIGHTS` env var (see
+  # tools/install.sh — picked up into .helm-values-overrides.yaml), or
+  # edit this file directly. Set to "" to fall back to
+  # global.defaults.ollamaModel.
   modelWeights:
     anthropic: "claude-haiku-4-5-20251001:55,claude-sonnet-4-6:23,claude-sonnet-4-5:12,claude-opus-4-7:5,claude-opus-4-6:3,claude-opus-4-1:2"
     openai: ""
     gemini: ""
-    ollama: ""
+    ollama: "qwen2.5:3b:25,qwen2.5:7b:30,llama3.1:8b:25,qwen2.5:14b:20"
 
   # Sigil credentials (required — populated by install.sh)
   sigil:

@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 import os
 from typing import Any
+from urllib.parse import quote_plus
 
 import psycopg
 from fastapi import HTTPException
@@ -193,6 +194,39 @@ def get_product_detail(sku: str) -> dict[str, Any]:
         return {"ok": False, "sku": sku, "error": str(e)}
 
 
+# ── Tool: navigate_to_search ──────────────────────────────────────────────────
+
+NAVIGATE_TO_SEARCH_SCHEMA = {
+    "name": "navigate_to_search",
+    "description": (
+        "Take the user to NeonCart's search results page for a query. Prefer this "
+        "tool when the user says \"show me X\", \"find X\", \"take me to X\" — i.e. "
+        "they want to browse the search page, not have results summarized inline. "
+        "Returns a URL the frontend can navigate to."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "The product search query, e.g. \"bluetooth speakers\".",
+            },
+        },
+        "required": ["query"],
+    },
+}
+
+
+def navigate_to_search(query: str) -> dict[str, Any]:
+    log.info("tool=navigate_to_search query=%r", query[:80])
+    url = f"/search?q={quote_plus(query)}"
+    return {
+        "ok": True,
+        "url": url,
+        "message": f"Navigating to search results for {query}",
+    }
+
+
 # ── Tool: add_to_cart ─────────────────────────────────────────────────────────
 
 ADD_TO_CART_SCHEMA = {
@@ -214,10 +248,17 @@ def add_to_cart(sku: str, quantity: int = 1) -> dict[str, Any]:
     return {"ok": True, "sku": sku, "quantity": quantity, "cart_size": quantity}
 
 
-SCHEMAS = [SEARCH_PRODUCTS_SCHEMA, NAVIGATE_TO_PAGE_SCHEMA, GET_PRODUCT_DETAIL_SCHEMA, ADD_TO_CART_SCHEMA]
+SCHEMAS = [
+    SEARCH_PRODUCTS_SCHEMA,
+    NAVIGATE_TO_SEARCH_SCHEMA,
+    NAVIGATE_TO_PAGE_SCHEMA,
+    GET_PRODUCT_DETAIL_SCHEMA,
+    ADD_TO_CART_SCHEMA,
+]
 
 _DISPATCH = {
     "search_products": search_products,
+    "navigate_to_search": navigate_to_search,
     "navigate_to_page": navigate_to_page,
     "get_product_detail": get_product_detail,
     "add_to_cart": add_to_cart,

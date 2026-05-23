@@ -166,14 +166,34 @@ The LLM gateway randomizes across a configurable pool of models per provider. Th
 | `claude-opus-4-6` | 3% | older opus (rare) |
 | `claude-opus-4-1` | 2% | very rare |
 
-Override the pool via `ANTHROPIC_MODEL_WEIGHTS` in your `.env` (picked up by `tools/install.sh`), or edit `global.modelWeights.anthropic` in your values file:
+The shipped Ollama default is a 4-model pool covering the practical
+parameter-count range you'd see on a single-GPU box (small / medium / large),
+with one llama3.1 entry mixed into the qwen2.5 family for vendor diversity on
+the model-name label. All four are tool-capable.
+
+| Model | Weight | Tier |
+|---|---|---|
+| `qwen2.5:3b` | 25% | small (~2GB VRAM, fast feedback) |
+| `qwen2.5:7b` | 30% | medium (workhorse) |
+| `llama3.1:8b` | 25% | medium (different family — vendor diversity) |
+| `qwen2.5:14b` | 20% | large (current default) |
+
+> **Heads-up:** the customer's Ollama server must have all four models pulled
+> (`ollama pull qwen2.5:3b`, etc.). The gateway does not auto-pull; a missing
+> model surfaces as a 500 from the gateway. If you can't host all four,
+> remove the missing entries from `global.modelWeights.ollama`.
+>
+> Avoid `tinyllama`, `llama3.2:1b|3b`, and `gemma2` — they don't support tool
+> calling and produce 400s on tool-using prompts.
+
+Override the pool via `ANTHROPIC_MODEL_WEIGHTS` / `OLLAMA_MODEL_WEIGHTS` in your `.env` (picked up by `tools/install.sh`), or edit `global.modelWeights.<provider>` in your values file:
 
 ```yaml
 global:
   modelWeights:
     # Format: "model_a:weight_a,model_b:weight_b,..." (weights normalized)
-    anthropic: "claude-haiku-4-5-20251001:0.6,claude-sonnet-4-6:0.35,claude-opus-4-7:0.05"
-    ollama:    "qwen2.5:14b:0.5,mistral-nemo:12b:0.3,granite3.1-dense:8b:0.2"
+    anthropic: "claude-haiku-4-5-20251001:60,claude-sonnet-4-6:35,claude-opus-4-7:5"
+    ollama:    "qwen2.5:3b:25,qwen2.5:7b:30,llama3.1:8b:25,qwen2.5:14b:20"
 ```
 
 Selection is **sticky per `(session_id, conversation_id)`** so one conversation stays on one model end-to-end (better UX, cleaner per-model dashboard slices).
