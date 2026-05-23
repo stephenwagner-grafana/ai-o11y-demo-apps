@@ -170,14 +170,19 @@ async def generate(
 
     sigil_client = get_sigil()
 
-    # Try the primary provider. If it raises (and fallback is enabled, and the
-    # caller didn't pin a strict preferred provider), retry once on another
-    # open provider so a flaky upstream doesn't blank out the chatbot UX.
-    # This is critical for the demo: the .240 Ollama box has periodic 503s,
-    # and without fallback every Ollama-routed conversation 502s through to
-    # the storefront, which both breaks the UI and prevents the loadgen from
-    # capturing a real model name for ATC attribution.
+    # Try the primary provider. Behavior on failure depends on caller_type:
+    #   * synthetic (loadgen)  → no fallback; error propagates as 502.
+    #     Lets the demo show REAL infrastructure failures on the error-rate
+    #     panel — that's the AI o11y story we want to tell.
+    #   * interactive (browser) → fallback to any other open provider once
+    #     so a flaky upstream doesn't blank out the chatbot UX for a human
+    #     watching the demo. Emits the llm_gateway_fallback_total metric
+    #     so dashboards can still SEE the infra-level failures even when
+    #     users got a 200.
+    # Disable entirely via FALLBACK_ON_PROVIDER_ERROR=0; force-enable for
+    # synthetic via FALLBACK_FOR_SYNTHETIC=1.
     tried: list[str] = [provider_name]
+    primary_provider = provider_name
     last_error: Exception | None = None
     resp = None
 
@@ -188,13 +193,26 @@ async def generate(
         last_error = e
         log.warning("provider %s failed: %s", provider_name, e)
 
-    if resp is None and _FALLBACK_ENABLED and not (req.strict and req.preferred_provider):
+    _fallback_for_synthetic = os.getenv("FALLBACK_FOR_SYNTHETIC", "0") == "1"
+    _allow_fallback = (
+        resp is None
+        and _FALLBACK_ENABLED
+        and not (req.strict and req.preferred_provider)
+        and (caller_type == "interactive" or _fallback_for_synthetic)
+    )
+    if _allow_fallback:
         for alt in [p for p in PROVIDER_MODULES if p not in tried and caps.is_open(p)[0]]:
             tried.append(alt)
             try:
                 resp = await PROVIDER_MODULES[alt].generate(p_req, sigil_client)
                 provider_name = alt  # for cap recording + response
                 log.info("fallback succeeded on %s after %s failed", alt, tried[0])
+                from .metrics import record_fallback
+                record_fallback(
+                    from_provider=primary_provider,
+                    to_provider=alt,
+                    caller_type=caller_type,
+                )
                 break
             except Exception as e:  # noqa: BLE001
                 last_error = e

@@ -51,6 +51,26 @@ user_tokens_counter = _meter.create_counter(
     description="Tokens consumed per user, split by token_type (input | output).",
 )
 
+# Provider-fallback counter. Increments every time the primary provider
+# raised and we successfully retried on another open provider. Lets the
+# dashboard show infra-level flakiness even when the user got a 200.
+fallback_counter = _meter.create_counter(
+    name="llm_gateway.fallback",
+    description="Successful provider fallbacks. Labels: from_provider, to_provider, caller_type.",
+)
+
+
+def record_fallback(*, from_provider: str, to_provider: str, caller_type: str) -> None:
+    """Increment fallback counter when one provider failed and another served the call."""
+    fallback_counter.add(
+        1,
+        attributes={
+            "from_provider": from_provider,
+            "to_provider": to_provider,
+            "caller_type": caller_type,
+        },
+    )
+
 
 def record_cost(*, provider: str, model: str, agent_name: str, user_id: str, cost_usd: float) -> None:
     """Record one LLM call's cost with full provider/model/agent/user attribution.
