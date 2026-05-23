@@ -185,37 +185,17 @@ def _set_k6_running(scenario: str, value: int) -> None:
     _k6_running_state[scenario] = value
 
 
-def _cb_anthropic_open(_options):  # type: ignore[no-untyped-def]
-    # Always include a non-empty attribute dict. With empty attributes the
-    # OTLP exporter constructs a NumberDataPoint with a degenerate Exemplar
-    # (filtered_attributes=None) and throws EncodingException on the whole
-    # metric batch — which previously prevented every loadgen metric from
-    # reaching Grafana Cloud.
-    return [Observation(_anthropic_open_state, {"provider": "anthropic"})]
-
-
-def _cb_k6_running(_options):  # type: ignore[no-untyped-def]
-    if not _k6_running_state:
-        # Emit a zero-valued sentinel so the time series exists from process
-        # start, and so the exporter never gets a no-data callback (which has
-        # been observed to trip the same encoding bug as empty-attrs).
-        return [Observation(0, {"scenario": "_none"})]
-    return [
-        Observation(value, {"scenario": scenario})
-        for scenario, value in _k6_running_state.items()
-    ]
-
-
-m_gateway_anthropic_open = _meter.create_observable_gauge(
-    "loadgen_gateway_anthropic_open",
-    callbacks=[_cb_anthropic_open],
-    description="1 if the LLM gateway reports Anthropic open, 0 if closed.",
-)
-m_k6_processes_running = _meter.create_observable_gauge(
-    "loadgen_k6_processes_running",
-    callbacks=[_cb_k6_running],
-    description="Number of K6 subprocesses currently running, by scenario.",
-)
+# NOTE: previously loadgen_gateway_anthropic_open + loadgen_k6_processes_running
+# were observable gauges. The OTel Python SDK attaches an Exemplar struct to
+# observable-gauge data points even with OTEL_METRICS_EXEMPLAR_FILTER=always_off
+# (a long-standing quirk in opentelemetry-python). The exemplar's span_id/trace_id
+# are None, the OTLP/HTTP encoder throws EncodingException on it, and the entire
+# metric batch is dropped — so we'd lose every loadgen metric.
+#
+# Removed for now. The same information is recoverable from upstream sources:
+#   - Anthropic-open state → query /open from the gateway or use cap metrics
+#   - K6 process count    → derivable from loadgen_k6_restarts_total + spawn logs
+# Track state via counters instead if needed later.
 
 # Counters ────────────────────────────────────────────────────────────────────
 _c_gateway_poll_failures = _meter.create_counter(
