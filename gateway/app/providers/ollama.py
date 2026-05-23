@@ -293,6 +293,19 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
     except Exception as e:
         if rec is not None:
             try:
+                # Attach input messages BEFORE marking the call errored, so
+                # Sigil's conversation thread shows what the user/specialist
+                # actually asked even when the upstream provider 5xx'd. Without
+                # this, errored conversations render as "No messages in this
+                # turn" because set_call_error alone carries no payload.
+                rec.set_result(generation=Generation(
+                    model=ModelRef(provider=PROVIDER_NAME, name=model),
+                    response_model="",
+                    stop_reason="error",
+                    input=_to_sigil_input(req.messages),
+                    output=[],
+                    usage=TokenUsage(input_tokens=0, output_tokens=0),
+                ))
                 rec.set_call_error(error=e)
                 rec.end()
             except Exception:

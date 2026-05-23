@@ -342,6 +342,18 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
         # Best-effort error reporting to Sigil before re-raising
         if rec is not None:
             try:
+                # Carry the request messages onto the errored generation so
+                # Sigil's conversation thread renders the user's question even
+                # when Anthropic 5xx'd. Without this, set_call_error alone
+                # produces "No messages in this turn" in the UI.
+                rec.set_result(generation=Generation(
+                    model=ModelRef(provider=PROVIDER_NAME, name=model),
+                    response_model="",
+                    stop_reason="error",
+                    input=_to_sigil_input(req.messages),
+                    output=[],
+                    usage=TokenUsage(input_tokens=0, output_tokens=0),
+                ))
                 rec.set_call_error(error=e)
                 rec.end()
             except Exception:
