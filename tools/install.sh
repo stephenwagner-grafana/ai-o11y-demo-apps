@@ -181,6 +181,15 @@ collect_optional() {
   prompt_value OLLAMA_BASE_URL "Ollama base URL (e.g. http://ollama.ollama:11434)" "${OLLAMA_BASE_URL:-}"
 }
 
+collect_ingress() {
+  hdr "Optional Ingress (press Enter to skip — apps remain reachable via kubectl port-forward)"
+  say "If you have an Ingress controller (Traefik, nginx, ...) and DNS pointing at it,"
+  say "supply public hostnames here. The chart creates one Ingress per host you provide."
+  prompt_value INGRESS_CLASS_NAME "Ingress class (e.g. traefik, nginx)" "${INGRESS_CLASS_NAME:-}"
+  prompt_value INGRESS_NEONCART_HOST "Public hostname for NeonCart (e.g. neoncart.example.com)" "${INGRESS_NEONCART_HOST:-}"
+  prompt_value INGRESS_SUPPORTBOT_HOST "Public hostname for SupportBot (e.g. supportbot.example.com)" "${INGRESS_SUPPORTBOT_HOST:-}"
+}
+
 collect_tunables() {
   hdr "Tunables (defaults are fine for most installs)"
   prompt_value ANTHROPIC_CAP_USD_PER_DAY "Anthropic spend cap per day, USD" "${ANTHROPIC_CAP_USD_PER_DAY:-20}"
@@ -253,6 +262,11 @@ ANTHROPIC_CAP_USD_PER_DAY="${ANTHROPIC_CAP_USD_PER_DAY}"
 NC_AI_ADOPTION_RATE="${NC_AI_ADOPTION_RATE}"
 NC_TOTAL_USERS="${NC_TOTAL_USERS}"
 SB_TOTAL_USERS="${SB_TOTAL_USERS}"
+
+# ── Optional Ingress (leave blank to disable; chart defaults to off) ─────────
+INGRESS_CLASS_NAME="${INGRESS_CLASS_NAME:-}"
+INGRESS_NEONCART_HOST="${INGRESS_NEONCART_HOST:-}"
+INGRESS_SUPPORTBOT_HOST="${INGRESS_SUPPORTBOT_HOST:-}"
 EOF
   chmod 600 "$ENV_FILE"
   ok "Wrote ${ENV_FILE} (chmod 600)"
@@ -348,6 +362,24 @@ loadgen:
   ncAiAdoptionRate: ${NC_AI_ADOPTION_RATE:-0.25}
   sbTotalUsers: ${SB_TOTAL_USERS:-30}
 EOF
+
+  # Optional Ingress — emit a full block only when at least one host is set.
+  # The chart's default is ingress.enabled=false, so silence == no Ingress
+  # objects. install.sh rewrites this file every run, so persisting the
+  # values here (rather than hand-editing the override file) is the
+  # reproducible path.
+  if [[ -n "${INGRESS_NEONCART_HOST:-}" || -n "${INGRESS_SUPPORTBOT_HOST:-}" ]]; then
+    cat >> "${VALUES_OVERRIDE}" <<EOF
+ingress:
+  enabled: true
+  className: "${INGRESS_CLASS_NAME:-}"
+  neoncart:
+    host: "${INGRESS_NEONCART_HOST:-}"
+  supportbot:
+    host: "${INGRESS_SUPPORTBOT_HOST:-}"
+EOF
+  fi
+
   ok "Wrote ${VALUES_OVERRIDE}"
 }
 
@@ -401,6 +433,7 @@ main() {
   collect_required
   collect_optional
   collect_tunables
+  collect_ingress
   compute_otel_headers
   detect_alloy
   write_env_file

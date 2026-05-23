@@ -46,17 +46,31 @@ check_prereqs() {
   if ! kubectl cluster-info >/dev/null 2>&1; then
     die "kubectl can't reach the cluster (check your context: kubectl config current-context)"
   fi
-  ok "Tools OK. Current context: $(kubectl config current-context)"
+  # current-context may be empty (direct kubeconfig / in-cluster SA);
+  # cluster-info already proved we can reach the API.
+  local ctx
+  ctx=$(kubectl config current-context 2>/dev/null || echo "<unset, using direct kubeconfig>")
+  ok "Tools OK. Current context: ${ctx}"
 }
 
 # ── helm uninstall ────────────────────────────────────────────────────────────
+# The release can be installed into ANY namespace (helm defaults to whatever
+# the kubeconfig's current namespace is). `helm status` and `helm uninstall`
+# without -n only check the default namespace, so we discover the namespace
+# the release is actually in via `helm list -A`.
 helm_uninstall() {
   hdr "Helm uninstall"
-  if ! helm status "${RELEASE}" >/dev/null 2>&1; then
-    warn "Helm release '${RELEASE}' not found — nothing to uninstall."
+  local rel_ns
+  rel_ns=$(helm list -A -f "^${RELEASE}$" -o json 2>/dev/null \
+    | grep -oE '"namespace":"[^"]+"' \
+    | head -n1 \
+    | sed 's/"namespace":"\([^"]*\)"/\1/')
+  if [[ -z "${rel_ns}" ]]; then
+    warn "Helm release '${RELEASE}' not found in any namespace — nothing to uninstall."
     return 0
   fi
-  helm uninstall "${RELEASE}"
+  say "Found release '${RELEASE}' in namespace '${rel_ns}'"
+  helm uninstall "${RELEASE}" -n "${rel_ns}"
   ok "Helm release deleted"
 }
 
