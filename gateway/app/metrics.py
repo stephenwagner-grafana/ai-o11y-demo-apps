@@ -20,7 +20,10 @@ _meter = metrics.get_meter(__name__)
 # token-usage in the same dashboard query.
 cost_usd_counter = _meter.create_counter(
     name="gen_ai.client.cost.usd",
-    unit="USD",
+    # No `unit=...` here. Setting unit="USD" causes the OTLP→Prom mapping to
+    # append the unit to the metric name, producing the awkward double-suffix
+    # `gen_ai_client_cost_usd_USD_total` in Prom. Without unit, we get the
+    # clean `gen_ai_client_cost_usd_total`.
     description="Cumulative LLM API spend in USD per provider/model/agent.",
 )
 

@@ -18,23 +18,13 @@ from opentelemetry import metrics
 _meter = metrics.get_meter("neoncart-web")
 
 
-# Active sessions — kept as an observable gauge for parity with the previous
-# definition. Nothing currently mutates it (no caller sets a value); the
-# callback reports 0 so the series still exists in case a dashboard panel
-# references the name.
-def _active_sessions_callback(_options):  # type: ignore[no-untyped-def]
-    from opentelemetry.metrics import Observation
-    return [Observation(0)]
-
-
-active_sessions = _meter.create_observable_gauge(
-    "neoncart_active_sessions",
-    callbacks=[_active_sessions_callback],
-    description=(
-        "Current active browser sessions (rough — counts session_ids seen in "
-        "the last N minutes)."
-    ),
-)
+# NOTE: An earlier observable gauge for `neoncart_active_sessions` was removed
+# because it tripped the OTLP exporter's EncodingException on a NumberDataPoint
+# with a degenerate Exemplar (filtered_attributes=None). One bad metric in
+# the batch poisoned the whole export and prevented EVERY metric from this
+# pod from reaching Grafana Cloud. If we want active-session tracking later,
+# track it as an UpDownCounter that we increment/decrement on session start
+# / session end rather than an observable gauge with a no-op callback.
 
 
 # ── Counters ─────────────────────────────────────────────────────────────────
