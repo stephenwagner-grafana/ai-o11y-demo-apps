@@ -173,21 +173,41 @@ function callGiftFinder(user, sessionId, conversationId, prompt) {
     'gift-finder 2xx': (res) => res.status >= 200 && res.status < 300,
   });
   let recs = [];
+  let model = null;
   try {
     const j = r.json();
-    recs = (j && (j.recommendations || j.output)) || [];
-    if (!Array.isArray(recs)) recs = [];
+    // The nc-gift-finder backend returns {"ok":true,"tool_calls":[...],"reply":"...","model":"..."} —
+    // there is no top-level `recommendations` array. Surface the SKUs by
+    // flattening every successful search_by_criteria tool result, dedup by
+    // sku so a multi-search session doesn't double-count, and fall back to
+    // the older shape for forward-compat with any backend variants.
+    if (j && typeof j.model === 'string') model = j.model;
+    const seen = {};
+    const fromTools = [];
+    (j && Array.isArray(j.tool_calls) ? j.tool_calls : []).forEach(function(tc) {
+      const results = tc && tc.result && Array.isArray(tc.result.results) ? tc.result.results : [];
+      results.forEach(function(p) {
+        const sku = p && (p.sku || p.id);
+        if (sku && !seen[sku]) { seen[sku] = true; fromTools.push(p); }
+      });
+    });
+    if (fromTools.length > 0) {
+      recs = fromTools;
+    } else {
+      recs = (j && (j.recommendations || j.output)) || [];
+      if (!Array.isArray(recs)) recs = [];
+    }
   } catch (_) { /* leave empty */ }
-  return recs;
+  return { recs, model };
 }
 
 function viewProduct(user, sessionId, sku) {
   return request('GET', `${BASE}/api/products/${encodeURIComponent(sku)}`, null, user, sessionId);
 }
 
-function addToCart(user, sessionId, sku) {
+function addToCart(user, sessionId, sku, model) {
   return request('POST', `${BASE}/api/cart/add`, {
-    sku, quantity: 1, source: 'ai_gift_finder',
+    sku, quantity: 1, source: 'ai_gift_finder', model: model || undefined,
   }, user, sessionId);
 }
 
@@ -214,7 +234,7 @@ function journeySingleShot(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    const recs = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
+    const { recs } = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepStep();
     browseRecs(user, sessionId, recs);
     // ~30% of even "single-shot" gift-finder sessions follow up with a
@@ -243,7 +263,7 @@ function journeyRefining(user) {
     const refined = Math.random() < 0.5
       ? pickOne(REFINEMENTS)
       : `${shapeByPersona(user, pickOne(PROMPTS))} — ${pickOne(REFINEMENTS)}`;
-    const recs2 = callGiftFinder(user, sessionId, conversationId, refined);
+    const { recs: recs2 } = callGiftFinder(user, sessionId, conversationId, refined);
     sleepStep();
     browseRecs(user, sessionId, recs2);
   });
@@ -255,13 +275,13 @@ function journeyConverting(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    const recs = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
+    const { recs, model } = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepStep();
     const viewed = browseRecs(user, sessionId, recs);
     if (viewed.length > 0) {
       const sku = viewed[0].sku || viewed[0].id;
       if (sku) {
-        addToCart(user, sessionId, sku);
+        addToCart(user, sessionId, sku, model);
         sleepPonder();
         checkout(user, sessionId, [{ sku, quantity: 1 }]);
       }
@@ -275,7 +295,7 @@ function journeyBrowseAndGo(user) {
     const conversationId = randConversationId();
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
-    const recs = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
+    const { recs } = callGiftFinder(user, sessionId, conversationId, shapeByPersona(user, pickOne(PROMPTS)));
     sleepStep();
     if (recs.length > 0) {
       const sku = recs[0].sku || recs[0].id;

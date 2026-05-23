@@ -264,7 +264,15 @@ function callChatbot(user, sessionId, conversationId, message) {
   check(r, {
     'chatbot responded': (res) => res.status >= 200 && res.status < 600,
   });
-  return r;
+  // Surface the model that drove the reply so callers can attribute the
+  // downstream ATC to it ("ATC per model" dashboards). Trap-500 responses
+  // legitimately have no body / model — that's fine, we pass through null.
+  let model = null;
+  try {
+    const j = r && r.json && r.json();
+    if (j && typeof j.model === 'string') model = j.model;
+  } catch (_) { /* leave null */ }
+  return { r, model };
 }
 
 function callGiftFinder(user, sessionId, conversationId, prompt) {
@@ -279,7 +287,7 @@ function callGiftFinder(user, sessionId, conversationId, prompt) {
   return request('POST', url, body, user, sessionId, { timeout: '90s' });
 }
 
-function maybeAddAndCheckout(user, sessionId, source) {
+function maybeAddAndCheckout(user, sessionId, source, model) {
   // After a chatbot suggestion, sometimes user adds to cart + checks out.
   // We fetch a real SKU from /api/products since the chatbot reply text
   // doesn't structurally include one; falling back to nothing if the catalog
@@ -301,7 +309,7 @@ function maybeAddAndCheckout(user, sessionId, source) {
   } catch (_) { /* swallow parse errors */ }
   if (!sku) return;
   request('POST', `${BASE}/api/cart/add`, {
-    sku, quantity: 1, source: source || 'ai_chatbot',
+    sku, quantity: 1, source: source || 'ai_chatbot', model: model || undefined,
   }, user, sessionId);
   sleepPonder();
   request('POST', `${BASE}/api/orders`, {
@@ -346,18 +354,20 @@ function journeyNavigationDriven(user) {
     const msg = Math.random() < 0.015
       ? mouseTrapMessage()
       : shapeByPersona(user, pickOne(NAV_QUESTIONS));
-    callChatbot(user, sessionId, conversationId, msg);
+    let lastModel = null;
+    ({ model: lastModel } = callChatbot(user, sessionId, conversationId, msg));
     sleepStep();
     // ~30% of nav sessions keep talking — "show me cheaper", "compare", etc.
     if (Math.random() < 0.3) {
-      callChatbot(user, sessionId, conversationId, pickOne(STOCK_FOLLOWUPS));
+      const followUp = callChatbot(user, sessionId, conversationId, pickOne(STOCK_FOLLOWUPS));
+      if (followUp && followUp.model) lastModel = followUp.model;
       sleepStep();
     }
     // Pretend we click the suggested product
     request('GET', `${BASE}/api/products`, null, user, sessionId);
     sleepStep();
     if (Math.random() < 0.35) {
-      maybeAddAndCheckout(user, sessionId);
+      maybeAddAndCheckout(user, sessionId, 'ai_chatbot', lastModel);
     }
   });
 }
@@ -369,17 +379,19 @@ function journeyMultiTurn(user) {
     request('GET', `${BASE}/`, null, user, sessionId);
     sleepStep();
     const turns = randInt(3, 5);
-    callChatbot(user, sessionId, conversationId, shapeByPersona(user, pickOne(MULTI_TURN_OPENERS)));
+    let lastModel = null;
+    ({ model: lastModel } = callChatbot(user, sessionId, conversationId, shapeByPersona(user, pickOne(MULTI_TURN_OPENERS))));
     sleepStep();
     // Mix clarifications with stock follow-ups so multi-turn doesn't read like
     // a templated form ("under $200" → "for office use" → "for gaming"...).
     for (let i = 1; i < turns; i++) {
       const pool = Math.random() < 0.65 ? MULTI_TURN_CLARIFICATIONS : STOCK_FOLLOWUPS;
-      callChatbot(user, sessionId, conversationId, pickOne(pool));
+      const turn = callChatbot(user, sessionId, conversationId, pickOne(pool));
+      if (turn && turn.model) lastModel = turn.model;
       sleepStep();
     }
     if (Math.random() < 0.4) {
-      maybeAddAndCheckout(user, sessionId);
+      maybeAddAndCheckout(user, sessionId, 'ai_chatbot', lastModel);
     }
   });
 }
