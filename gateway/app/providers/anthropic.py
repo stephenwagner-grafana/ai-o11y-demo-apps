@@ -336,8 +336,26 @@ async def generate(req: ProviderRequest, sigil_client: Any) -> ProviderResponse:
             log.exception("sigil start_generation failed (continuing without Sigil)")
             rec = None
 
+    async def _call_anthropic():
+        """Make the Anthropic call; on 400 'temperature is deprecated', retry once without temperature."""
+        try:
+            return await client.messages.create(**kwargs)
+        except Exception as exc:
+            err_str = str(exc).lower()
+            # Reasoning-tier models (Opus 4.7+ "thinking" variants) 400 when
+            # temperature is provided. Strip it and retry once.
+            if (
+                "temperature" in err_str
+                and ("deprecated" in err_str or "not supported" in err_str)
+                and "temperature" in kwargs
+            ):
+                log.info("anthropic %s rejects temperature; retrying without", model)
+                kwargs.pop("temperature", None)
+                return await client.messages.create(**kwargs)
+            raise
+
     try:
-        response = await client.messages.create(**kwargs)
+        response = await _call_anthropic()
     except Exception as e:
         # Best-effort error reporting to Sigil before re-raising
         if rec is not None:
