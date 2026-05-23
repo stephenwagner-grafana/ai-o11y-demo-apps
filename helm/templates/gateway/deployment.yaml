@@ -78,6 +78,11 @@ spec:
               value: {{ .Values.global.modelWeights.gemini | default "" | quote }}
             - name: OLLAMA_MODEL_WEIGHTS
               value: {{ .Values.global.modelWeights.ollama | default "" | quote }}
+            # Optional cross-provider weighting (anthropic vs ollama etc.).
+            # Empty = uniform across configured+open providers.
+            # Example: "anthropic:1,ollama:2" → ollama ~67%, anthropic ~33%.
+            - name: PROVIDER_WEIGHTS
+              value: {{ .Values.global.providerWeights | default "" | quote }}
           {{- if .Values.gateway.pricingOverrides }}
           volumeMounts:
             - name: pricing

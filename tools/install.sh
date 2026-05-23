@@ -355,6 +355,11 @@ EOF
   _emit_weight gemini    "${GEMINI_MODEL_WEIGHTS:-}"
   _emit_weight ollama    "${OLLAMA_MODEL_WEIGHTS:-}"
 
+  # Optional cross-provider weighting (e.g. bias synthetic traffic toward Ollama).
+  if [[ -n "${PROVIDER_WEIGHTS:-}" ]]; then
+    printf '  providerWeights: "%s"\n' "${PROVIDER_WEIGHTS}" >> "${VALUES_OVERRIDE}"
+  fi
+
   # Resume the heredoc-style append for the loadgen section.
   cat >> "${VALUES_OVERRIDE}" <<EOF
 loadgen:
