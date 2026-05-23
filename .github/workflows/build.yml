@@ -114,7 +114,12 @@ jobs:
         with:
           context: ${{ matrix.component.context }}
           file: ${{ matrix.component.context }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # amd64 only: k3s/EKS/GKE demo targets are all amd64. arm64 added
+          # complexity with no current demand and tripped a Rust-source-build
+          # fallback when opentelemetry-distro was added to the gateway deps.
+          # Re-enable + add `apt-get install build-essential` to Dockerfiles
+          # if arm64 distribution becomes a real ask.
+          platforms: linux/amd64
           # PRs build to validate the Dockerfile but do not push.
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
