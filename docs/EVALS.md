@@ -243,12 +243,18 @@ Evaluators: sb.quality
 | Kind | `LLM Judge` |
 | Evaluator ID | `nc.groundedness` |
 | Description | `Boolean: did the NC chatbot/gift-finder use only catalog data returned by its tools, or did it hallucinate products?` |
+| System prompt | *(paste below)* |
 | User prompt | *(paste below)* |
 | Max tokens | `300` |
 | Temperature | `0` |
 | Output key | `grounded` |
 | Output type | `bool` |
 | Pass when | `true` |
+
+**System prompt:**
+```
+You verify whether an AI response is grounded in tool data only. Be strict: if a product SKU, price, spec, or availability claim does not appear VERBATIM in the tool results, mark it as ungrounded. Do not give the response benefit of the doubt. Reply with valid JSON only — no prose outside the JSON object.
+```
 
 **User prompt:**
 ```
@@ -281,6 +287,8 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": ["<claim 1>", .
 # Evaluator
 Kind: LLM Judge
 Evaluator ID: nc.groundedness
+System prompt: |
+  You verify whether an AI response is grounded in tool data only. Be strict: if a product SKU, price, spec, or availability claim does not appear VERBATIM in the tool results, mark it as ungrounded. Do not give the response benefit of the doubt. Reply with valid JSON only — no prose outside the JSON object.
 Description: Boolean: did the NC chatbot/gift-finder use only catalog data returned by its tools, or did it hallucinate products?
 Max tokens: 300
 Temperature: 0
@@ -317,9 +325,15 @@ Critical because invented HR/IT policy is a compliance issue.
 |---|---|
 | Kind | `LLM Judge` |
 | Evaluator ID | `sb.groundedness` |
+| System prompt | *(paste below)* |
 | Output key | `grounded` |
 | Output type | `bool` |
 | Pass when | `true` |
+
+**System prompt:**
+```
+You verify whether an internal help bot grounded its answer in tool data only. Be strict: if a runbook step, expense amount, account detail, or policy claim does not appear VERBATIM in the tool output, mark it as ungrounded. Compliance-critical — err on the strict side. Reply with valid JSON only.
+```
 
 **User prompt:**
 ```
@@ -351,6 +365,8 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": [...]}
 # Evaluator
 Kind: LLM Judge
 Evaluator ID: sb.groundedness
+System prompt: |
+  You verify whether an internal help bot grounded its answer in tool data only. Be strict: if a runbook step, expense amount, account detail, or policy claim does not appear VERBATIM in the tool output, mark it as ungrounded. Compliance-critical — err on the strict side. Reply with valid JSON only.
 Output key: grounded
 Output type: bool
 Pass when: true
@@ -383,9 +399,15 @@ A tighter version that doesn't need tool output as reference — useful for sess
 |---|---|
 | Kind | `LLM Judge` |
 | Evaluator ID | `hallucination` |
+| System prompt | *(paste below)* |
 | Output key | `hallucination` |
 | Output type | `bool` |
 | Pass when | `false (no hallucination = pass) |
+
+**System prompt:**
+```
+You are a fact-checker. Flag any claim in the AI response that is fabricated, contradicts widely-known facts, or contains specific identifiers (SKUs, dollar amounts, dates) that look invented rather than retrieved. Err on the side of flagging. Reply with valid JSON only.
+```
 
 **User prompt:**
 ```
@@ -417,6 +439,8 @@ Reply JSON only: {"hallucination": <true|false>, "examples": [...]}
 # Evaluator
 Kind: LLM Judge
 Evaluator ID: hallucination
+System prompt: |
+  You are a fact-checker. Flag any claim in the AI response that is fabricated, contradicts widely-known facts, or contains specific identifiers (SKUs, dollar amounts, dates) that look invented rather than retrieved. Err on the side of flagging. Reply with valid JSON only.
 Output key: hallucination
 Output type: bool
 Pass when: false (no hallucination = pass)
@@ -515,9 +539,15 @@ Applies to the **user** turn (not the AI response).
 | Kind | `LLM Judge` |
 | Evaluator ID | `nc.sentiment` |
 | Description | `Categorical sentiment of the user's message (NEUTRAL / POSITIVE / FRUSTRATED / ANGRY).` |
+| System prompt | *(paste below)* |
 | Output key | `sentiment` |
 | Output type | `string` |
 | Pass when | leave blank — this is categorical, dashboard charts the breakdown |
+
+**System prompt:**
+```
+You are a sentiment classifier. Classify only the customer message. Be strict about boundaries: NEUTRAL is the default; pick FRUSTRATED or ANGRY only when there is clear language of impatience, rudeness, or escalation. Reply with valid JSON only.
+```
 
 **User prompt:**
 ```
@@ -550,6 +580,8 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 # Evaluator
 Kind: LLM Judge
 Evaluator ID: nc.sentiment
+System prompt: |
+  You are a sentiment classifier. Classify only the customer message. Be strict about boundaries: NEUTRAL is the default; pick FRUSTRATED or ANGRY only when there is clear language of impatience, rudeness, or escalation. Reply with valid JSON only.
 Description: Categorical sentiment of the user's message (NEUTRAL / POSITIVE / FRUSTRATED / ANGRY).
 Output key: sentiment
 Output type: string
