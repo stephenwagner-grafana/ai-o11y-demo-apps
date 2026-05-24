@@ -4,6 +4,29 @@ A curated set of evaluators that turn the ai-o11y-demo-apps stack into a
 complete AI o11y demo — not just metrics and traces, but verdicts on
 whether the AI is actually doing its job well.
 
+## 🚀 One-shot install (script all 12 evaluators)
+
+Skip the UI walkthrough and create all 12 evaluators via API:
+
+```bash
+export GRAFANA_URL=https://YOUR-STACK.grafana.net
+export GRAFANA_API_TOKEN=glsa_xxxxxxxx   # service-account token
+
+python3 tools/create-evaluators.py
+```
+
+Optional flags:
+- `--judge-provider anthropic-vertex` to override the judge target
+- `--judge-model claude-sonnet-4-5` (defaults to haiku for cost)
+- `--only ncQuality ncGroundedness` to create a subset
+- `--dry-run` to print payloads without POSTing
+
+POSTs to `/api/plugins/grafana-sigil-app/resources/eval/evaluators` for
+each. Rules still need to be created in the UI (see field tables below
+per evaluator) — the public Rules API isn't documented yet.
+
+---
+
 ## How Sigil's evaluator UI works
 
 **Two-step model:**
