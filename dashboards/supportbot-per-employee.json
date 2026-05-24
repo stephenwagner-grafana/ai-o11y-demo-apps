@@ -70,7 +70,7 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
-                        "expr": "topk(5, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) / sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])))",
+                        "expr": "topk(5, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])) > 0))",
                         "instant": true,
                         "legendFormat": "{{user_id}}"
                       }
@@ -86,15 +86,22 @@
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "stat",
+            "group": "bargauge",
             "version": "13.1.0-25668120414",
             "spec": {
               "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "orientation": "auto",
-                "percentChangeColorMode": "standard",
+                "displayMode": "gradient",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
+                "orientation": "horizontal",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
@@ -102,30 +109,43 @@
                   "fields": "",
                   "values": false
                 },
-                "showPercentChange": false,
-                "textMode": "value_and_name",
-                "wideLayout": true
+                "showUnfilled": true,
+                "sizing": "auto",
+                "text": {},
+                "valueMode": "color"
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
-                  "decimals": 2,
+                  "unit": "short",
+                  "decimals": 1,
+                  "min": 0,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "#FBCA0A"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 10,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 20,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 30,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 40,
+                        "color": "#3274D9"
                       }
                     ]
                   },
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#b537ff"
+                    "mode": "palette-classic"
                   }
                 },
                 "overrides": []
@@ -241,9 +261,12 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
+                        "app": "grafana-assistant-app",
                         "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])))",
                         "format": "table",
-                        "instant": true
+                        "instant": true,
+                        "queryType": "instant",
+                        "range": false
                       }
                     },
                     "refId": "input",
@@ -261,12 +284,15 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[24h]))",
+                        "app": "grafana-assistant-app",
+                        "expr": "topk(1, sum by (user_id, gen_ai_request_model) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[24h]))) by (user_id)",
                         "format": "table",
-                        "instant": true
+                        "instant": true,
+                        "queryType": "instant",
+                        "range": false
                       }
                     },
-                    "refId": "output",
+                    "refId": "model",
                     "hidden": false
                   }
                 },
@@ -281,9 +307,12 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])) / sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[24h]))",
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[24h])) > 0)",
                         "format": "table",
-                        "instant": true
+                        "instant": true,
+                        "queryType": "instant",
+                        "range": false
                       }
                     },
                     "refId": "ratio",
@@ -301,9 +330,12 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
+                        "app": "grafana-assistant-app",
                         "expr": "sum by (user_id) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[24h]))",
                         "format": "table",
-                        "instant": true
+                        "instant": true,
+                        "queryType": "instant",
+                        "range": false
                       }
                     },
                     "refId": "cost",
@@ -331,20 +363,21 @@
                         "Time 1": true,
                         "Time 2": true,
                         "Time 3": true,
-                        "Time 4": true
+                        "Time 4": true,
+                        "Value #model": true
                       },
                       "indexByName": {
                         "Value #cost": 4,
                         "Value #input": 1,
-                        "Value #output": 2,
                         "Value #ratio": 3,
+                        "gen_ai_request_model": 2,
                         "user_id": 0
                       },
                       "renameByName": {
                         "Value #cost": "Cost (USD, 24h)",
                         "Value #input": "Input Tokens",
-                        "Value #output": "Output Tokens",
                         "Value #ratio": "In:Out Ratio",
+                        "gen_ai_request_model": "Model",
                         "user_id": "Employee"
                       }
                     }
@@ -380,22 +413,34 @@
                 "sortBy": [
                   {
                     "desc": true,
-                    "displayName": "Input Tokens"
+                    "displayName": "Cost (USD, 24h)"
                   }
                 ]
               },
               "fieldConfig": {
                 "defaults": {
                   "thresholds": {
-                    "mode": "absolute",
+                    "mode": "percentage",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "#FBCA0A"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 12,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 28,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 50,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 68,
+                        "color": "#3274D9"
                       }
                     ]
                   },
@@ -419,11 +464,40 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 280
+                        "value": 240
                       },
                       {
                         "id": "custom.align",
                         "value": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Model"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 220
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "left"
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "type": "color-text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#3274D9",
+                          "mode": "fixed"
+                        }
                       }
                     ]
                   },
@@ -452,45 +526,35 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "continuous-purples"
+                          "mode": "thresholds"
                         }
                       },
                       {
-                        "id": "fieldMinMax",
-                        "value": true
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Output Tokens"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "short"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.cellOptions",
+                        "id": "thresholds",
                         "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "continuous-BlPu"
+                          "mode": "percentage",
+                          "steps": [
+                            {
+                              "color": "#FBCA0A",
+                              "value": 0
+                            },
+                            {
+                              "color": "#F05A28",
+                              "value": 12
+                            },
+                            {
+                              "color": "#CF0DD6",
+                              "value": 28
+                            },
+                            {
+                              "color": "#8B46DE",
+                              "value": 50
+                            },
+                            {
+                              "color": "#3274D9",
+                              "value": 68
+                            }
+                          ]
                         }
                       },
                       {
@@ -528,7 +592,35 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "continuous-blues"
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "percentage",
+                          "steps": [
+                            {
+                              "color": "#FBCA0A",
+                              "value": 0
+                            },
+                            {
+                              "color": "#F05A28",
+                              "value": 12
+                            },
+                            {
+                              "color": "#CF0DD6",
+                              "value": 28
+                            },
+                            {
+                              "color": "#8B46DE",
+                              "value": 50
+                            },
+                            {
+                              "color": "#3274D9",
+                              "value": 68
+                            }
+                          ]
                         }
                       },
                       {
@@ -570,7 +662,35 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "continuous-YlRd"
+                          "mode": "thresholds"
+                        }
+                      },
+                      {
+                        "id": "thresholds",
+                        "value": {
+                          "mode": "percentage",
+                          "steps": [
+                            {
+                              "color": "#FBCA0A",
+                              "value": 0
+                            },
+                            {
+                              "color": "#F05A28",
+                              "value": 12
+                            },
+                            {
+                              "color": "#CF0DD6",
+                              "value": 28
+                            },
+                            {
+                              "color": "#8B46DE",
+                              "value": 50
+                            },
+                            {
+                              "color": "#3274D9",
+                              "value": 68
+                            }
+                          ]
                         }
                       },
                       {
@@ -659,11 +779,23 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "#FBCA0A"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 10,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 20,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 30,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 40,
+                        "color": "#3274D9"
                       }
                     ]
                   },
@@ -680,7 +812,7 @@
                     "barWidthFactor": 0.9,
                     "drawStyle": "bars",
                     "fillOpacity": 80,
-                    "gradientMode": "opacity",
+                    "gradientMode": "none",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
@@ -715,7 +847,7 @@
         "kind": "Panel",
         "spec": {
           "id": 7,
-          "title": "Tokens per employee (last 1h)",
+          "title": "Tokens per employee (selected range)",
           "description": "Bar chart of total tokens per employee (input + output) in the last 1h. Highlights the 10 heaviest users.",
           "links": [],
           "data": {
@@ -733,7 +865,7 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
-                        "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])))",
+                        "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[$__range])))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{user_id}}"
@@ -795,27 +927,27 @@
                   "unit": "short",
                   "decimals": 0,
                   "thresholds": {
-                    "mode": "absolute",
+                    "mode": "percentage",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#3274D9"
+                        "color": "#FBCA0A"
                       },
                       {
-                        "value": 5500,
-                        "color": "#8B46DE"
-                      },
-                      {
-                        "value": 6500,
-                        "color": "#CF0DD6"
-                      },
-                      {
-                        "value": 8500,
+                        "value": 12,
                         "color": "#F05A28"
                       },
                       {
-                        "value": 10000,
-                        "color": "#FBCA0A"
+                        "value": 28,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 50,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 68,
+                        "color": "#3274D9"
                       }
                     ]
                   },
@@ -828,8 +960,8 @@
                     "axisColorMode": "text",
                     "axisLabel": "",
                     "axisPlacement": "auto",
-                    "fillOpacity": 55,
-                    "gradientMode": "none",
+                    "fillOpacity": 80,
+                    "gradientMode": "scheme",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
@@ -842,7 +974,8 @@
                     "thresholdsStyle": {
                       "mode": "off"
                     }
-                  }
+                  },
+                  "fieldMinMax": true
                 },
                 "overrides": []
               }
@@ -850,12 +983,12 @@
           }
         }
       },
-      "panel-8": {
+      "panel-20": {
         "kind": "Panel",
         "spec": {
-          "id": 8,
-          "title": "Input tokens per hour per employee (top 5)",
-          "description": "Input-token throughput per employee. Top 5 by current rate.",
+          "id": 20,
+          "title": "Eval verdicts (24h)",
+          "description": "Total Sigil evaluator executions across all 19 evaluators in the last 24h.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -864,6 +997,8 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "refId": "A",
+                    "hidden": false,
                     "query": {
                       "kind": "DataQuery",
                       "group": "prometheus",
@@ -872,112 +1007,57 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
-                        "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) * 3600)",
-                        "legendFormat": "{{user_id}}"
+                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\"}[24h]))"
                       }
-                    },
-                    "refId": "A",
-                    "hidden": false
+                    }
                   }
                 }
               ],
               "transformations": [],
-              "queryOptions": {}
+              "queryOptions": {
+                "instant": true
+              }
             }
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "timeseries",
+            "group": "stat",
             "version": "13.1.0-25668120414",
             "spec": {
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
-                "legend": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "reduceOptions": {
                   "calcs": [
-                    "lastNotNull",
-                    "mean"
+                    "lastNotNull"
                   ],
-                  "displayMode": "table",
-                  "placement": "bottom",
-                  "showLegend": true
+                  "fields": "",
+                  "values": false
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "short",
-                  "decimals": 0,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "fixed",
+                    "fixedColor": "#CF0DD6"
                   },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.9,
-                    "drawStyle": "bars",
-                    "fillOpacity": 80,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 0,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "normal"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
-                  }
-                },
-                "overrides": []
+                  "decimals": 0,
+                  "unit": "short"
+                }
               }
             }
           }
         }
       },
-      "panel-9": {
+      "panel-21": {
         "kind": "Panel",
         "spec": {
-          "id": 9,
-          "title": "Output tokens per hour per employee (top 5)",
-          "description": "Output-token throughput per employee. Top 5 by current rate.",
+          "id": 21,
+          "title": "Quality pass rate (sbQuality, 1h)",
+          "description": "Fraction of sbQuality evaluations that score \u2265 3/5 in the last hour.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -986,6 +1066,8 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
+                    "refId": "A",
+                    "hidden": false,
                     "query": {
                       "kind": "DataQuery",
                       "group": "prometheus",
@@ -994,101 +1076,1108 @@
                         "name": "${DS_PROMETHEUS}"
                       },
                       "spec": {
-                        "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])) * 3600)",
-                        "legendFormat": "{{user_id}}"
+                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\",status=\"pass\"}[1h])) / sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[1h]))"
                       }
-                    },
-                    "refId": "A",
-                    "hidden": false
+                    }
                   }
                 }
               ],
               "transformations": [],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "#FBCA0A"
+                  },
+                  "decimals": 2,
+                  "unit": "percentunit"
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-22": {
+        "kind": "Panel",
+        "spec": {
+          "id": 22,
+          "title": "Hallucination rate (24h)",
+          "description": "Fraction of conversations flagged as hallucinating in the last 24h. Inverse of pass \u2014 higher is worse.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"hallucination\",status=\"fail\"}[24h])) / sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"hallucination\"}[24h]))"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "#F05A28"
+                  },
+                  "decimals": 2,
+                  "unit": "percentunit"
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-23": {
+        "kind": "Panel",
+        "spec": {
+          "id": 23,
+          "title": "PII / secret leaks (24h)",
+          "description": "Count of conversations where ANY PII regex (SSN / CC / email / phone / IP) OR the secretApiKey regex matched in 24h.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=~\"pii.*|secretApiKey\",status=\"fail\"}[24h]))"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "#8B46DE"
+                  },
+                  "decimals": 0,
+                  "unit": "short"
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-24": {
+        "kind": "Panel",
+        "spec": {
+          "id": 24,
+          "title": "\ud83c\udff4\u200d\u2620\ufe0f First-mates promoted (score \u2265 7)",
+          "description": "Count of conversations where sbPirateMate scored \u2265 7. Yes, a joke evaluator. Yes, it gets its own KPI tile.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbPirateMate\",status=\"pass\"}[24h]))"
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "fixed",
+                    "fixedColor": "#3274D9"
+                  },
+                  "decimals": 0,
+                  "unit": "short"
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-25": {
+        "kind": "Panel",
+        "spec": {
+          "id": 25,
+          "title": "\ud83c\udfc6 Top employees by quality pass rate (sbQuality, 24h)",
+          "description": "For each employee with sbQuality evaluations in 24h: pass rate on the 0-5 quality judge (\u2265 3 = pass). Higher = AI is consistently helpful for them.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "pass",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "topk(10, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\",status=\"pass\"}[24h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[24h])))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "count",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[24h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "id": "joinByField",
+                  "options": {
+                    "byField": "user_id",
+                    "mode": "outer"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time 1": true,
+                      "Time 2": true
+                    },
+                    "indexByName": {
+                      "user_id": 0,
+                      "Value #pass": 1,
+                      "Value #count": 2
+                    },
+                    "renameByName": {
+                      "user_id": "Employee",
+                      "Value #pass": "Pass rate",
+                      "Value #count": "Evals run"
+                    }
+                  }
+                },
+                {
+                  "id": "sortBy",
+                  "options": {
+                    "fields": {},
+                    "sort": [
+                      {
+                        "desc": true,
+                        "field": "Pass rate"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "cellHeight": "md",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "left",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Employee"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 280
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Pass rate"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percentunit"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FBCA0A"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Evals run"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#8B46DE"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-26": {
+        "kind": "Panel",
+        "spec": {
+          "id": 26,
+          "title": "\ud83d\udcbc AI usage appropriateness (sbAiUsage, 24h)",
+          "description": "Per-employee breakdown of the sbAiUsage categorical judge: WORTHY = legit work question. WASTEFUL = trivial / could have Googled. The chargeback story \u2014 high-Wasteful employees burn AI budget without payoff.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "worthy",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "topk(15, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=\"WORTHY\"}[24h])))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "borderline",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=\"BORDERLINE\"}[24h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "wasteful",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=~\"WASTEFUL|ABUSIVE\"}[24h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "id": "joinByField",
+                  "options": {
+                    "byField": "user_id",
+                    "mode": "outer"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time 1": true,
+                      "Time 2": true,
+                      "Time 3": true
+                    },
+                    "indexByName": {
+                      "user_id": 0,
+                      "Value #worthy": 1,
+                      "Value #borderline": 2,
+                      "Value #wasteful": 3
+                    },
+                    "renameByName": {
+                      "user_id": "Employee",
+                      "Value #worthy": "Worthy",
+                      "Value #borderline": "Borderline",
+                      "Value #wasteful": "Wasteful"
+                    }
+                  }
+                },
+                {
+                  "id": "sortBy",
+                  "options": {
+                    "fields": {},
+                    "sort": [
+                      {
+                        "desc": true,
+                        "field": "Wasteful"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "cellHeight": "md",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "left",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Employee"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 260
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Worthy"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FBCA0A"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Borderline"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#CF0DD6"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Wasteful"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "short"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F05A28"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-27": {
+        "kind": "Panel",
+        "spec": {
+          "id": 27,
+          "title": "\ud83c\udff4\u200d\u2620\ufe0f First-mate leaderboard (sbPirateMate, 24h)",
+          "description": "Average sbPirateMate score per employee. Higher = more likely to abandon their cubicle when you raise the Jolly Roger. Joke evaluator \u2014 keeps demo viewers awake.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "A",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "topk(10, avg by (user_id) (sigil_eval_executions_value{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbPirateMate\"}))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time": true
+                    },
+                    "renameByName": {
+                      "Value": "Score",
+                      "user_id": "Employee"
+                    }
+                  }
+                }
+              ],
               "queryOptions": {}
             }
           },
           "vizConfig": {
             "kind": "VizConfig",
-            "group": "timeseries",
+            "group": "barchart",
             "version": "13.1.0-25668120414",
             "spec": {
               "options": {
-                "annotations": {
-                  "clustering": -1,
-                  "multiLane": false
-                },
+                "barWidth": 0.8,
                 "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean"
-                  ],
-                  "displayMode": "table",
-                  "placement": "bottom",
-                  "showLegend": true
+                  "showLegend": false
                 },
-                "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
-                }
+                "orientation": "horizontal",
+                "showValue": "auto",
+                "xTickLabelRotation": 0
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "short",
-                  "decimals": 0,
-                  "min": 0,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
-                      }
-                    ]
-                  },
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "fixed",
+                    "fixedColor": "#FBCA0A"
                   },
-                  "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.9,
-                    "drawStyle": "bars",
-                    "fillOpacity": 80,
-                    "gradientMode": "opacity",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
-                    },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 0,
-                    "pointSize": 5,
-                    "scaleDistribution": {
-                      "type": "linear"
-                    },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "normal"
-                    },
-                    "thresholdsStyle": {
-                      "mode": "off"
+                  "decimals": 1,
+                  "unit": "short",
+                  "min": 0,
+                  "max": 10
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-28": {
+        "kind": "Panel",
+        "spec": {
+          "id": 28,
+          "title": "\u2728 Compound bot health \u2014 pass rates by evaluator (1h)",
+          "description": "Per-employee pass rates on three key bot-health evaluators. Concise = no padding. On-brand = uses Acme lingo, not marketing-speak. Grounded = sticks to what the tools returned.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "concise",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "topk(12, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbConciseness\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbConciseness\"}[1h])))",
+                        "format": "table",
+                        "instant": true
+                      }
                     }
                   }
                 },
-                "overrides": []
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "brand",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbBrandVoice\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbBrandVoice\"}[1h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "refId": "grounded",
+                    "hidden": false,
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "${DS_PROMETHEUS}"
+                      },
+                      "spec": {
+                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbGroundedness\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbGroundedness\"}[1h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    }
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "id": "joinByField",
+                  "options": {
+                    "byField": "user_id",
+                    "mode": "outer"
+                  }
+                },
+                {
+                  "id": "organize",
+                  "options": {
+                    "excludeByName": {
+                      "Time 1": true,
+                      "Time 2": true,
+                      "Time 3": true
+                    },
+                    "indexByName": {
+                      "user_id": 0,
+                      "Value #concise": 1,
+                      "Value #brand": 2,
+                      "Value #grounded": 3
+                    },
+                    "renameByName": {
+                      "user_id": "Employee",
+                      "Value #concise": "Concise",
+                      "Value #brand": "On-brand",
+                      "Value #grounded": "Grounded"
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {
+                "instant": true
+              }
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "cellHeight": "md",
+                "showHeader": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "left",
+                    "cellOptions": {
+                      "type": "auto"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Employee"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 260
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Concise"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percentunit"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#3274D9"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "On-brand"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percentunit"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#CF0DD6"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Grounded"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "percentunit"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#8B46DE"
+                        }
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  }
+                ]
               }
             }
           }
@@ -1187,17 +2276,110 @@
                           "name": "panel-7"
                         }
                       }
-                    },
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83c\udfaf Evaluator results \u2014 verdicts at a glance",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
                     {
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 0,
-                        "y": 9,
-                        "width": 12,
-                        "height": 9,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-8"
+                          "name": "panel-20"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 5,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-21"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 10,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-22"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 15,
+                        "y": 0,
+                        "width": 4,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-23"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 19,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-24"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83c\udfc6 Per-employee eval leaderboards",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 12,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-25"
                         }
                       }
                     },
@@ -1205,12 +2387,38 @@
                       "kind": "GridLayoutItem",
                       "spec": {
                         "x": 12,
-                        "y": 9,
+                        "y": 0,
                         "width": 12,
+                        "height": 10,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-26"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 10,
+                        "width": 14,
                         "height": 9,
                         "element": {
                           "kind": "ElementReference",
-                          "name": "panel-9"
+                          "name": "panel-28"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 14,
+                        "y": 10,
+                        "width": 10,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-27"
                         }
                       }
                     }

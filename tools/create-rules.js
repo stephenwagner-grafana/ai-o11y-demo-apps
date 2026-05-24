@@ -1,10 +1,14 @@
 // Paste into your Grafana DevTools Console while logged in.
 // Creates Sigil eval rules that wire the 18 evaluators (from create-evaluators.js)
-// to their target traffic slices.
+// to per-app traffic slices (neoncart vs supportbot).
 //
-// Endpoint: POST {origin}/api/plugins/grafana-sigil-app/resources/eval/rules
+// Endpoint: POST   {origin}/api/plugins/grafana-sigil-app/resources/eval/rules
+//           DELETE {origin}/api/plugins/grafana-sigil-app/resources/eval/rules/{rule_id}
 // Schema (confirmed from a live capture):
 //   { rule_id, enabled, selector, match: {key: value}, sample_rate: 0-1, evaluator_ids[] }
+//
+// Match key MUST be one of Sigil's first-class tags: app, caller_type,
+// gen_ai.system, session_id, user_id. We match by `app` (neoncart / supportbot).
 //
 // Run AFTER create-evaluators.js — rules reference evaluator IDs.
 //
@@ -14,56 +18,83 @@
 (async () => {
   const URL = `${window.location.origin}/api/plugins/grafana-sigil-app/resources/eval/rules`;
 
+  // ── Cleanup: remove old per-agent rules that match the dead `gen_ai.agent.name` key.
+  // Safe to re-run — 404s on missing IDs are ignored.
+  const LEGACY_IDS = [
+    "online.nc.quality.nc_chatbot", "online.nc.quality.nc_gift_finder",
+    "online.sb.quality.sb_router", "online.sb.quality.sb_billing",
+    "online.sb.quality.sb_tech_support", "online.sb.quality.sb_account_management",
+    "online.nc.groundedness.nc_chatbot", "online.nc.groundedness.nc_gift_finder",
+    "online.sb.groundedness.sb_billing", "online.sb.groundedness.sb_tech_support",
+    "online.sb.groundedness.sb_account_management",
+    "online.hallucination.nc_chatbot", "online.hallucination.nc_gift_finder",
+    "online.hallucination.sb_router", "online.hallucination.sb_billing",
+    "online.hallucination.sb_tech_support", "online.hallucination.sb_account_management",
+    "online.sb.pii.sb_account_management", "online.sb.pii.sb_billing",
+    "online.nc.sentiment.nc_chatbot", "online.nc.sentiment.nc_gift_finder",
+    "online.json.valid.nc_chatbot", "online.json.valid.nc_gift_finder",
+    "online.json.valid.sb_router", "online.json.valid.sb_billing",
+    "online.json.valid.sb_tech_support", "online.json.valid.sb_account_management",
+    "online.sb.ai_usage.sb_router", "online.sb.ai_usage.sb_billing",
+    "online.sb.ai_usage.sb_tech_support", "online.sb.ai_usage.sb_account_management",
+    "online.nc.conciseness.nc_chatbot", "online.nc.conciseness.nc_gift_finder",
+    "online.sb.conciseness.sb_router", "online.sb.conciseness.sb_billing",
+    "online.sb.conciseness.sb_tech_support", "online.sb.conciseness.sb_account_management",
+    "online.sb.brand_voice.sb_router", "online.sb.brand_voice.sb_billing",
+    "online.sb.brand_voice.sb_tech_support", "online.sb.brand_voice.sb_account_management",
+    "online.sb.pirate_mate.sb_router", "online.sb.pirate_mate.sb_billing",
+    "online.sb.pirate_mate.sb_tech_support", "online.sb.pirate_mate.sb_account_management",
+  ];
+
+  console.log(`%cDeleting ${LEGACY_IDS.length} legacy per-agent rules…`,
+              "font-weight: bold; color: #ff9933;");
+  let deleted = 0, missing = 0;
+  for (const id of LEGACY_IDS) {
+    try {
+      const resp = await fetch(`${URL}/${encodeURIComponent(id)}`,
+        { method: "DELETE", credentials: "include" });
+      if (resp.ok) { deleted++; }
+      else if (resp.status === 404) { missing++; }
+      else { console.log(`  ? ${id} HTTP ${resp.status}`); }
+    } catch (e) {
+      console.log(`  ? ${id} threw: ${e.message}`);
+    }
+  }
+  console.log(`%c  deleted ${deleted}, ${missing} already gone`,
+              "color: #ff9933;");
+
   // ── Helper ──────────────────────────────────────────────────────────────────
-  // match takes exact key-value pairs (no regex). For evaluators that should
-  // span multiple agents, we emit one rule per agent.
-  // Sigil rule IDs only accept letters/digits/_/. — sanitize hyphens to underscores.
-  const sanitize = s => s.replace(/-/g, "_");
-  const rule = (id, evaluators, agentName, sampleRate, selector = "user_visible_turn") => ({
-    rule_id: sanitize(id),
+  // match by `tags.app` (the first-class Sigil tag; values: neoncart / supportbot)
+  const rule = (id, evaluators, app, sampleRate, selector = "user_visible_turn") => ({
+    rule_id: id,
     enabled: true,
     selector,
-    match: { "tags.gen_ai.agent.name": agentName },
+    match: { "tags.app": app },
     sample_rate: sampleRate,   // decimal 0-1, NOT percent
     evaluator_ids: evaluators,
   });
 
-  // Build the rule set. Evaluators targeting multiple agents get one rule per agent.
-  const NC_AGENTS = ["nc-chatbot", "nc-gift-finder"];
-  const SB_USER_FACING = ["sb-router", "sb-billing", "sb-tech-support", "sb-account-management"];
-  const SB_PII_RISK = ["sb-account-management", "sb-billing"];
-
-  const RULES = [];
-
-  // 1. ncQuality — both NC agents, 10% sample
-  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.quality.${a}`,        ["ncQuality"],       a, 0.10)));
-  // 2. sbQuality — all SB agents, 10% sample
-  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.quality.${a}`,   ["sbQuality"],       a, 0.10)));
-  // 3. ncGroundedness — chatbot + gift-finder
-  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.groundedness.${a}`,   ["ncGroundedness"],  a, 0.15)));
-  // 4. sbGroundedness — billing + tech-support + account-mgmt (excl. router)
-  ["sb-billing", "sb-tech-support", "sb-account-management"].forEach(a =>
-    RULES.push(rule(`online.sb.groundedness.${a}`,                         ["sbGroundedness"],  a, 0.15)));
-  // 5. hallucination — broad, low sample
-  [...NC_AGENTS, ...SB_USER_FACING].forEach(a =>
-    RULES.push(rule(`online.hallucination.${a}`,                           ["hallucination"],   a, 0.05)));
-  // 6. sbPii — high sample on PII-risk agents
-  SB_PII_RISK.forEach(a => RULES.push(rule(`online.sb.pii.${a}`,           ["sbPii"],           a, 1.00)));
-  // 7. ncSentiment — both NC agents
-  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.sentiment.${a}`,       ["ncSentiment"],     a, 0.25)));
-  // 8. jsonValid — every agent, free (no LLM call)
-  [...NC_AGENTS, ...SB_USER_FACING].forEach(a =>
-    RULES.push(rule(`online.json.valid.${a}`,                              ["jsonValid"],       a, 1.00)));
-  // 9. sbAiUsage — all SB agents
-  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.ai_usage.${a}`,   ["sbAiUsage"],       a, 0.15)));
-  // 10. ncConciseness
-  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.conciseness.${a}`,     ["ncConciseness"],   a, 0.10)));
-  // 11. sbConciseness
-  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.conciseness.${a}`,["sbConciseness"],   a, 0.10)));
-  // 12. sbBrandVoice
-  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.brand_voice.${a}`,["sbBrandVoice"],    a, 0.10)));
-  // 13. sbPirateMate — the gag, 5% on all SB
-  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.pirate_mate.${a}`,["sbPirateMate"],    a, 0.05)));
+  // Per-evaluator sample rates (tuned for ~$5/day eval cost on Claude Haiku judge).
+  const RULES = [
+    // NeonCart-only
+    rule("online.nc.quality",       ["ncQuality"],       "neoncart",   0.10),
+    rule("online.nc.groundedness",  ["ncGroundedness"],  "neoncart",   0.15),
+    rule("online.nc.sentiment",     ["ncSentiment"],     "neoncart",   0.25),
+    rule("online.nc.conciseness",   ["ncConciseness"],   "neoncart",   0.10),
+    // SupportBot-only
+    rule("online.sb.quality",       ["sbQuality"],       "supportbot", 0.10),
+    rule("online.sb.groundedness",  ["sbGroundedness"],  "supportbot", 0.15),
+    rule("online.sb.pii",           ["sbPii"],           "supportbot", 1.00),
+    rule("online.sb.ai_usage",      ["sbAiUsage"],       "supportbot", 0.15),
+    rule("online.sb.conciseness",   ["sbConciseness"],   "supportbot", 0.10),
+    rule("online.sb.brand_voice",   ["sbBrandVoice"],    "supportbot", 0.10),
+    rule("online.sb.pirate_mate",   ["sbPirateMate"],    "supportbot", 0.05),
+    // Both apps
+    rule("online.nc.hallucination", ["hallucination"],   "neoncart",   0.05),
+    rule("online.sb.hallucination", ["hallucination"],   "supportbot", 0.05),
+    rule("online.nc.json_valid",    ["jsonValid"],       "neoncart",   1.00),
+    rule("online.sb.json_valid",    ["jsonValid"],       "supportbot", 1.00),
+  ];
 
   console.log(`%cCreating ${RULES.length} rules on ${window.location.origin}`,
               "font-weight: bold; color: #00f0ff;");
@@ -79,14 +110,14 @@
       });
       const text = await resp.text();
       if (resp.ok) {
-        console.log(`%c  ✓ ${r.rule_id.padEnd(45)} → ${r.evaluator_ids.join(",")} HTTP ${resp.status}`,
+        console.log(`%c  ✓ ${r.rule_id.padEnd(30)} app=${r.match["tags.app"].padEnd(11)} → ${r.evaluator_ids.join(",")}`,
                     "color: #39ff7e;");
         results.ok.push(r.rule_id);
       } else if (resp.status === 409) {
         // Already exists — silent skip
         results.skipped.push(r.rule_id);
       } else {
-        console.log(`%c  ✗ ${r.rule_id.padEnd(45)} HTTP ${resp.status}`,
+        console.log(`%c  ✗ ${r.rule_id.padEnd(30)} HTTP ${resp.status}`,
                     "color: #ff3b6b;");
         console.log(`      ${text.slice(0, 300)}`);
         results.fail.push({ id: r.rule_id, status: resp.status, body: text });
