@@ -4,9 +4,56 @@ A curated set of evaluators that turn the ai-o11y-demo-apps stack into a
 complete AI o11y demo — not just metrics and traces, but verdicts on
 whether the AI is actually doing its job well.
 
-## 🚀 One-shot install (script all 18 evaluators (one is a joke))
+**19 evaluators + 45 rules** are scripted. Paste two lines into your browser DevTools Console while logged into your Grafana stack and you're done in ~10 seconds.
 
-Skip the UI walkthrough and create all 18 evaluators (one is a joke) via API:
+---
+
+## 🚀 One-paste install (browser console)
+
+Open DevTools Console on any page of your Grafana stack (`https://YOUR-STACK.grafana.net/...`), then paste these **two lines, in order**:
+
+### Step 1 — Create 19 evaluators
+
+```js
+fetch('https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/tools/create-evaluators.js?cb='+Date.now()).then(r=>r.text()).then(eval)
+```
+
+### Step 2 — Create 45 rules (wires evaluators to traffic)
+
+```js
+fetch('https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/tools/create-rules.js?cb='+Date.now()).then(r=>r.text()).then(eval)
+```
+
+Each script POSTs to `/api/plugins/grafana-sigil-app/resources/eval/{evaluators,rules}` using your existing browser session — no API token needed. Both are **idempotent** — re-runs silently skip anything that already exists.
+
+Expected output:
+
+```
+Creating 19 evaluators on https://YOUR-STACK.grafana.net
+  ✓ ncQuality          llm_judge   HTTP 200
+  ✓ sbQuality          llm_judge   HTTP 200
+  ...
+19 created, 0 already-existed, 0 failed
+
+Creating 45 rules on https://YOUR-STACK.grafana.net
+  ✓ online.nc.quality.nc_chatbot      → ncQuality HTTP 200
+  ...
+45 created, 0 already-existed, 0 failed
+```
+
+### Pre-flight tweak (only if your judge target differs)
+
+Default judge: `anthropic / claude-haiku-4-5-20251001`. To override:
+
+```js
+fetch('https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/tools/create-evaluators.js?cb='+Date.now())
+  .then(r => r.text())
+  .then(s => s.replace('"anthropic"', '"anthropic-vertex"')
+              .replace('"claude-haiku-4-5-20251001"', '"claude-sonnet-4-5"'))
+  .then(eval)
+```
+
+### Alternative — CI-friendly install via Grafana API token
 
 ```bash
 export GRAFANA_URL=https://YOUR-STACK.grafana.net
@@ -15,17 +62,59 @@ export GRAFANA_API_TOKEN=glsa_xxxxxxxx   # service-account token
 python3 tools/create-evaluators.py
 ```
 
-Optional flags:
-- `--judge-provider anthropic-vertex` to override the judge target
-- `--judge-model claude-sonnet-4-5` (defaults to haiku for cost)
-- `--only ncQuality ncGroundedness` to create a subset
-- `--dry-run` to print payloads without POSTing
-
-POSTs to `/api/plugins/grafana-sigil-app/resources/eval/evaluators` for
-each. Rules still need to be created in the UI (see field tables below
-per evaluator) — the public Rules API isn't documented yet.
+Optional flags: `--judge-provider`, `--judge-model`, `--only ID [ID ...]`, `--dry-run`. Rules still go through the browser-console JS — no Python equivalent (Rules API was reverse-engineered from a DevTools capture).
 
 ---
+
+## What you get
+
+19 evaluators wired to 45 sampling rules. Within ~30 min of loadgen traffic the Sigil Evaluation tab populates:
+
+| Tier | Evaluators | Purpose |
+|---|---|---|
+| **AI response quality** | `ncQuality`, `sbQuality` | LLM judge, 0-5 score. Pass threshold = 3. |
+| **Groundedness** | `ncGroundedness`, `sbGroundedness` | LLM judge bool. "Did the bot stick to the tools' data?" The demo punchline. |
+| **Hallucination** | `hallucination` | LLM judge bool. Catches fabricated facts even when no tools were used. |
+| **PII regex** | `piiSsn`, `piiCreditCard`, `piiEmail`, `piiPhone`, `piiIp` | 5 individual regex evaluators. Each emits its own metric. |
+| **API-key leak** | `secretApiKey` | 25-prefix regex union (AWS / GitHub / Anthropic / OpenAI / Stripe / Grafana / Slack / Google / Datadog / SendGrid / Twilio / JWT / PEM). |
+| **PII heuristic** | `sbPii` | Sigil heuristic — `not_empty` + `max_length` + 17× `not_contains`. Catches literal key prefixes via substring. |
+| **AI usage** | `sbAiUsage` | LLM judge categorical: WORTHY / BORDERLINE / WASTEFUL / ABUSIVE. The chargeback story. |
+| **Conciseness** | `ncConciseness`, `sbConciseness` | LLM judge bool. Catches preamble + restated questions + upsell padding. |
+| **Brand voice** | `sbBrandVoice` | LLM judge bool. "Acme teammate vs. marketing pitch." |
+| **Sentiment** | `ncSentiment` | LLM judge categorical on user message: NEUTRAL / POSITIVE / FRUSTRATED / ANGRY. |
+| **JSON validity** | `jsonValid` | JSON-schema check. Free — no LLM call. |
+| **🏴‍☠️ Joke** | `sbPirateMate` | First-mate-on-a-pirate-ship potential 0-10. 5% sample rate. |
+
+### Rule coverage
+
+Sigil's `match` field is exact-string (no regex), so each rule targets ONE agent name. Evaluators spanning multiple agents get multiple rules:
+
+| Scope | Rules per evaluator |
+|---|---|
+| NC-only (chatbot + gift-finder) | 2 |
+| SB-only (router + 3 specialists) | 4 |
+| Cross-app (hallucination, jsonValid) | 6 |
+| PII-risk only (sbPii) | 2 (account-mgmt + billing) |
+
+### Sample rates
+
+Tuned per evaluator cost:
+
+| Rate | Evaluators | Reason |
+|---|---|---|
+| `100%` | regex, JSON schema, heuristic | Free — no LLM call |
+| `25%` | sentiment | Cheap categorical judge |
+| `15%` | groundedness, sbAiUsage | Mid-cost judges |
+| `10%` | quality, conciseness, brand voice | Default for paid judges |
+| `5%` | hallucination, sbPirateMate | Low-yield / joke |
+
+At default loadgen volume (~3-5 conversations/min) on Haiku, the full eval suite costs ~$5-10/day.
+
+---
+
+## Manual UI walkthrough (alternate path)
+
+If you'd rather create evaluators by hand in the Sigil UI — perhaps to learn the form fields, or because the scripts don't fit your environment — the field-by-field walkthrough is below. Otherwise everything you need is in the two paste blocks above.
 
 ## How Sigil's evaluator UI works
 
