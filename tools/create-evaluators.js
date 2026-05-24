@@ -53,9 +53,9 @@
     output_keys: [{ key: "json_valid", type: "bool", pass_value: true }],
   });
 
-  const heuristicEval = (id, desc, rule_tree, output_key = "heuristic_pass") => ({
+  const heuristicEval = (id, desc, root, output_key = "heuristic_pass") => ({
     evaluator_id: id, version: VERSION, kind: "heuristic", description: desc,
-    config: { version: "1.0", ...rule_tree },
+    config: { version: "v2", root },
     output_keys: [{ key: output_key, type: "bool", pass_value: true }],
   });
 
