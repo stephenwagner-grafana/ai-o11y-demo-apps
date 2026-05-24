@@ -35,6 +35,7 @@ DEFAULT_JUDGE_MODEL = "claude-haiku-4-5-20251001"
 def llm_judge(eid, description, system_prompt, user_prompt,
               output_keys, max_tokens=256, temperature=0,
               pass_threshold=None, min_value=None, max_value=None):
+    max_tokens = max(256, max_tokens or 256)  # API minimum
     # For number output_keys, attach pass_threshold/min/max INSIDE the first key
     keys = []
     for i, k in enumerate(output_keys):

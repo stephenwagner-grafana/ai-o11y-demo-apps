@@ -20,6 +20,7 @@
   const URL = `${window.location.origin}/api/plugins/grafana-sigil-app/resources/eval/evaluators`;
 
   const llmJudge = (id, desc, sys, usr, output_keys, max_tokens = 256, pass_threshold, min, max) => {
+    max_tokens = Math.max(256, max_tokens || 256);  // API minimum
     // For number output_keys, attach pass_threshold/min/max INSIDE the first key
     const keys = output_keys.map((k, i) => {
       if (i === 0 && k.type === "number") {
