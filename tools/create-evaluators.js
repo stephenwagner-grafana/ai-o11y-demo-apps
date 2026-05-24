@@ -166,12 +166,12 @@ Reply JSON only: {"hallucination": <true|false>, "examples": [...]}`,
         kind: "group",
         operator: "and",
         rules: [
-          { kind: "rule", type: "regex_no_match", value: "\\b\\d{3}-\\d{2}-\\d{4}\\b" },
-          { kind: "rule", type: "regex_no_match", value: "\\b(?:\\d[ -]*?){13,16}\\b" },
-          { kind: "rule", type: "regex_no_match", value: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" },
-          { kind: "rule", type: "regex_no_match", value: "\\b(?:\\+?1[-.\\s]?)?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b" },
-          { kind: "rule", type: "regex_no_match", value: "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b" },
-          { kind: "rule", type: "regex_no_match", value: "\\b(?:AKIA|ASIA|AIza|ya29\\.|ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|sk-ant-|sk-proj-|sk-svcacct-|sk_live_|sk_test_|pk_live_|pk_test_|rk_live_|rk_test_|glsa_|glc_|glb_|gle_|gnsa_|gtsa_|glsacc_|xox[abposr]-|SG\\.|ddapi_|key-[a-f0-9]{32}|AC[a-f0-9]{32}|SK[a-f0-9]{32}|eyJ[A-Za-z0-9_-]{10,}\\.eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)[A-Za-z0-9_\\-]{0,200}" },
+          { kind: "rule", type: "not_regex_match", value: "\\b\\d{3}-\\d{2}-\\d{4}\\b" },
+          { kind: "rule", type: "not_regex_match", value: "\\b(?:\\d[ -]*?){13,16}\\b" },
+          { kind: "rule", type: "not_regex_match", value: "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}" },
+          { kind: "rule", type: "not_regex_match", value: "\\b(?:\\+?1[-.\\s]?)?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}\\b" },
+          { kind: "rule", type: "not_regex_match", value: "\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b" },
+          { kind: "rule", type: "not_regex_match", value: "\\b(?:AKIA|ASIA|AIza|ya29\\.|ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|sk-ant-|sk-proj-|sk-svcacct-|sk_live_|sk_test_|pk_live_|pk_test_|rk_live_|rk_test_|glsa_|glc_|glb_|gle_|gnsa_|gtsa_|glsacc_|xox[abposr]-|SG\\.|ddapi_|key-[a-f0-9]{32}|AC[a-f0-9]{32}|SK[a-f0-9]{32}|eyJ[A-Za-z0-9_-]{10,}\\.eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)[A-Za-z0-9_\\-]{0,200}" },
         ],
       },
     ),
@@ -300,7 +300,7 @@ Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<one-line pirate capta
               "font-weight: bold; color: #00f0ff;");
   console.log(`Judge target: ${JUDGE_PROVIDER} / ${JUDGE_MODEL}`);
 
-  const results = { ok: [], fail: [] };
+  const results = { ok: [], skipped: [], fail: [] };
   for (const ev of EVALUATORS) {
     try {
       const r = await fetch(URL, {
@@ -326,7 +326,7 @@ Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<one-line pirate capta
     }
   }
 
-  console.log(`\n%c${results.ok.length} created, ${results.fail.length} failed`,
+  console.log(`\n%c${results.ok.length} created, ${results.skipped.length} already-existed, ${results.fail.length} failed`,
               "font-weight: bold; color: #b537ff;");
   if (results.fail.length) console.table(results.fail);
   console.log("Next: create matching Rules in the Sigil UI (docs/EVALS.md has the per-evaluator Rule config).");
