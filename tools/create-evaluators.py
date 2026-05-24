@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create all 12 Sigil evaluators for the ai-o11y-demo-apps demo via API.
+"""Create all 18 Sigil evaluators (one is a joke — sbPirateMate) for the ai-o11y-demo-apps demo via API.
 
 Hits POST {GRAFANA_URL}/api/plugins/grafana-sigil-app/resources/eval/evaluators
 for each evaluator. Uses Bearer auth (Grafana service-account token).
@@ -266,7 +266,142 @@ EVALUATORS = [
         output_keys=[{"key": "sentiment", "type": "string"}],
         max_tokens=200,
     ),
-    # 8. JSON schema validity
+    # 7b. Conciseness — NeonCart
+    llm_judge(
+        eid="ncConciseness",
+        description="Boolean: was the NC chatbot/gift-finder response concise and on-point (no preamble, no fluff)?",
+        system_prompt=(
+            "You are a writing critic. A concise response answers the question "
+            "directly without filler, recap of the question, multi-paragraph "
+            "context, or excessive disclaimers. Be strict: 'Great question!' "
+            "or 'Sure, I can help with that' is a fail. Reply with valid JSON only."
+        ),
+        user_prompt=(
+            "Is this AI response appropriately concise?\n\n"
+            "User asked: {{latest_user_message}}\n"
+            "AI responded: {{assistant_response}}\n\n"
+            "A response is CONCISE if:\n"
+            "- Answers the question directly within 1-3 sentences (or a short bullet list)\n"
+            "- No 'Great question!' / 'Sure, I can help' preamble\n"
+            "- No re-statement of the question\n"
+            "- No unsolicited follow-up suggestions or upsells\n"
+            "- No disclaimers ('As an AI...' / 'Please note...')\n\n"
+            'Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}'
+        ),
+        output_keys=[{"key": "concise", "type": "bool", "pass_value": True}],
+        max_tokens=200,
+    ),
+    # 7c. Conciseness — SupportBot
+    llm_judge(
+        eid="sbConciseness",
+        description="Boolean: was the SB specialist response concise (employees want answers, not essays)?",
+        system_prompt=(
+            "You are a writing critic for an internal help bot. Acme employees want "
+            "direct answers, not preamble or essay-length explanations. Be strict: "
+            "a response with 'I'd be happy to help!' or excessive disclaimers fails. "
+            "Reply with valid JSON only."
+        ),
+        user_prompt=(
+            "Is this internal help bot response appropriately concise?\n\n"
+            "Employee asked: {{latest_user_message}}\n"
+            "Bot responded: {{assistant_response}}\n\n"
+            "A response is CONCISE if:\n"
+            "- Provides the answer / next action in the first sentence\n"
+            "- No 'I'd be happy to help' / 'Let me look that up' preamble\n"
+            "- No restating of company policy the employee already knows\n"
+            "- No 'If you need further assistance, please...' closer\n\n"
+            'Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}'
+        ),
+        output_keys=[{"key": "concise", "type": "bool", "pass_value": True}],
+        max_tokens=200,
+    ),
+    # 7d. AI usage appropriateness — was the employee's prompt a worthwhile use of the bot?
+    llm_judge(
+        eid="sbAiUsage",
+        description="Was this a worthwhile use of the SupportBot? Flag wasteful / trivial / abusive employee prompts.",
+        system_prompt=(
+            "You are reviewing whether an Acme employee's question to the internal "
+            "help bot was a productive use of AI. Be honest. Many prompts are perfectly "
+            "legit; some are wasteful (could be Googled in 5s), some are abusive "
+            "(chit-chat, gaming the system, irrelevant). Reply with valid JSON only "
+            "— no prose outside the JSON object."
+        ),
+        user_prompt=(
+            "Classify the employee's use of the AI help bot.\n\n"
+            "Employee message: {{latest_user_message}}\n"
+            "Tools the bot would consult: {{tools}}\n\n"
+            "Categories:\n"
+            "- WORTHY: legitimate question that benefits from the bot's tools (runbooks, expense lookup, account info, internal policy)\n"
+            "- BORDERLINE: answerable via a 10-second web search or existing docs; using AI is OK but inefficient\n"
+            "- WASTEFUL: trivial, social, or off-topic — the bot adds no value\n"
+            "- ABUSIVE: gaming the system, irrelevant requests, or attempts to extract data the employee shouldn't see\n\n"
+            'Reply JSON only: {"usage": "<category>", "confidence": <0.0-1.0>, "rationale": "<one sentence>"}'
+        ),
+        output_keys=[{"key": "usage", "type": "string"}],
+        max_tokens=200,
+    ),
+
+    # 7e. Brand voice — does the bot sound like an Acme teammate, not a sales rep?
+    llm_judge(
+        eid="sbBrandVoice",
+        description="Boolean: does the SB specialist speak like an internal teammate using Acme terminology, NOT a sales rep pitching the employee?",
+        system_prompt=(
+            "You audit whether an internal help bot speaks in the right voice. "
+            "It should sound like a knowledgeable Acme teammate — concrete, factual, "
+            "uses internal terminology (Acme HR portal, Acme expense system, Acme "
+            "runbook, etc.). It should NOT pitch / upsell / use marketing language "
+            "('amazing', 'incredible', 'leverage', 'unlock', \"you'll love\"). "
+            "Reply with valid JSON only."
+        ),
+        user_prompt=(
+            "Does this internal help bot response sound like an Acme teammate, or like a marketing pitch?\n\n"
+            "Employee asked: {{latest_user_message}}\n"
+            "Bot responded: {{assistant_response}}\n\n"
+            "A response PASSES voice check if:\n"
+            "- Uses Acme-specific terminology when relevant (e.g. 'Acme HR portal', 'Acme expense system') instead of generic phrases\n"
+            "- Reads like an internal helpdesk reply: concrete, factual, action-oriented\n"
+            "- Does NOT pitch products, upsell features, or use marketing adjectives ('amazing', 'powerful', 'robust', 'leverage', 'unlock', 'best-in-class')\n"
+            "- Does NOT address the employee like a prospect (\"you'll love...\", 'discover...', 'experience...')\n\n"
+            'Reply JSON only: {"on_brand": <true|false>, "violations": ["<marketing phrase or generic substitute>", ...]}'
+        ),
+        output_keys=[{"key": "on_brand", "type": "bool", "pass_value": True}],
+        max_tokens=300,
+    ),
+
+    # 12b. [Demo gag] Pirate first-mate evaluator
+    #      Yes this is a joke. Provided because demos benefit from one whimsical
+    #      panel in the eval dashboard — sparks conversation when prospects see
+    #      the eval list. Easy to skip via --skip sbPirateMate.
+    llm_judge(
+        eid="sbPirateMate",
+        description="[Demo gag] 0-10 score: how likely is this Acme employee to abandon their cubicle and join you as first mate on a pirate ship?",
+        system_prompt=(
+            "You are a pirate captain evaluating employees for first-mate potential. "
+            "Score honestly based ONLY on what their message reveals. Look for: boldness "
+            "of question, willingness to take initiative, healthy disregard for "
+            "bureaucracy, mention of swashbuckling vocabulary, sense of adventure, OR "
+            "conversely — extreme corporate compliance, fear of risk, deep love of TPS "
+            "reports (auto-disqualifies). Reply with valid JSON only. Yes this is a joke "
+            "evaluator. Take it seriously anyway."
+        ),
+        user_prompt=(
+            "Score this employee's first-mate-on-a-pirate-ship potential.\n\n"
+            "Employee asked: {{latest_user_message}}\n\n"
+            "Rate 0-10 across these dimensions, then average and round:\n"
+            "- BOLDNESS: does the question suggest a curious, risk-tolerant mind?\n"
+            "- INITIATIVE: would they grab the wheel in a storm, or wait for IT?\n"
+            "- ANTI-BUREAUCRACY: do they sound like they enjoy the expense report form?\n"
+            "- SWASHBUCKLE QUOTIENT: bonus points for maritime / piratical vocabulary\n"
+            "- LOYALTY VECTOR: would they back you up against the Royal Navy?\n\n"
+            "Auto-disqualifiers (score 0): 'synergy', 'circling back', 'let's take this offline'\n"
+            "Auto-promoters (bonus to 10): 'treasure', 'ye', 'captain', 'arrr'\n\n"
+            'Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<pirate captain\'s log entry>", "auto_flags": [...]}'
+        ),
+        output_keys=[{"key": "first_mate_score", "type": "number", "pass_value": 7, "min": 0, "max": 10}],
+        max_tokens=250,
+    ),
+
+    # 13. JSON schema validity
     json_schema_eval(
         eid="jsonValid",
         description="True if the assistant response is valid JSON.",

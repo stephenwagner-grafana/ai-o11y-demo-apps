@@ -4,9 +4,9 @@ A curated set of evaluators that turn the ai-o11y-demo-apps stack into a
 complete AI o11y demo — not just metrics and traces, but verdicts on
 whether the AI is actually doing its job well.
 
-## 🚀 One-shot install (script all 12 evaluators)
+## 🚀 One-shot install (script all 18 evaluators (one is a joke))
 
-Skip the UI walkthrough and create all 12 evaluators via API:
+Skip the UI walkthrough and create all 18 evaluators (one is a joke) via API:
 
 ```bash
 export GRAFANA_URL=https://YOUR-STACK.grafana.net
@@ -73,7 +73,7 @@ Sigil substitutes these `{{double-brace}}` variables at evaluation time:
 
 ---
 
-## The 8 recommended evaluators
+## The 12 recommended evaluators
 
 Each evaluator block maps 1:1 to the Sigil Create-evaluator form: paste the
 "Field values" table values into the matching form fields, then create the
@@ -674,6 +674,238 @@ Selector: User-visible turn
 Sample rate: 100 (free)
 Evaluators: json.valid
 ```
+
+---
+
+### 9. SupportBot AI usage appropriateness (LLM Judge, categorical)
+
+**Why it matters:** chargeback story. Some employees use the bot for legitimate ops questions; some use it for chit-chat. This evaluator separates the two so the dashboard can show "AI wasted hours per employee."
+
+| Field | Value |
+|---|---|
+| Kind | `LLM Judge` |
+| Evaluator ID | `sbAiUsage` |
+| Description | `Was this a worthwhile use of the SupportBot? Flag wasteful / trivial / abusive employee prompts.` |
+| System prompt | *(paste below)* |
+| User prompt | *(paste below)* |
+| Output key | `usage` |
+| Output type | `string` |
+
+**System prompt:**
+```
+You are reviewing whether an Acme employee's question to the internal help bot was a productive use of AI. Be honest. Many prompts are perfectly legit; some are wasteful (could be Googled in 5s), some are abusive (chit-chat, gaming the system, irrelevant). Reply with valid JSON only — no prose outside the JSON object.
+```
+
+**User prompt:**
+```
+Classify the employee's use of the AI help bot.
+
+Employee message: {{latest_user_message}}
+Tools the bot would consult: {{tools}}
+
+Categories:
+- WORTHY: legitimate question that benefits from the bot's tools
+- BORDERLINE: answerable via a 10-second web search; using AI is OK but inefficient
+- WASTEFUL: trivial, social, or off-topic — the bot adds no value
+- ABUSIVE: gaming the system, irrelevant requests, or attempts to extract data the employee shouldn't see
+
+Reply JSON only: {"usage": "<category>", "confidence": <0.0-1.0>, "rationale": "<one sentence>"}
+```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb.ai_usage` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-.*"` |
+| Sample rate | `15` |
+| Evaluators | `sbAiUsage` |
+
+---
+
+### 10. NeonCart conciseness (LLM Judge, pass/fail)
+
+**Why it matters:** rambling AI responses degrade UX. Catches verbose preambles, restated questions, and unsolicited upsells.
+
+| Field | Value |
+|---|---|
+| Kind | `LLM Judge` |
+| Evaluator ID | `ncConciseness` |
+| Output key | `concise` |
+| Output type | `bool` |
+| Pass when | `true` |
+
+**System prompt:**
+```
+You are a writing critic. A concise response answers the question directly without filler, recap of the question, multi-paragraph context, or excessive disclaimers. Be strict: 'Great question!' or 'Sure, I can help with that' is a fail. Reply with valid JSON only.
+```
+
+**User prompt:**
+```
+Is this AI response appropriately concise?
+
+User asked: {{latest_user_message}}
+AI responded: {{assistant_response}}
+
+A response is CONCISE if:
+- Answers the question directly within 1-3 sentences (or a short bullet list)
+- No "Great question!" / "Sure, I can help" preamble
+- No re-statement of the question
+- No unsolicited follow-up suggestions or upsells
+- No disclaimers ("As an AI..." / "Please note...")
+
+Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}
+```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.nc.conciseness` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "nc-.*"` |
+| Sample rate | `10` |
+| Evaluators | `ncConciseness` |
+
+---
+
+### 11. SupportBot conciseness (LLM Judge, pass/fail)
+
+**Why it matters:** employees want answers, not essays. Internal bot prose that's too long actually wastes more time than it saves.
+
+| Field | Value |
+|---|---|
+| Kind | `LLM Judge` |
+| Evaluator ID | `sbConciseness` |
+| Output key | `concise` |
+| Output type | `bool` |
+| Pass when | `true` |
+
+**System prompt:**
+```
+You are a writing critic for an internal help bot. Acme employees want direct answers, not preamble or essay-length explanations. Be strict: a response with 'I'd be happy to help!' or excessive disclaimers fails. Reply with valid JSON only.
+```
+
+**User prompt:**
+```
+Is this internal help bot response appropriately concise?
+
+Employee asked: {{latest_user_message}}
+Bot responded: {{assistant_response}}
+
+A response is CONCISE if:
+- Provides the answer / next action in the first sentence
+- No "I'd be happy to help" / "Let me look that up" preamble
+- No restating of company policy the employee already knows
+- No "If you need further assistance, please..." closer
+
+Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}
+```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb.conciseness` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-.*"` |
+| Sample rate | `10` |
+| Evaluators | `sbConciseness` |
+
+---
+
+### 12. SupportBot brand voice (LLM Judge, pass/fail)
+
+**Why it matters:** internal bots that talk like marketing emails feel off-brand. This evaluator flags marketing-speak ("amazing", "leverage", "you'll love") AND the inverse — generic language where Acme-specific terms should appear ("your company's HR system" instead of "Acme HR portal").
+
+| Field | Value |
+|---|---|
+| Kind | `LLM Judge` |
+| Evaluator ID | `sbBrandVoice` |
+| Output key | `on_brand` |
+| Output type | `bool` |
+| Pass when | `true` |
+
+**System prompt:**
+```
+You audit whether an internal help bot speaks in the right voice. It should sound like a knowledgeable Acme teammate — concrete, factual, uses internal terminology (Acme HR portal, Acme expense system, Acme runbook, etc.). It should NOT pitch / upsell / use marketing language ('amazing', 'incredible', 'leverage', 'unlock', "you'll love"). Reply with valid JSON only.
+```
+
+**User prompt:**
+```
+Does this internal help bot response sound like an Acme teammate, or like a marketing pitch?
+
+Employee asked: {{latest_user_message}}
+Bot responded: {{assistant_response}}
+
+A response PASSES voice check if:
+- Uses Acme-specific terminology when relevant ("Acme HR portal", "Acme expense system")
+- Reads like an internal helpdesk reply: concrete, factual, action-oriented
+- Does NOT pitch products, upsell features, or use marketing adjectives ("amazing", "powerful", "leverage", "unlock")
+- Does NOT address the employee like a prospect ("you'll love...", "discover...", "experience...")
+
+Reply JSON only: {"on_brand": <true|false>, "violations": ["<marketing phrase>", ...]}
+```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb.brand_voice` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-.*"` |
+| Sample rate | `10` |
+| Evaluators | `sbBrandVoice` |
+
+---
+
+### 13. Pirate first-mate potential (LLM Judge, 0-10) — JOKE
+
+**Why it matters:** it doesn't. This is a gag evaluator — useful because every demo benefits from one whimsical panel that gets a laugh when a prospect notices it in the evaluator list. Sparks the "wait, what?" conversation about what evaluators CAN do (anything you can prompt for). Easy to skip via `--skip sbPirateMate`.
+
+| Field | Value |
+|---|---|
+| Kind | `LLM Judge` |
+| Evaluator ID | `sbPirateMate` |
+| Output key | `first_mate_score` |
+| Output type | `number` |
+| Pass threshold | `7` |
+| Min | `0` / Max | `10` |
+
+**System prompt:**
+```
+You are a pirate captain evaluating employees for first-mate potential. Score honestly based ONLY on what their message reveals. Look for: boldness of question, willingness to take initiative, healthy disregard for bureaucracy, mention of swashbuckling vocabulary, sense of adventure, OR conversely — extreme corporate compliance, fear of risk, deep love of TPS reports (auto-disqualifies). Reply with valid JSON only. Yes this is a joke evaluator. Take it seriously anyway.
+```
+
+**User prompt:**
+```
+Score this employee's first-mate-on-a-pirate-ship potential.
+
+Employee asked: {{latest_user_message}}
+
+Rate 0-10 across these dimensions, then average and round:
+- BOLDNESS: does the question suggest a curious, risk-tolerant mind?
+- INITIATIVE: would they grab the wheel in a storm, or wait for IT to fix it?
+- ANTI-BUREAUCRACY: do they sound like they enjoy the expense report form?
+- SWASHBUCKLE QUOTIENT: bonus points for maritime / piratical / treasure-related vocabulary
+- LOYALTY VECTOR: does their tone suggest they'd back you up against the Royal Navy?
+
+Auto-disqualifiers (score 0): "synergy", "circling back", "let's take this offline", unironic "ROI"
+Auto-promoters (bonus to 10): "treasure", "ye", "captain", "the high seas", any 'arrr'
+
+Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<one-line pirate captain's log entry>", "auto_flags": ["<flag1>", ...]}
+```
+
+**Matching Rule:**
+
+| Field | Value |
+|---|---|
+| Rule ID | `online.sb.pirate_mate` |
+| Selector | `User-visible turn` |
+| Match criteria | `gen_ai.agent.name =~ "sb-.*"` |
+| Sample rate | `5` (this is a gag — don't burn judge tokens on it) |
+| Evaluators | `sbPirateMate` |
 
 ---
 
