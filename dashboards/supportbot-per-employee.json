@@ -124,23 +124,27 @@
                     "steps": [
                       {
                         "value": 0,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 3,
                         "color": "#FBCA0A"
                       },
                       {
-                        "value": 10,
+                        "value": 8,
                         "color": "#F05A28"
                       },
                       {
-                        "value": 20,
+                        "value": 15,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 25,
                         "color": "#CF0DD6"
                       },
                       {
-                        "value": 30,
-                        "color": "#8B46DE"
-                      },
-                      {
                         "value": 40,
-                        "color": "#3274D9"
+                        "color": "#8B46DE"
                       }
                     ]
                   },
@@ -220,18 +224,33 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "green"
+                        "color": "#3274D9"
                       },
                       {
-                        "value": 80,
-                        "color": "red"
+                        "value": 1,
+                        "color": "#00F0FF"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#39FF7E"
                       }
                     ]
                   },
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#3c8fff"
-                  }
+                    "mode": "thresholds"
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
                 },
                 "overrides": []
               }
@@ -420,39 +439,47 @@
               "fieldConfig": {
                 "defaults": {
                   "thresholds": {
-                    "mode": "percentage",
+                    "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#FBCA0A"
+                        "color": "transparent"
                       },
                       {
-                        "value": 12,
-                        "color": "#F05A28"
+                        "value": 1,
+                        "color": "#1a1a2e"
                       },
                       {
-                        "value": 28,
+                        "value": 100,
+                        "color": "#3274D9"
+                      },
+                      {
+                        "value": 1000,
                         "color": "#CF0DD6"
                       },
                       {
-                        "value": 50,
-                        "color": "#8B46DE"
+                        "value": 5000,
+                        "color": "#FF4B7E"
                       },
                       {
-                        "value": 68,
-                        "color": "#3274D9"
+                        "value": 15000,
+                        "color": "#F05A28"
                       }
                     ]
                   },
                   "custom": {
                     "align": "left",
                     "cellOptions": {
-                      "type": "auto"
+                      "type": "color-background",
+                      "mode": "gradient"
                     },
                     "footer": {
                       "reducers": []
                     },
                     "inspect": false
+                  },
+                  "color": {
+                    "mode": "thresholds"
                   }
                 },
                 "overrides": [
@@ -756,17 +783,16 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
-                    "mean"
+                    "mean",
+                    "max"
                   ],
                   "displayMode": "table",
-                  "placement": "bottom",
+                  "placement": "right",
                   "showLegend": true
                 },
                 "tooltip": {
-                  "hideZeros": false,
-                  "mode": "single",
-                  "sort": "none"
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               },
               "fieldConfig": {
@@ -803,38 +829,29 @@
                     "mode": "palette-classic"
                   },
                   "custom": {
-                    "axisBorderShow": false,
-                    "axisCenteredZero": false,
-                    "axisColorMode": "text",
-                    "axisLabel": "",
-                    "axisPlacement": "auto",
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.9,
-                    "drawStyle": "bars",
-                    "fillOpacity": 80,
-                    "gradientMode": "none",
-                    "hideFrom": {
-                      "legend": false,
-                      "tooltip": false,
-                      "viz": false
+                    "drawStyle": "line",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "fillOpacity": 35,
+                    "gradientMode": "scheme",
+                    "spanNulls": false,
+                    "showPoints": "never",
+                    "pointSize": 4,
+                    "stacking": {
+                      "mode": "normal",
+                      "group": "A"
                     },
-                    "insertNulls": false,
-                    "lineInterpolation": "linear",
-                    "lineWidth": 0,
-                    "pointSize": 5,
+                    "axisPlacement": "auto",
+                    "axisLabel": "",
+                    "axisColorMode": "text",
                     "scaleDistribution": {
                       "type": "linear"
                     },
-                    "showPoints": "auto",
-                    "showValues": false,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "normal"
+                    "axisGridShow": true,
+                    "lineStyle": {
+                      "fill": "solid"
                     },
-                    "thresholdsStyle": {
-                      "mode": "off"
-                    }
+                    "axisCenteredZero": false
                   }
                 },
                 "overrides": []
@@ -920,34 +937,45 @@
                   "sort": "none"
                 },
                 "xTickLabelRotation": 0,
-                "xTickLabelSpacing": 0
+                "xTickLabelSpacing": 0,
+                "displayMode": "gradient",
+                "valueMode": "color",
+                "showUnfilled": true
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "short",
                   "decimals": 0,
                   "thresholds": {
-                    "mode": "percentage",
+                    "mode": "absolute",
                     "steps": [
                       {
                         "value": 0,
                         "color": "#FBCA0A"
                       },
                       {
-                        "value": 12,
+                        "value": 1000,
                         "color": "#F05A28"
                       },
                       {
-                        "value": 28,
+                        "value": 5000,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 20000,
                         "color": "#CF0DD6"
                       },
                       {
-                        "value": 50,
+                        "value": 50000,
                         "color": "#8B46DE"
                       },
                       {
-                        "value": 68,
+                        "value": 100000,
                         "color": "#3274D9"
+                      },
+                      {
+                        "value": 200000,
+                        "color": "#00F0FF"
                       }
                     ]
                   },
@@ -1036,16 +1064,46 @@
                   "fields": "",
                   "values": false
                 },
-                "wideLayout": true
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
               },
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#CF0DD6"
+                    "mode": "thresholds"
                   },
                   "decimals": 0,
-                  "unit": "short"
+                  "unit": "short",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#FBCA0A"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
                 }
               }
             }
@@ -1105,16 +1163,46 @@
                   "fields": "",
                   "values": false
                 },
-                "wideLayout": true
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
               },
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#FBCA0A"
+                    "mode": "thresholds"
                   },
-                  "decimals": 2,
-                  "unit": "percentunit"
+                  "decimals": 1,
+                  "unit": "percentunit",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#444444"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#39FF7E"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
                 }
               }
             }
@@ -1174,16 +1262,46 @@
                   "fields": "",
                   "values": false
                 },
-                "wideLayout": true
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
               },
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#F05A28"
+                    "mode": "thresholds"
                   },
                   "decimals": 2,
-                  "unit": "percentunit"
+                  "unit": "percentunit",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#1a1a1a"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#FF4B7E"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
                 }
               }
             }
@@ -1243,16 +1361,46 @@
                   "fields": "",
                   "values": false
                 },
-                "wideLayout": true
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
               },
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#8B46DE"
+                    "mode": "thresholds"
                   },
                   "decimals": 0,
-                  "unit": "short"
+                  "unit": "short",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#0d0d0d"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#CF0DD6"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
                 }
               }
             }
@@ -1312,16 +1460,46 @@
                   "fields": "",
                   "values": false
                 },
-                "wideLayout": true
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
               },
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#3274D9"
+                    "mode": "thresholds"
                   },
                   "decimals": 0,
-                  "unit": "short"
+                  "unit": "short",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#0a0a1a"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#3274D9"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
                 }
               }
             }
@@ -1439,9 +1617,41 @@
                   "custom": {
                     "align": "left",
                     "cellOptions": {
-                      "type": "auto"
+                      "type": "gauge",
+                      "mode": "gradient"
                     }
-                  }
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.5,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.75,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.9,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 0.97,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "min": 0,
+                  "max": 1
                 },
                 "overrides": [
                   {
@@ -1682,9 +1892,130 @@
                   "custom": {
                     "align": "left",
                     "cellOptions": {
-                      "type": "auto"
+                      "type": "color-background",
+                      "mode": "gradient"
                     }
-                  }
+                  },
+                  "overrides": [
+                    {
+                      "matcher": {
+                        "id": "byName",
+                        "options": "Worthy"
+                      },
+                      "properties": [
+                        {
+                          "id": "color",
+                          "value": {
+                            "mode": "thresholds"
+                          }
+                        },
+                        {
+                          "id": "thresholds",
+                          "value": {
+                            "mode": "absolute",
+                            "steps": [
+                              {
+                                "value": 0,
+                                "color": "transparent"
+                              },
+                              {
+                                "value": 1,
+                                "color": "#0a3a1a"
+                              },
+                              {
+                                "value": 50,
+                                "color": "#39FF7E"
+                              },
+                              {
+                                "value": 200,
+                                "color": "#00F0FF"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "matcher": {
+                        "id": "byName",
+                        "options": "Borderline"
+                      },
+                      "properties": [
+                        {
+                          "id": "color",
+                          "value": {
+                            "mode": "thresholds"
+                          }
+                        },
+                        {
+                          "id": "thresholds",
+                          "value": {
+                            "mode": "absolute",
+                            "steps": [
+                              {
+                                "value": 0,
+                                "color": "transparent"
+                              },
+                              {
+                                "value": 1,
+                                "color": "#3a2a0a"
+                              },
+                              {
+                                "value": 20,
+                                "color": "#FBCA0A"
+                              },
+                              {
+                                "value": 50,
+                                "color": "#F05A28"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "matcher": {
+                        "id": "byName",
+                        "options": "Wasteful"
+                      },
+                      "properties": [
+                        {
+                          "id": "color",
+                          "value": {
+                            "mode": "thresholds"
+                          }
+                        },
+                        {
+                          "id": "thresholds",
+                          "value": {
+                            "mode": "absolute",
+                            "steps": [
+                              {
+                                "value": 0,
+                                "color": "transparent"
+                              },
+                              {
+                                "value": 1,
+                                "color": "#3a0a1a"
+                              },
+                              {
+                                "value": 5,
+                                "color": "#FF4B7E"
+                              },
+                              {
+                                "value": 15,
+                                "color": "#CF0DD6"
+                              },
+                              {
+                                "value": 30,
+                                "color": "#8B46DE"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 },
                 "overrides": [
                   {
@@ -1887,7 +2218,9 @@
                 },
                 "orientation": "horizontal",
                 "showValue": "auto",
-                "xTickLabelRotation": 0
+                "xTickLabelRotation": 0,
+                "displayMode": "gradient",
+                "valueMode": "color"
               },
               "fieldConfig": {
                 "defaults": {
@@ -1898,7 +2231,36 @@
                   "decimals": 1,
                   "unit": "short",
                   "min": 0,
-                  "max": 10
+                  "max": 10,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#1a1a2e"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 3,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 7,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 15,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 30,
+                        "color": "#8B46DE"
+                      }
+                    ]
+                  }
                 }
               }
             }
@@ -2029,7 +2391,82 @@
                     "cellOptions": {
                       "type": "auto"
                     }
-                  }
+                  },
+                  "unit": "percentunit",
+                  "min": 0,
+                  "max": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.6,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.85,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.95,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 0.99,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "overrides": [
+                    {
+                      "matcher": {
+                        "id": "byRegexp",
+                        "options": ".*[Cc]oncise.*"
+                      },
+                      "properties": [
+                        {
+                          "id": "color",
+                          "value": {
+                            "mode": "fixed",
+                            "fixedColor": "#FBCA0A"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "matcher": {
+                        "id": "byRegexp",
+                        "options": ".*[Bb]rand.*"
+                      },
+                      "properties": [
+                        {
+                          "id": "color",
+                          "value": {
+                            "mode": "fixed",
+                            "fixedColor": "#CF0DD6"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "matcher": {
+                        "id": "byRegexp",
+                        "options": ".*[Gg]round.*"
+                      },
+                      "properties": [
+                        {
+                          "id": "color",
+                          "value": {
+                            "mode": "fixed",
+                            "fixedColor": "#3274D9"
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 },
                 "overrides": [
                   {
