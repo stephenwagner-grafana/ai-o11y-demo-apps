@@ -91,7 +91,7 @@ def heuristic_eval(eid, description, rule_tree, output_key="heuristic_pass"):
         "version": VERSION,
         "kind": "heuristic",
         "description": description,
-        "config": {"version": "v1", **rule_tree},
+        "config": {"version": VERSION, **rule_tree},
         "output_keys": [{"key": output_key, "type": "bool", "pass_value": True}],
     }
 
@@ -413,7 +413,7 @@ EVALUATORS = [
         ),
         output_keys=[{"key": "first_mate_score", "type": "number"}],
         pass_threshold=7, min_value=0, max_value=10,
-        max_tokens=250,
+        max_tokens=256,
     ),
 
     # 13. JSON schema validity

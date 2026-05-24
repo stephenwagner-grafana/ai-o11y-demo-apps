@@ -54,7 +54,7 @@
 
   const heuristicEval = (id, desc, rule_tree, output_key = "heuristic_pass") => ({
     evaluator_id: id, version: VERSION, kind: "heuristic", description: desc,
-    config: { version: "v1", ...rule_tree },
+    config: { version: VERSION, ...rule_tree },
     output_keys: [{ key: output_key, type: "bool", pass_value: true }],
   });
 
