@@ -1,805 +1,2455 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "st6b9f8",
+    "namespace": "stacks-1664580",
+    "uid": "295e245b-8a45-45bf-a683-c4591c33a5fe",
+    "resourceVersion": "2058318520730517995",
+    "generation": 1,
+    "creationTimestamp": "2026-05-23T22:45:51Z",
+    "labels": {
+      "grafana.app/deprecatedInternalID": "173490947297280"
+    },
+    "annotations": {
+      "grafana.app/createdBy": "user:efmyq5rboa5tsb",
+      "grafana.app/folder": "",
+      "grafana.app/saved-from-ui": "Grafana Cloud"
+    }
   },
-  "description": "Revenue + AI ROI panels for the NeonCart app. Built 2026-05-23 via MCP.",
-  "panels": [
-    {
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
-      "title": "\ud83d\udecd Add-to-Cart \u2014 by source & model",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "ATC events sliced by source. `manual` = direct shopper click. `ai_chatbot` = nc-chatbot suggested it. `ai_gift_finder` = gift-finder agent suggested it.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
           },
-          "custom": {
-            "barAlignment": 0,
-            "barWidthFactor": 0.9,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "gradientMode": "opacity",
-            "lineWidth": 0,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "builtIn": true,
+          "legacyOptions": {
+            "type": "dashboard"
+          }
+        }
+      },
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "query": {
+            "kind": "DataQuery",
+            "group": "grafana",
+            "version": "v0",
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "spec": {}
+          },
+          "enable": true,
+          "hide": false,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "legacyOptions": {
+            "type": "dashboard"
+          }
+        }
+      }
+    ],
+    "cursorSync": "Off",
+    "description": "Revenue + AI ROI panels for the NeonCart app. Built 2026-05-23 via MCP.",
+    "editable": true,
+    "elements": {
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "id": 10,
+          "title": "Per-agent ROI (1h)",
+          "description": "Per-agent ROI: attributed_revenue / token_cost across the last hour. Anything > 1 means the agent earns more than its token cost. Joined on gen_ai_agent_name.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_agent_name) (increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    },
+                    "refId": "rev",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    },
+                    "refId": "cost",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_agent_name) (increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) / on(gen_ai_agent_name) sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    },
+                    "refId": "roi",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "joinByField",
+                  "spec": {
+                    "options": {
+                      "byField": "gen_ai_agent_name",
+                      "mode": "outer"
+                    }
+                  }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Time 1": true,
+                        "Time 2": true,
+                        "Time 3": true
+                      },
+                      "indexByName": {
+                        "Value #cost": 2,
+                        "Value #rev": 1,
+                        "Value #roi": 3,
+                        "gen_ai_agent_name": 0
+                      },
+                      "renameByName": {
+                        "Value #cost": "Token Cost (1h)",
+                        "Value #rev": "AI Revenue (1h)",
+                        "Value #roi": "ROI (revenue/cost)",
+                        "gen_ai_agent_name": "Agent"
+                      }
+                    }
+                  }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "sortBy",
+                  "spec": {
+                    "options": {
+                      "fields": {},
+                      "sort": [
+                        {
+                          "desc": true,
+                          "field": "ROI (revenue/cost)"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
             }
           },
-          "decimals": 3,
-          "min": 0,
-          "unit": "short"
-        }
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 0,
-        "y": 1
-      },
-      "id": 2,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum by (source) (rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) * 3600",
-          "interval": "1h",
-          "legendFormat": "{{source}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Add-to-Cart per source",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "ATC events sliced by gen_ai_request_model. Populates as the model label rolls out across new loadgen traffic (parallel commit landing 2026-05-23). Empty before that.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "barAlignment": 0,
-            "barWidthFactor": 0.9,
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "gradientMode": "opacity",
-            "lineWidth": 0,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            }
-          },
-          "decimals": 3,
-          "min": 0,
-          "noValue": "(pending model-label rollout)",
-          "unit": "short"
-        }
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 12,
-        "x": 12,
-        "y": 1
-      },
-      "id": 3,
-      "options": {
-        "legend": {
-          "calcs": [
-            "lastNotNull",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum by (gen_ai_request_model) (rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_request_model!=\"unknown\",gen_ai_request_model!=\"\"}[1h])) * 3600",
-          "interval": "1h",
-          "legendFormat": "{{gen_ai_request_model}}",
-          "refId": "A"
-        }
-      ],
-      "title": "Add-to-Cart per model",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Ratio: AI-attributed ATC rate vs manual ATC rate. >1 = AI is suggesting more cart-adds than humans are clicking on their own. 1h window.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#ff2bd6"
-          },
-          "decimals": 2,
-          "unit": "none"
-        }
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 8,
-        "x": 0,
-        "y": 10
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum(rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\",source=~\"ai_.*\"}[1h])) / sum(rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\",source=\"manual\"}[1h]))",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "AI conversion lift (AI ATC / manual ATC, 1h)",
-      "type": "stat"
-    },
-    {
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 15
-      },
-      "id": 5,
-      "title": "\ud83d\udcb5 Revenue",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Realized revenue from completed checkouts, projected to $/hour.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "continuous-GrYlRd"
-          },
-          "custom": {
-            "drawStyle": "line",
-            "fillOpacity": 30,
-            "gradientMode": "opacity",
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "spanNulls": false
-          },
-          "decimals": 2,
-          "unit": "currencyUSD"
-        }
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 16,
-        "x": 0,
-        "y": 16
-      },
-      "id": 6,
-      "options": {
-        "legend": {
-          "showLegend": false
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum(rate(neoncart_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[5m])) * 3600",
-          "legendFormat": "revenue",
-          "refId": "A"
-        }
-      ],
-      "title": "Revenue rate ($/hour)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Current 1h revenue rate projected forward by 7 days (rate \u00d7 86400 \u00d7 7). Linear extrapolation \u2014 assumes constant traffic.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#ff6ad9"
-          },
-          "decimals": 2,
-          "unit": "currencyUSD"
-        }
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 8,
-        "x": 16,
-        "y": 16
-      },
-      "id": 7,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum(rate(neoncart_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) * 86400 * 7",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Projected weekly revenue",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Cumulative revenue attributed to AI agents (gift-finder + chatbot) in the trailing 24h.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#00f0ff"
-          },
-          "decimals": 2,
-          "unit": "currencyUSD"
-        }
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 24,
-        "x": 0,
-        "y": 25
-      },
-      "id": 8,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum(increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[24h]))",
-          "instant": true,
-          "refId": "A"
-        }
-      ],
-      "title": "AI-attributed revenue (last 24h)",
-      "type": "stat"
-    },
-    {
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "id": 9,
-      "title": "\ud83c\udfaf AI agent ROI",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Per-agent ROI: attributed_revenue / token_cost across the last hour. Anything > 1 means the agent earns more than its token cost. Joined on gen_ai_agent_name.",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "left",
-            "cellOptions": {
-              "type": "auto"
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "",
+            "spec": {
+              "options": {
+                "cellHeight": "md",
+                "showHeader": true,
+                "sortBy": [
+                  {
+                    "desc": true,
+                    "displayName": "ROI (revenue/cost)"
+                  }
+                ]
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "custom": {
+                    "align": "left",
+                    "cellOptions": {
+                      "type": "color-background",
+                      "mode": "gradient"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Agent"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 240
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "left"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "AI Revenue (1h)"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "currencyUSD"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-GrYlRd"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Token Cost (1h)"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "currencyUSD"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 4
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-YlRd"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "ROI (revenue/cost)"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "none"
+                      },
+                      {
+                        "id": "decimals",
+                        "value": 2
+                      },
+                      {
+                        "id": "custom.cellOptions",
+                        "value": {
+                          "mode": "gradient",
+                          "type": "gauge",
+                          "valueDisplayMode": "text"
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "continuous-purples"
+                        }
+                      },
+                      {
+                        "id": "fieldMinMax",
+                        "value": true
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "right"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              }
             }
           }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Agent"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 240
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "id": 11,
+          "title": "AI agent ROI (combined, 1h)",
+          "description": "Combined AI agent ROI \u2014 attributed revenue / token cost over the last hour, across ALL nc-* agents. > 1.0 = AI pays for itself. < 1.0 = bleeding.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) / sum(rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "textMode": "value",
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
               },
-              {
-                "id": "custom.align",
-                "value": "left"
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 2,
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.5,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 1.5,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 3,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                },
+                "overrides": []
               }
-            ]
+            }
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "id": 2,
+          "title": "Add-to-Cart per source",
+          "description": "ATC events sliced by source. `manual` = direct shopper click. `ai_chatbot` = nc-chatbot suggested it. `ai_gift_finder` = gift-finder agent suggested it.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (source) (rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) * 3600",
+                        "interval": "1h",
+                        "legendFormat": "{{source}}"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "decimals": 3,
+                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.9,
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "gradientMode": "scheme",
+                    "lineWidth": 2,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "lineInterpolation": "smooth",
+                    "showPoints": "never"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Add-to-Cart per model",
+          "description": "ATC events sliced by gen_ai_request_model. Populates as the model label rolls out across new loadgen traffic (parallel commit landing 2026-05-23). Empty before that.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_request_model!=\"unknown\",gen_ai_request_model!=\"\"}[1h])) * 3600",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_request_model}}"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "decimals": 3,
+                  "min": 0,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "noValue": "(pending model-label rollout)",
+                  "custom": {
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.9,
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "gradientMode": "scheme",
+                    "lineWidth": 2,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "lineInterpolation": "smooth",
+                    "showPoints": "never"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "AI conversion lift (AI ATC / manual ATC, 1h)",
+          "description": "Ratio: AI-attributed ATC rate vs manual ATC rate. >1 = AI is suggesting more cart-adds than humans are clicking on their own. 1h window.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\",source=~\"ai_.*\"}[1h])) / sum(rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\",source=\"manual\"}[1h]))",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "textMode": "value",
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 2,
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#1a1a2e"
+                      },
+                      {
+                        "value": 0.5,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 1.5,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 3,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Revenue rate ($/hour)",
+          "description": "Realized revenue from completed checkouts, projected to $/hour.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[5m])) * 3600",
+                        "legendFormat": "revenue"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 2,
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "fillOpacity": 40,
+                    "gradientMode": "scheme",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "spanNulls": false,
+                    "showPoints": "never"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Projected weekly revenue",
+          "description": "Current 1h revenue rate projected forward by 7 days (rate \u00d7 86400 \u00d7 7). Linear extrapolation \u2014 assumes constant traffic.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) * 86400 * 7",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "textMode": "value",
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 2,
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#0a3a1a"
+                      },
+                      {
+                        "value": 100,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 1000,
+                        "color": "#00F0FF"
+                      },
+                      {
+                        "value": 10000,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 50000,
+                        "color": "#8B46DE"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "AI-attributed revenue (last 24h)",
+          "description": "Cumulative revenue attributed to AI agents (gift-finder + chatbot) in the trailing 24h.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[24h]))",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ]
+                },
+                "textMode": "value",
+                "wideLayout": true,
+                "percentChangeColorMode": "standard",
+                "showPercentChange": false
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 2,
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#1a1a2e"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 100,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 500,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 2000,
+                        "color": "#8B46DE"
+                      }
+                    ]
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-20": {
+        "kind": "Panel",
+        "spec": {
+          "id": 20,
+          "title": "Eval verdicts (24h)",
+          "description": "Total NeonCart evaluator executions (sum across all evaluators, 24h).",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[24h]))",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "wideLayout": true,
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 100,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 500,
+                        "color": "#39FF7E"
+                      }
+                    ]
+                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-21": {
+        "kind": "Panel",
+        "spec": {
+          "id": 21,
+          "title": "Quality pass rate (ncQuality, 1h)",
+          "description": "% of sampled chatbot/gift-finder turns the LLM judge scored as high quality.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncQuality\",status=\"pass\"}[1h])) / clamp_min(sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncQuality\"}[1h])), 0.0001)",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "wideLayout": true,
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.7,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.85,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.95,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 0.99,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-22": {
+        "kind": "Panel",
+        "spec": {
+          "id": 22,
+          "title": "Groundedness pass rate (1h)",
+          "description": "Are AI responses tied to real catalog/cart data?",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncGroundedness\",status=\"pass\"}[1h])) / clamp_min(sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncGroundedness\"}[1h])), 0.0001)",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "wideLayout": true,
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.5,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 0.75,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 0.9,
+                        "color": "#3274D9"
+                      },
+                      {
+                        "value": 0.97,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-23": {
+        "kind": "Panel",
+        "spec": {
+          "id": 23,
+          "title": "Hallucination rate (24h)",
+          "description": "Share of sampled turns flagged as likely hallucination. Lower is better.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"hallucination\",status=\"fail\"}[24h])) / clamp_min(sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"hallucination\"}[24h])), 0.0001)",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "wideLayout": true,
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 0.01,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.05,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.1,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.2,
+                        "color": "#CF0DD6"
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "decimals": 2,
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-24": {
+        "kind": "Panel",
+        "spec": {
+          "id": 24,
+          "title": "Sentiment positivity (24h)",
+          "description": "% of customer-facing turns the sentiment judge scored positive/neutral.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncSentiment\",status=\"pass\"}[24h])) / clamp_min(sum(rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncSentiment\"}[24h])), 0.0001)",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "textMode": "value",
+                "wideLayout": true,
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.5,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.7,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.85,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 0.95,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "mappings": [
+                    {
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "\u2014",
+                          "color": "text"
+                        }
+                      },
+                      "type": "special"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-25": {
+        "kind": "Panel",
+        "spec": {
+          "id": 25,
+          "title": "Pass rate per evaluator (1h smoothed)",
+          "description": "Pass-rate trend per NeonCart evaluator over time.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (evaluator_id) (rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",status=\"pass\"}[1h])) / clamp_min(sum by (evaluator_id) (rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h])), 0.0001)",
+                        "legendFormat": "{{evaluator_id}}"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "percentunit",
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "line",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "fillOpacity": 25,
+                    "gradientMode": "opacity",
+                    "spanNulls": false,
+                    "showPoints": "never"
+                  },
+                  "min": 0,
+                  "max": 1
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-26": {
+        "kind": "Panel",
+        "spec": {
+          "id": 26,
+          "title": "Pass rate per agent \u2014 ncQuality (1h)",
+          "description": "Quality pass-rate split by nc-chatbot vs nc-gift-finder.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_agent_name) (rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncQuality\",status=\"pass\"}[1h])) / clamp_min(sum by (gen_ai_agent_name) (rate(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncQuality\"}[1h])), 0.0001)",
+                        "legendFormat": "{{gen_ai_agent_name}}",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "bargauge",
+            "version": "",
+            "spec": {
+              "options": {
+                "displayMode": "gradient",
+                "valueMode": "color",
+                "orientation": "horizontal",
+                "showUnfilled": true,
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 0.7,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.85,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.95,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 0.99,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "unit": "percentunit",
+                  "min": 0,
+                  "max": 1,
+                  "decimals": 2
+                }
+              }
+            }
+          }
+        }
+      },
+      "panel-27": {
+        "kind": "Panel",
+        "spec": {
+          "id": 27,
+          "title": "Verdict mix (1h stacked)",
+          "description": "Stacked verdicts per hour \u2014 green pass, rose fail, orange error.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (status) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
+                        "legendFormat": "{{status}}"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "",
+            "spec": {
+              "options": {
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "drawStyle": "bars",
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "fillOpacity": 85,
+                    "gradientMode": "scheme",
+                    "spanNulls": false,
+                    "showPoints": "never",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.9,
+                    "stacking": {
+                      "mode": "normal",
+                      "group": "A"
+                    }
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "pass"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#39FF7E"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "fail"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#FF4B7E"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "error"
+                    },
+                    "properties": [
+                      {
+                        "id": "color",
+                        "value": {
+                          "mode": "fixed",
+                          "fixedColor": "#F05A28"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      "panel-28": {
+        "kind": "Panel",
+        "spec": {
+          "id": 28,
+          "title": "Hallucination + groundedness fails (24h)",
+          "description": "Worst offenders by agent. Empty if everyone's behaving.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_agent_name) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"hallucination\",status=\"fail\"}[24h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_agent_name) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",evaluator_id=\"ncGroundedness\",status=\"fail\"}[24h]))",
+                        "format": "table",
+                        "instant": true
+                      }
+                    },
+                    "refId": "B",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [
+                {
+                  "kind": "Transformation",
+                  "group": "joinByField",
+                  "spec": {
+                    "options": {
+                      "byField": "gen_ai_agent_name",
+                      "mode": "outer"
+                    }
+                  }
+                },
+                {
+                  "kind": "Transformation",
+                  "group": "organize",
+                  "spec": {
+                    "options": {
+                      "excludeByName": {
+                        "Time 1": true,
+                        "Time 2": true
+                      },
+                      "renameByName": {
+                        "gen_ai_agent_name": "Agent",
+                        "Value #A": "Hallucination fails",
+                        "Value #B": "Groundedness fails"
+                      }
+                    }
+                  }
+                }
+              ],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "table",
+            "version": "",
+            "spec": {
+              "options": {
+                "cellHeight": "md",
+                "showHeader": true,
+                "footer": {
+                  "show": false,
+                  "reducer": [
+                    "sum"
+                  ],
+                  "fields": ""
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "transparent"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#3a0a1a"
+                      },
+                      {
+                        "value": 3,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 30,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 100,
+                        "color": "#CF0DD6"
+                      }
+                    ]
+                  },
+                  "custom": {
+                    "cellOptions": {
+                      "type": "color-background",
+                      "mode": "gradient"
+                    },
+                    "align": "auto"
+                  },
+                  "unit": "short"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Agent"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.width",
+                        "value": 240
+                      },
+                      {
+                        "id": "custom.align",
+                        "value": "left"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "kind": "RowsLayout",
+      "spec": {
+        "rows": [
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83d\udecd Add-to-Cart \u2014 by source & model",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 12,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 12,
+                        "y": 0,
+                        "width": 12,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 9,
+                        "width": 8,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           },
           {
-            "matcher": {
-              "id": "byName",
-              "options": "AI Revenue (1h)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyUSD"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "gauge",
-                  "valueDisplayMode": "text"
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83d\udcb5 Revenue",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 16,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 16,
+                        "y": 0,
+                        "width": 8,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 9,
+                        "width": 24,
+                        "height": 6,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        }
+                      }
+                    }
+                  ]
                 }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "continuous-GrYlRd"
-                }
-              },
-              {
-                "id": "fieldMinMax",
-                "value": true
-              },
-              {
-                "id": "custom.align",
-                "value": "right"
               }
-            ]
+            }
           },
           {
-            "matcher": {
-              "id": "byName",
-              "options": "Token Cost (1h)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyUSD"
-              },
-              {
-                "id": "decimals",
-                "value": 4
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "gauge",
-                  "valueDisplayMode": "text"
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83c\udfaf AI agent ROI",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 24,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 9,
+                        "width": 24,
+                        "height": 7,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-11"
+                        }
+                      }
+                    }
+                  ]
                 }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "continuous-YlRd"
-                }
-              },
-              {
-                "id": "fieldMinMax",
-                "value": true
-              },
-              {
-                "id": "custom.align",
-                "value": "right"
               }
-            ]
+            }
           },
           {
-            "matcher": {
-              "id": "byName",
-              "options": "ROI (revenue/cost)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "none"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              },
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "mode": "gradient",
-                  "type": "gauge",
-                  "valueDisplayMode": "text"
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83c\udfaf AI quality at a glance \u2014 eval results",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-20"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 5,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-21"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 10,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-22"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 15,
+                        "y": 0,
+                        "width": 4,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-23"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 19,
+                        "y": 0,
+                        "width": 5,
+                        "height": 5,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-24"
+                        }
+                      }
+                    }
+                  ]
                 }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "continuous-purples"
-                }
-              },
-              {
-                "id": "fieldMinMax",
-                "value": true
-              },
-              {
-                "id": "custom.align",
-                "value": "right"
-              },
-              {
-                "id": "min",
-                "value": 0
               }
-            ]
+            }
+          },
+          {
+            "kind": "RowsLayoutRow",
+            "spec": {
+              "title": "\ud83d\udcca Eval trends & per-agent breakdowns",
+              "collapse": false,
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 0,
+                        "width": 14,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-25"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 14,
+                        "y": 0,
+                        "width": 10,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-26"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 0,
+                        "y": 9,
+                        "width": 14,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-27"
+                        }
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "x": 14,
+                        "y": 9,
+                        "width": 10,
+                        "height": 9,
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-28"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
           }
         ]
-      },
-      "gridPos": {
-        "h": 9,
-        "w": 24,
-        "x": 0,
-        "y": 32
-      },
-      "id": 10,
-      "options": {
-        "cellHeight": "md",
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "ROI (revenue/cost)"
-          }
-        ]
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum by (gen_ai_agent_name) (increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h]))",
-          "format": "table",
-          "instant": true,
-          "refId": "rev"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
-          "format": "table",
-          "instant": true,
-          "refId": "cost"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum by (gen_ai_agent_name) (increase(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) / on(gen_ai_agent_name) sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
-          "format": "table",
-          "instant": true,
-          "refId": "roi"
-        }
-      ],
-      "title": "Per-agent ROI (1h)",
-      "transformations": [
-        {
-          "id": "joinByField",
-          "options": {
-            "byField": "gen_ai_agent_name",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time 1": true,
-              "Time 2": true,
-              "Time 3": true
-            },
-            "indexByName": {
-              "Value #cost": 2,
-              "Value #rev": 1,
-              "Value #roi": 3,
-              "gen_ai_agent_name": 0
-            },
-            "renameByName": {
-              "Value #cost": "Token Cost (1h)",
-              "Value #rev": "AI Revenue (1h)",
-              "Value #roi": "ROI (revenue/cost)",
-              "gen_ai_agent_name": "Agent"
-            }
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "desc": true,
-                "field": "ROI (revenue/cost)"
-              }
-            ]
-          }
-        }
-      ],
-      "type": "table"
+      }
     },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "description": "Combined AI agent ROI \u2014 attributed revenue / token cost over the last hour, across ALL nc-* agents. > 1.0 = AI pays for itself. < 1.0 = bleeding.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#b537ff"
-          },
-          "decimals": 1,
-          "unit": "none"
-        }
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 24,
-        "x": 0,
-        "y": 41
-      },
-      "id": 11,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "center",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "expr": "sum(rate(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[1h])) / sum(rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}[1h]))",
-          "instant": true,
-          "refId": "A"
-        }
+    "links": [],
+    "liveNow": false,
+    "preload": false,
+    "tags": [
+      "ai-o11y-demo-apps",
+      "neoncart",
+      "business",
+      "roi"
+    ],
+    "timeSettings": {
+      "timezone": "browser",
+      "from": "now-6h",
+      "to": "now",
+      "autoRefresh": "30s",
+      "autoRefreshIntervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
       ],
-      "title": "AI agent ROI (combined, 1h)",
-      "type": "stat"
-    }
-  ],
-  "refresh": "30s",
-  "schemaVersion": 39,
-  "tags": [
-    "ai-o11y-demo-apps",
-    "neoncart",
-    "business",
-    "roi"
-  ],
-  "templating": {
-    "list": [
+      "hideTimepicker": false,
+      "fiscalYearStartMonth": 0
+    },
+    "title": "AI o11y \u2014 NeonCart Business Impact",
+    "variables": [
       {
-        "allValue": ".+",
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "includeAll": true,
-        "label": "Agent",
-        "multi": true,
-        "name": "agent",
-        "query": {
-          "query": "label_values(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}, gen_ai_agent_name)"
-        },
-        "refresh": 2,
-        "sort": 1,
-        "type": "query"
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "agent",
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "label": "Agent",
+          "hide": "dontHide",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "grafanacloud-prom"
+            },
+            "spec": {
+              "query": "label_values(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}, gen_ai_agent_name)"
+            }
+          },
+          "regex": "",
+          "sort": "alphabeticalAsc",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".+",
+          "allowCustomValue": true
+        }
       },
       {
-        "allValue": ".+",
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "includeAll": true,
-        "label": "Provider",
-        "multi": true,
-        "name": "provider",
-        "query": {
-          "query": "label_values(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}, gen_ai_system)"
-        },
-        "refresh": 2,
-        "sort": 1,
-        "type": "query"
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "provider",
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "label": "Provider",
+          "hide": "dontHide",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "grafanacloud-prom"
+            },
+            "spec": {
+              "query": "label_values(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}, gen_ai_system)"
+            }
+          },
+          "regex": "",
+          "sort": "alphabeticalAsc",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".+",
+          "allowCustomValue": true
+        }
       },
       {
-        "allValue": ".+",
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${DS_PROMETHEUS}"
-        },
-        "includeAll": true,
-        "label": "Model",
-        "multi": true,
-        "name": "model",
-        "query": {
-          "query": "label_values(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}, gen_ai_request_model)"
-        },
-        "refresh": 2,
-        "sort": 1,
-        "type": "query"
+        "kind": "QueryVariable",
+        "spec": {
+          "name": "model",
+          "current": {
+            "text": "All",
+            "value": [
+              "$__all"
+            ]
+          },
+          "label": "Model",
+          "hide": "dontHide",
+          "refresh": "onTimeRangeChanged",
+          "skipUrlSync": false,
+          "query": {
+            "kind": "DataQuery",
+            "group": "prometheus",
+            "version": "v0",
+            "datasource": {
+              "name": "grafanacloud-prom"
+            },
+            "spec": {
+              "query": "label_values(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\"}, gen_ai_request_model)"
+            }
+          },
+          "regex": "",
+          "sort": "alphabeticalAsc",
+          "options": [],
+          "multi": true,
+          "includeAll": true,
+          "allValue": ".+",
+          "allowCustomValue": true
+        }
       }
     ]
-  },
-  "time": {
-    "from": "now-6h",
-    "to": "now"
-  },
-  "timezone": "browser",
-  "title": "AI o11y \u2014 NeonCart Business Impact",
-  "uid": null,
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "Your Grafana Cloud Prometheus datasource (typically named grafanacloud-prom).",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
-  "__requires": [
-    {
-      "type": "grafana",
-      "id": "grafana",
-      "name": "Grafana",
-      "version": "11.0.0"
-    },
-    {
-      "type": "datasource",
-      "id": "prometheus",
-      "name": "Prometheus",
-      "version": "1.0.0"
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "timeseries",
-      "name": "Time series",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "barchart",
-      "name": "Bar chart",
-      "version": ""
-    }
-  ]
+  }
 }
