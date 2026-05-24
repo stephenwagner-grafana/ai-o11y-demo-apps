@@ -18,6 +18,11 @@ whether the AI is actually doing its job well.
 
 Pick the 3-5 most relevant evaluators for your customer; running all 8 against every conversation is overkill (and expensive at LLM-judge cost).
 
+
+> **Sigil ID format**: Evaluator ID and Rule ID fields accept only letters,
+> digits, `_`, and `.` — no hyphens. We use dot-separated IDs throughout
+> (matches Sigil's built-in convention like `online.helpfulness.user_visible`).
+
 ## The 4 evaluator Kinds Sigil supports
 
 | Kind | What it does | Cost per call |
@@ -61,7 +66,7 @@ matching Rule on the Rules tab.
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `nc-quality` |
+| Evaluator ID | `nc.quality` |
 | Description | `0-5 quality score for nc-chatbot and nc-gift-finder responses (relevance, completeness, accuracy, tone).` |
 | Provider | `Default` |
 | Model | `Default` (cheap haiku) |
@@ -98,11 +103,11 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 | Field | Value |
 |---|---|
 | Enable rule | ON |
-| Rule ID | `online.nc-quality.user_visible` |
+| Rule ID | `online.nc.quality.user_visible` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "nc-.*"` (Add criteria) |
 | Sample rate | `10` (%) |
-| Evaluators | `nc-quality` |
+| Evaluators | `nc.quality` |
 
 ---
 
@@ -114,7 +119,7 @@ Same shape as #1 but for the internal helpdesk. Different filter + prompt + tone
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `sb-quality` |
+| Evaluator ID | `sb.quality` |
 | Description | `0-5 quality score for sb-* agent responses (actionable, policy-aligned, complete, professional tone).` |
 | System prompt | *(same as #1)* |
 | User prompt | *(paste below)* |
@@ -146,11 +151,11 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 
 | Field | Value |
 |---|---|
-| Rule ID | `online.sb-quality.user_visible` |
+| Rule ID | `online.sb.quality.user_visible` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "sb-.*"` |
 | Sample rate | `10` |
-| Evaluators | `sb-quality` |
+| Evaluators | `sb.quality` |
 
 ---
 
@@ -162,7 +167,7 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `nc-groundedness` |
+| Evaluator ID | `nc.groundedness` |
 | Description | `Boolean: did the NC chatbot/gift-finder use only catalog data returned by its tools, or did it hallucinate products?` |
 | User prompt | *(paste below)* |
 | Max tokens | `300` |
@@ -190,11 +195,11 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": ["<claim 1>", .
 
 | Field | Value |
 |---|---|
-| Rule ID | `online.nc-groundedness` |
+| Rule ID | `online.nc.groundedness` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "nc-chatbot|nc-gift-finder"` |
 | Sample rate | `15` |
-| Evaluators | `nc-groundedness` |
+| Evaluators | `nc.groundedness` |
 
 ---
 
@@ -206,7 +211,7 @@ Critical because invented HR/IT policy is a compliance issue.
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `sb-groundedness` |
+| Evaluator ID | `sb.groundedness` |
 | Output key | `grounded` |
 | Output type | `bool` |
 | Pass when | `true` |
@@ -229,11 +234,11 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": [...]}
 
 | Field | Value |
 |---|---|
-| Rule ID | `online.sb-groundedness` |
+| Rule ID | `online.sb.groundedness` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "sb-billing|sb-tech-support|sb-account-management"` |
 | Sample rate | `15` |
-| Evaluators | `sb-groundedness` |
+| Evaluators | `sb.groundedness` |
 
 ---
 
@@ -290,11 +295,11 @@ Click the **sparkle** ✨ icon next to Pattern to auto-generate the regex from t
 
 | Evaluator ID | Pattern description (paste verbatim) |
 |---|---|
-| `pii-ssn` | `Matches a US Social Security Number in the format NNN-NN-NNNN` |
-| `pii-credit-card` | `Matches a 13-16 digit credit card number with optional spaces or dashes` |
-| `pii-email` | `Matches an email address` |
-| `pii-phone` | `Matches a US phone number with or without country code` |
-| `pii-ip` | `Matches an IPv4 address` |
+| `pii.ssn` | `Matches a US Social Security Number in the format NNN-NN-NNNN` |
+| `pii.credit_card` | `Matches a 13-16 digit credit card number with optional spaces or dashes` |
+| `pii.email` | `Matches an email address` |
+| `pii.phone` | `Matches a US phone number with or without country code` |
+| `pii.ip` | `Matches an IPv4 address` |
 
 #### 6b. Combine with a Heuristic
 
@@ -302,7 +307,7 @@ Click the **sparkle** ✨ icon next to Pattern to auto-generate the regex from t
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `sb-pii` |
+| Evaluator ID | `sb.pii` |
 | Description | `Pass if NONE of the PII regex evaluators matched the response.` |
 | Output key | `heuristic_pass` |
 | Output type | `bool` |
@@ -314,11 +319,11 @@ In the Heuristic configuration: choose **All of**, then add 5 rules — for each
 
 | Field | Value |
 |---|---|
-| Rule ID | `online.sb-pii` |
+| Rule ID | `online.sb.pii` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "sb-account-management|sb-billing"` |
 | Sample rate | `100` (PII is compliance — score every response) |
-| Evaluators | `sb-pii` only (the 5 sub-evaluators chain in automatically) |
+| Evaluators | `sb.pii` only (the 5 sub-evaluators chain in automatically) |
 
 ---
 
@@ -332,7 +337,7 @@ Applies to the **user** turn (not the AI response).
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `nc-sentiment` |
+| Evaluator ID | `nc.sentiment` |
 | Description | `Categorical sentiment of the user's message (NEUTRAL / POSITIVE / FRUSTRATED / ANGRY).` |
 | Output key | `sentiment` |
 | Output type | `string` |
@@ -357,11 +362,11 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 
 | Field | Value |
 |---|---|
-| Rule ID | `online.nc-sentiment` |
+| Rule ID | `online.nc.sentiment` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "nc-chatbot|nc-gift-finder"` |
 | Sample rate | `25` |
-| Evaluators | `nc-sentiment` |
+| Evaluators | `nc.sentiment` |
 
 ---
 
@@ -373,7 +378,7 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 
 | Field | Value |
 |---|---|
-| Evaluator ID | `json-valid` |
+| Evaluator ID | `json.valid` |
 | Description | `True if the assistant response is valid JSON.` |
 | Evaluate against | `Response` |
 | Schema | `{}` *(empty schema accepts any well-formed JSON)* |
@@ -385,23 +390,23 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 
 | Field | Value |
 |---|---|
-| Rule ID | `online.json-valid` |
+| Rule ID | `online.json.valid` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "nc-.*|sb-.*"` |
 | Sample rate | `100` (free) |
-| Evaluators | `json-valid` |
+| Evaluators | `json.valid` |
 
 ---
 
 ## Suggested rollout order
 
-1. **#1 `nc-quality`** — broadest signal. Validates the eval pipeline end-to-end before adding more.
-2. **#3 `nc-groundedness`** — the demo punchline. Visualizes "AI hallucinates products" failure per model.
-3. **#2 `sb-quality`** — gives you the SupportBot half of the overall "AI health" KPI.
-4. **#6 `sb-pii`** — lands the compliance beat for internal AI.
-5. **#7 `nc-sentiment`** — for the "AI conversation health" panel.
-6. **#8 `json-valid`** — free schema check.
-7. **#4 `sb-groundedness`** — internal-bot version of #3.
+1. **#1 `nc.quality`** — broadest signal. Validates the eval pipeline end-to-end before adding more.
+2. **#3 `nc.groundedness`** — the demo punchline. Visualizes "AI hallucinates products" failure per model.
+3. **#2 `sb.quality`** — gives you the SupportBot half of the overall "AI health" KPI.
+4. **#6 `sb.pii`** — lands the compliance beat for internal AI.
+5. **#7 `nc.sentiment`** — for the "AI conversation health" panel.
+6. **#8 `json.valid`** — free schema check.
+7. **#4 `sb.groundedness`** — internal-bot version of #3.
 8. **#5 `hallucination`** — tool-less fallback.
 
 ## How the dashboard uses evaluation results
@@ -426,7 +431,7 @@ sum by (evaluator, gen_ai_request_model) (
 
 Drop into a Stat panel grouped by `evaluator`, color thresholds at 80% and 95%. Tells the side-by-side "which model is best at X" story.
 
-For PII / hallucination — invert (higher = worse): `count by (...) (sigil_eval_executions_total{status="fail",evaluator="sb-pii"})`.
+For PII / hallucination — invert (higher = worse): `count by (...) (sigil_eval_executions_total{status="fail",evaluator="sb.pii"})`.
 
 ## Cost gotcha
 
