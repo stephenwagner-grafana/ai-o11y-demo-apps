@@ -1,25 +1,18 @@
 // Paste into your Grafana DevTools Console while logged in.
 // Creates Sigil eval rules that wire the 18 evaluators (from create-evaluators.js)
-// to per-app traffic slices (neoncart vs supportbot).
+// to per-agent traffic slices.
 //
 // Endpoint: POST   {origin}/api/plugins/grafana-sigil-app/resources/eval/rules
 //           DELETE {origin}/api/plugins/grafana-sigil-app/resources/eval/rules/{rule_id}
 //
-// Match key: `tags.app` (one of Sigil's first-class tag suggestions). Values
-// are neoncart / supportbot — set on every generation via the gateway's
-// tags={"app": req.app, ...} dict (gateway/app/providers/anthropic.py:327).
+// Match shape (captured from the UI's PATCH payload):
+//   { enabled, selector, match: { agent_name: "<agent>" }, sample_rate, evaluator_ids, alert_rule_uids: [] }
 //
-// Why per-app and not per-agent: the gateway does NOT include
-// `gen_ai.agent.name` in the Sigil tags dict, so Tag-criteria rules keyed
-// on that name match zero generations. The Sigil UI has a separate
-// "Agent name" criteria type that DOES match, but its API payload shape
-// isn't documented yet (would need a network capture from the UI). Per-app
-// matching ships today; per-agent can come later by either capturing the
-// "Agent name" rule shape or by adding gen_ai.agent.name to the tags dict.
-//
-// The eval RESULT metric (sigil_eval_executions_total) still carries
-// gen_ai_agent_name as a Prom label, so dashboards retain per-specialist
-// breakdowns — only the rule scope is coarser.
+// IMPORTANT: "agent_name" is a TOP-LEVEL match key, NOT a tag. The earlier
+// `tags.gen_ai.agent.name` attempts failed because the gateway's tags dict
+// (gateway/app/providers/anthropic.py:327) doesn't include agent name —
+// it's passed as a separate Sigil SDK parameter and surfaces in the API
+// as its own match dimension.
 //
 // One-liner (always fresh):
 //   fetch('https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/tools/create-rules.js?cb='+Date.now()).then(r=>r.text()).then(eval)
@@ -27,10 +20,17 @@
 (async () => {
   const URL = `${window.location.origin}/api/plugins/grafana-sigil-app/resources/eval/rules`;
 
-  // ── Cleanup: remove every prior rule_id we've shipped (per-agent + per-app).
-  // Safe to re-run — 404s on missing IDs are silently counted.
+  // ── Cleanup: nuke everything we've ever shipped. Safe to re-run — 404s
+  // are silently counted as "already gone".
   const STALE_IDS = [
-    // 45 legacy per-agent IDs (tags.gen_ai.agent.name — matched 0)
+    // Per-app interim
+    "online.nc.quality", "online.nc.groundedness", "online.nc.sentiment",
+    "online.nc.conciseness", "online.sb.quality", "online.sb.groundedness",
+    "online.sb.pii", "online.sb.ai_usage", "online.sb.conciseness",
+    "online.sb.brand_voice", "online.sb.pirate_mate",
+    "online.nc.hallucination", "online.sb.hallucination",
+    "online.nc.json_valid", "online.sb.json_valid",
+    // Per-agent rules with the wrong (Tag) match shape
     "online.nc.quality.nc_chatbot", "online.nc.quality.nc_gift_finder",
     "online.sb.quality.sb_router", "online.sb.quality.sb_billing",
     "online.sb.quality.sb_tech_support", "online.sb.quality.sb_account_management",
@@ -56,7 +56,7 @@
     "online.sb.pirate_mate.sb_tech_support", "online.sb.pirate_mate.sb_account_management",
   ];
 
-  console.log(`%cDeleting ${STALE_IDS.length} legacy per-agent rules…`,
+  console.log(`%cDeleting ${STALE_IDS.length} prior rule IDs…`,
               "font-weight: bold; color: #ff9933;");
   let deleted = 0, missing = 0;
   for (const id of STALE_IDS) {
@@ -74,38 +74,55 @@
               "color: #ff9933;");
 
   // ── Helper ──────────────────────────────────────────────────────────────────
-  // Match by `tags.app` — values: neoncart / supportbot
-  const rule = (id, evaluators, app, sampleRate, selector = "user_visible_turn") => ({
-    rule_id: id,
+  // match: {agent_name: "<agent>"} — UI renders this as "Agent name" criteria.
+  // rule_id must be [A-Za-z0-9_.] — sanitize hyphens to underscores.
+  const sanitize = s => s.replace(/-/g, "_");
+  const rule = (id, evaluators, agentName, sampleRate, selector = "user_visible_turn") => ({
+    rule_id: sanitize(id),
     enabled: true,
     selector,
-    match: { "tags.app": app },
-    sample_rate: sampleRate,   // decimal 0-1, NOT percent
+    match: { agent_name: agentName },
+    sample_rate: sampleRate,
     evaluator_ids: evaluators,
+    alert_rule_uids: [],
   });
 
-  const RULES = [
-    // NeonCart-only
-    rule("online.nc.quality",       ["ncQuality"],       "neoncart",   0.10),
-    rule("online.nc.groundedness",  ["ncGroundedness"],  "neoncart",   0.15),
-    rule("online.nc.sentiment",     ["ncSentiment"],     "neoncart",   0.25),
-    rule("online.nc.conciseness",   ["ncConciseness"],   "neoncart",   0.10),
-    // SupportBot-only
-    rule("online.sb.quality",       ["sbQuality"],       "supportbot", 0.10),
-    rule("online.sb.groundedness",  ["sbGroundedness"],  "supportbot", 0.15),
-    rule("online.sb.pii",           ["sbPii"],           "supportbot", 1.00),
-    rule("online.sb.ai_usage",      ["sbAiUsage"],       "supportbot", 0.15),
-    rule("online.sb.conciseness",   ["sbConciseness"],   "supportbot", 0.10),
-    rule("online.sb.brand_voice",   ["sbBrandVoice"],    "supportbot", 0.10),
-    rule("online.sb.pirate_mate",   ["sbPirateMate"],    "supportbot", 0.05),
-    // Both apps
-    rule("online.nc.hallucination", ["hallucination"],   "neoncart",   0.05),
-    rule("online.sb.hallucination", ["hallucination"],   "supportbot", 0.05),
-    rule("online.nc.json_valid",    ["jsonValid"],       "neoncart",   1.00),
-    rule("online.sb.json_valid",    ["jsonValid"],       "supportbot", 1.00),
-  ];
+  const NC_AGENTS = ["nc-chatbot", "nc-gift-finder"];
+  const SB_USER_FACING = ["sb-router", "sb-billing", "sb-tech-support", "sb-account-management"];
+  const SB_PII_RISK = ["sb-account-management", "sb-billing"];
 
-  console.log(`%cCreating ${RULES.length} rules on ${window.location.origin}`,
+  const RULES = [];
+  // 1. ncQuality
+  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.quality.${a}`,        ["ncQuality"],       a, 0.10)));
+  // 2. sbQuality
+  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.quality.${a}`,   ["sbQuality"],       a, 0.10)));
+  // 3. ncGroundedness
+  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.groundedness.${a}`,   ["ncGroundedness"],  a, 0.15)));
+  // 4. sbGroundedness (excl. router)
+  ["sb-billing", "sb-tech-support", "sb-account-management"].forEach(a =>
+    RULES.push(rule(`online.sb.groundedness.${a}`,                         ["sbGroundedness"],  a, 0.15)));
+  // 5. hallucination
+  [...NC_AGENTS, ...SB_USER_FACING].forEach(a =>
+    RULES.push(rule(`online.hallucination.${a}`,                           ["hallucination"],   a, 0.05)));
+  // 6. sbPii
+  SB_PII_RISK.forEach(a => RULES.push(rule(`online.sb.pii.${a}`,           ["sbPii"],           a, 1.00)));
+  // 7. ncSentiment
+  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.sentiment.${a}`,       ["ncSentiment"],     a, 0.25)));
+  // 8. jsonValid
+  [...NC_AGENTS, ...SB_USER_FACING].forEach(a =>
+    RULES.push(rule(`online.json.valid.${a}`,                              ["jsonValid"],       a, 1.00)));
+  // 9. sbAiUsage
+  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.ai_usage.${a}`,   ["sbAiUsage"],       a, 0.15)));
+  // 10. ncConciseness
+  NC_AGENTS.forEach(a => RULES.push(rule(`online.nc.conciseness.${a}`,     ["ncConciseness"],   a, 0.10)));
+  // 11. sbConciseness
+  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.conciseness.${a}`,["sbConciseness"],   a, 0.10)));
+  // 12. sbBrandVoice
+  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.brand_voice.${a}`,["sbBrandVoice"],    a, 0.10)));
+  // 13. sbPirateMate
+  SB_USER_FACING.forEach(a => RULES.push(rule(`online.sb.pirate_mate.${a}`,["sbPirateMate"],    a, 0.05)));
+
+  console.log(`%cCreating ${RULES.length} per-agent rules on ${window.location.origin}`,
               "font-weight: bold; color: #00f0ff;");
 
   const results = { ok: [], skipped: [], fail: [] };
@@ -119,13 +136,13 @@
       });
       const text = await resp.text();
       if (resp.ok) {
-        console.log(`%c  ✓ ${r.rule_id.padEnd(30)} app=${r.match["tags.app"].padEnd(11)} → ${r.evaluator_ids.join(",")}`,
+        console.log(`%c  ✓ ${r.rule_id.padEnd(45)} → ${r.evaluator_ids.join(",")} HTTP ${resp.status}`,
                     "color: #39ff7e;");
         results.ok.push(r.rule_id);
       } else if (resp.status === 409) {
         results.skipped.push(r.rule_id);
       } else {
-        console.log(`%c  ✗ ${r.rule_id.padEnd(30)} HTTP ${resp.status}`,
+        console.log(`%c  ✗ ${r.rule_id.padEnd(45)} HTTP ${resp.status}`,
                     "color: #ff3b6b;");
         console.log(`      ${text.slice(0, 300)}`);
         results.fail.push({ id: r.rule_id, status: resp.status, body: text });
