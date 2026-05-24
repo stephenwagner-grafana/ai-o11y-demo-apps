@@ -19,18 +19,25 @@
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const URL = `${window.location.origin}/api/plugins/grafana-sigil-app/resources/eval/evaluators`;
 
-  const llmJudge = (id, desc, sys, usr, output_keys, max_tokens = 256, pass_threshold = undefined, min = undefined, max = undefined) => {
-    const ev = {
+  const llmJudge = (id, desc, sys, usr, output_keys, max_tokens = 256, pass_threshold, min, max) => {
+    // For number output_keys, attach pass_threshold/min/max INSIDE the first key
+    const keys = output_keys.map((k, i) => {
+      if (i === 0 && k.type === "number") {
+        const enriched = { ...k };
+        if (pass_threshold !== undefined) enriched.pass_threshold = pass_threshold;
+        if (min !== undefined) enriched.min = min;
+        if (max !== undefined) enriched.max = max;
+        return enriched;
+      }
+      return k;
+    });
+    return {
       evaluator_id: id, version: VERSION, kind: "llm_judge", description: desc,
       config: { provider: JUDGE_PROVIDER, model: JUDGE_MODEL,
                 system_prompt: sys, user_prompt: usr,
                 max_tokens, temperature: 0 },
-      output_keys,
+      output_keys: keys,
     };
-    if (pass_threshold !== undefined) ev.pass_threshold = pass_threshold;
-    if (min !== undefined) ev.min = min;
-    if (max !== undefined) ev.max = max;
-    return ev;
   };
 
   const regexEval = (id, desc, pattern) => ({
@@ -47,7 +54,7 @@
 
   const heuristicEval = (id, desc, rule_tree, output_key = "heuristic_pass") => ({
     evaluator_id: id, version: VERSION, kind: "heuristic", description: desc,
-    config: { version: "1", ...rule_tree },
+    config: { version: "v1", ...rule_tree },
     output_keys: [{ key: output_key, type: "bool", pass_value: true }],
   });
 

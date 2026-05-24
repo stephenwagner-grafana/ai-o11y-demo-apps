@@ -35,7 +35,18 @@ DEFAULT_JUDGE_MODEL = "claude-haiku-4-5-20251001"
 def llm_judge(eid, description, system_prompt, user_prompt,
               output_keys, max_tokens=256, temperature=0,
               pass_threshold=None, min_value=None, max_value=None):
-    out = {
+    # For number output_keys, attach pass_threshold/min/max INSIDE the first key
+    keys = []
+    for i, k in enumerate(output_keys):
+        if i == 0 and k.get("type") == "number":
+            enriched = dict(k)
+            if pass_threshold is not None: enriched["pass_threshold"] = pass_threshold
+            if min_value is not None: enriched["min"] = min_value
+            if max_value is not None: enriched["max"] = max_value
+            keys.append(enriched)
+        else:
+            keys.append(k)
+    return {
         "evaluator_id": eid,
         "version": VERSION,
         "kind": "llm_judge",
@@ -48,12 +59,8 @@ def llm_judge(eid, description, system_prompt, user_prompt,
             "max_tokens": max_tokens,
             "temperature": temperature,
         },
-        "output_keys": output_keys,
+        "output_keys": keys,
     }
-    if pass_threshold is not None: out["pass_threshold"] = pass_threshold
-    if min_value is not None: out["min"] = min_value
-    if max_value is not None: out["max"] = max_value
-    return out
 
 
 def regex_eval(eid, description, pattern):
@@ -84,7 +91,7 @@ def heuristic_eval(eid, description, rule_tree, output_key="heuristic_pass"):
         "version": VERSION,
         "kind": "heuristic",
         "description": description,
-        "config": {"version": "1", **rule_tree},
+        "config": {"version": "v1", **rule_tree},
         "output_keys": [{"key": output_key, "type": "bool", "pass_value": True}],
     }
 
