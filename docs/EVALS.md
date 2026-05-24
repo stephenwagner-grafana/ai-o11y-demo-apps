@@ -68,7 +68,7 @@ matching Rule on the Rules tab.
 | Evaluator ID | `nc.quality` |
 | Description | `0-5 quality score for nc-chatbot and nc-gift-finder responses (relevance, completeness, accuracy, tone).` |
 | Provider | `Default` |
-| Model | `Default` (cheap haiku) |
+| Model | `Default (cheap haiku) |
 | System prompt | `You evaluate one assistant response. Use only the user input and assistant output. Follow the score field description exactly. Be strict. If uncertain, choose the lower score.` |
 | User prompt | *(paste the block below)* |
 | Max tokens | `200` |
@@ -105,8 +105,50 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 | Rule ID | `online.nc.quality.user_visible` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "nc-.*"` (Add criteria) |
-| Sample rate | `10` (%) |
+| Sample rate | `10 (%) |
 | Evaluators | `nc.quality` |
+
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: LLM Judge
+Evaluator ID: nc.quality
+Description: 0-5 quality score for nc-chatbot and nc-gift-finder responses (relevance, completeness, accuracy, tone).
+Provider: Default
+Model: Default (cheap haiku)
+System prompt: You evaluate one assistant response. Use only the user input and assistant output. Follow the score field description exactly. Be strict. If uncertain, choose the lower score.
+Max tokens: 200
+Temperature: 0
+Output key: score
+Output type: number
+Output description: Quality score 0.0-5.0
+Pass threshold: 3
+Min: 0
+Max: 5
+User prompt: |
+  You are evaluating an AI shopping assistant's response quality.
+  
+  User asked: {{latest_user_message}}
+  AI responded: {{assistant_response}}
+  Tools used: {{tool_calls}}
+  
+  Rate 0-5 on:
+  - RELEVANCE: did it address what the user asked?
+  - COMPLETENESS: enough info to act on?
+  - ACCURACY: are product details / prices / availability correct?
+  - TONE: helpful, not pushy?
+  
+  Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
+
+# Rule
+Enable rule: ON
+Rule ID: online.nc.quality.user_visible
+Selector: User-visible turn
+Match criteria: gen_ai.agent.name =~ "nc-.*"` (Add criteria)
+Sample rate: 10 (%)
+Evaluators: nc.quality
+```
 
 ---
 
@@ -155,6 +197,41 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 | Sample rate | `10` |
 | Evaluators | `sb.quality` |
 
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: LLM Judge
+Evaluator ID: sb.quality
+Description: 0-5 quality score for sb-* agent responses (actionable, policy-aligned, complete, professional tone).
+Max tokens: 200
+Temperature: 0
+Output key: score
+Output type: number
+Pass threshold: 3
+User prompt: |
+  You are evaluating an internal employee help bot's response.
+  
+  Employee asked: {{latest_user_message}}
+  Bot responded: {{assistant_response}}
+  Tools used: {{tool_calls}}
+  
+  Rate 0-5:
+  - ACTIONABLE: did it tell the employee what to do, or just describe the situation?
+  - POLICY-ALIGNED: does the advice match company policy as referenced in tool outputs?
+  - COMPLETENESS: would the employee need to ask a follow-up to act?
+  - TONE: professional, not condescending, no excessive disclaimers?
+  
+  Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
+
+# Rule
+Rule ID: online.sb.quality.user_visible
+Selector: User-visible turn
+Match criteria: gen_ai.agent.name =~ "sb-.*"
+Sample rate: 10
+Evaluators: sb.quality
+```
+
 ---
 
 ### 3. NeonCart groundedness (LLM Judge, pass/fail)
@@ -198,6 +275,38 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": ["<claim 1>", .
 | Sample rate | `15` |
 | Evaluators | `nc.groundedness` |
 
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: LLM Judge
+Evaluator ID: nc.groundedness
+Description: Boolean: did the NC chatbot/gift-finder use only catalog data returned by its tools, or did it hallucinate products?
+Max tokens: 300
+Temperature: 0
+Output key: grounded
+Output type: bool
+Pass when: true
+User prompt: |
+  You are verifying whether an AI shopping assistant's response is grounded
+  in the tool data it received.
+  
+  Tool results: {{tool_results}}
+  AI response: {{assistant_response}}
+  
+  A grounded response only mentions products / prices / specs that appear
+  in the tool results above. Inventing SKUs, prices, descriptions, or
+  availability NOT in the tool output = NOT grounded.
+  
+  Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": ["<claim 1>", ...]}
+
+# Rule
+Rule ID: online.nc.groundedness
+Selector: User-visible turn
+Sample rate: 15
+Evaluators: nc.groundedness
+```
+
 ---
 
 ### 4. SupportBot groundedness (LLM Judge, pass/fail)
@@ -236,6 +345,34 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": [...]}
 | Sample rate | `15` |
 | Evaluators | `sb.groundedness` |
 
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: LLM Judge
+Evaluator ID: sb.groundedness
+Output key: grounded
+Output type: bool
+Pass when: true
+User prompt: |
+  You are verifying an internal help bot grounded its answer in tool data.
+  
+  Tools called: {{tool_calls}}
+  Tool results: {{tool_results}}
+  Bot response: {{assistant_response}}
+  
+  If the bot cited a runbook step, expense amount, account detail, or policy
+  NOT present in the tool output, mark as NOT grounded.
+  
+  Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": [...]}
+
+# Rule
+Rule ID: online.sb.groundedness
+Selector: User-visible turn
+Sample rate: 15
+Evaluators: sb.groundedness
+```
+
 ---
 
 ### 5. Hallucination check (LLM Judge, pass/fail)
@@ -248,7 +385,7 @@ A tighter version that doesn't need tool output as reference — useful for sess
 | Evaluator ID | `hallucination` |
 | Output key | `hallucination` |
 | Output type | `bool` |
-| Pass when | `false` (no hallucination = pass) |
+| Pass when | `false (no hallucination = pass) |
 
 **User prompt:**
 ```
@@ -273,6 +410,34 @@ Reply JSON only: {"hallucination": <true|false>, "examples": [...]}
 | Match criteria | `gen_ai.agent.name =~ "nc-.*|sb-.*"` |
 | Sample rate | `5` |
 | Evaluators | `hallucination` |
+
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: LLM Judge
+Evaluator ID: hallucination
+Output key: hallucination
+Output type: bool
+Pass when: false (no hallucination = pass)
+User prompt: |
+  Does this AI response contain any factual claim that:
+  - is fabricated (made up)
+  - contradicts widely known facts
+  - mentions specific identifiers (SKUs, dollar amounts, dates) that look
+    invented rather than retrieved?
+  
+  Prompt: {{latest_user_message}}
+  Response: {{assistant_response}}
+  
+  Reply JSON only: {"hallucination": <true|false>, "examples": [...]}
+
+# Rule
+Rule ID: online.hallucination
+Selector: User-visible turn
+Sample rate: 5
+Evaluators: hallucination
+```
 
 ---
 
@@ -316,8 +481,26 @@ In the Heuristic configuration: choose **All of**, then add 5 rules — for each
 | Rule ID | `online.sb.pii` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "sb-account-management|sb-billing"` |
-| Sample rate | `100` (PII is compliance — score every response) |
+| Sample rate | `100 (PII is compliance — score every response) |
 | Evaluators | `sb.pii` only (the 5 sub-evaluators chain in automatically) |
+
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: Heuristic
+Evaluator ID: sb.pii
+Description: Pass if NONE of the PII regex evaluators matched the response.
+Output key: heuristic_pass
+Output type: bool
+Pass when: true
+
+# Rule
+Rule ID: online.sb.pii
+Selector: User-visible turn
+Sample rate: 100 (PII is compliance — score every response)
+Evaluators: sb.pii` only (the 5 sub-evaluators chain in automatically)
+```
 
 ---
 
@@ -361,6 +544,36 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 | Sample rate | `25` |
 | Evaluators | `nc.sentiment` |
 
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: LLM Judge
+Evaluator ID: nc.sentiment
+Description: Categorical sentiment of the user's message (NEUTRAL / POSITIVE / FRUSTRATED / ANGRY).
+Output key: sentiment
+Output type: string
+Pass when: leave blank — this is categorical, dashboard charts the breakdown
+User prompt: |
+  Classify the emotional state expressed in this customer message.
+  
+  Message: {{latest_user_message}}
+  
+  Categories:
+  - NEUTRAL: standard product question, no emotion
+  - POSITIVE: enthusiastic, complimentary
+  - FRUSTRATED: showing impatience, repeating themselves
+  - ANGRY: rude language, demanding human, threatening to leave
+  
+  Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_phrases": [...]}
+
+# Rule
+Rule ID: online.nc.sentiment
+Selector: User-visible turn
+Sample rate: 25
+Evaluators: nc.sentiment
+```
+
 ---
 
 ### 8. JSON-response validity (JSON Schema, pass/fail)
@@ -385,8 +598,27 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 | Rule ID | `online.json.valid` |
 | Selector | `User-visible turn` |
 | Match criteria | `gen_ai.agent.name =~ "nc-.*|sb-.*"` |
-| Sample rate | `100` (free) |
+| Sample rate | `100 (free) |
 | Evaluators | `json.valid` |
+
+📋 **Quick copy-paste cheat:**
+
+```yaml
+# Evaluator
+Kind: JSON Schema
+Evaluator ID: json.valid
+Description: True if the assistant response is valid JSON.
+Evaluate against: Response
+Output key: json_valid
+Output type: bool
+Pass when: true
+
+# Rule
+Rule ID: online.json.valid
+Selector: User-visible turn
+Sample rate: 100 (free)
+Evaluators: json.valid
+```
 
 ---
 
