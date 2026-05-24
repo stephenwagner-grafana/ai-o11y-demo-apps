@@ -135,6 +135,14 @@ Pick the 3-5 most relevant evaluators for your customer; running all 8 against e
 > digits, `_`, and `.` — no hyphens. We use dot-separated IDs throughout
 > (matches Sigil's built-in convention like `online.helpfulness.user_visible`).
 
+> **Match criteria type gotcha (manual UI flow)**: when you click "Add
+> criteria" the type dropdown defaults to **Tag**. For per-agent matching
+> you **MUST switch the type to "Agent name"** (separate option). The Tag
+> dropdown lists `gen_ai.system / app / caller_type / session_id / user_id`
+> but **not** agent name — even if you type `gen_ai.agent.name` as a custom
+> tag key, it'll match 0 generations. The JS scripts handle this
+> automatically (`match: {"agent_name": "<agent>"}` — no `tags.` prefix).
+
 ## The 4 evaluator Kinds Sigil supports
 
 | Kind | What it does | Cost per call |
