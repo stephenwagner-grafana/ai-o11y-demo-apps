@@ -62,10 +62,9 @@ matching Rule on the Rules tab.
 
 **Why it matters:** answers the "is the AI actually helpful" question. Cheap and broadly informative — start here.
 
-**Kind: LLM Judge**
-
 | Field | Value |
 |---|---|
+| Kind | `LLM Judge` |
 | Evaluator ID | `nc.quality` |
 | Description | `0-5 quality score for nc-chatbot and nc-gift-finder responses (relevance, completeness, accuracy, tone).` |
 | Provider | `Default` |
@@ -115,10 +114,9 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 
 Same shape as #1 but for the internal helpdesk. Different filter + prompt + tone criteria.
 
-**Kind: LLM Judge**
-
 | Field | Value |
 |---|---|
+| Kind | `LLM Judge` |
 | Evaluator ID | `sb.quality` |
 | Description | `0-5 quality score for sb-* agent responses (actionable, policy-aligned, complete, professional tone).` |
 | System prompt | *(same as #1)* |
@@ -163,10 +161,9 @@ Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}
 
 **Why it matters:** catches the failure mode where the AI invents SKUs, prices, or availability not in the tool output. The AI o11y demo punchline — "see how groundedness drops the moment you switch models."
 
-**Kind: LLM Judge**
-
 | Field | Value |
 |---|---|
+| Kind | `LLM Judge` |
 | Evaluator ID | `nc.groundedness` |
 | Description | `Boolean: did the NC chatbot/gift-finder use only catalog data returned by its tools, or did it hallucinate products?` |
 | User prompt | *(paste below)* |
@@ -207,10 +204,9 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": ["<claim 1>", .
 
 Critical because invented HR/IT policy is a compliance issue.
 
-**Kind: LLM Judge** — same field shape as #3 with a different prompt.
-
 | Field | Value |
 |---|---|
+| Kind | `LLM Judge` |
 | Evaluator ID | `sb.groundedness` |
 | Output key | `grounded` |
 | Output type | `bool` |
@@ -246,10 +242,9 @@ Reply JSON only: {"grounded": <true|false>, "ungrounded_claims": [...]}
 
 A tighter version that doesn't need tool output as reference — useful for sessions with no tool calls.
 
-**Kind: LLM Judge**
-
 | Field | Value |
 |---|---|
+| Kind | `LLM Judge` |
 | Evaluator ID | `hallucination` |
 | Output key | `hallucination` |
 | Output type | `bool` |
@@ -303,10 +298,9 @@ Click the **sparkle** ✨ icon next to Pattern to auto-generate the regex from t
 
 #### 6b. Combine with a Heuristic
 
-**Kind: Heuristic**
-
 | Field | Value |
 |---|---|
+| Kind | `Heuristic` |
 | Evaluator ID | `sb.pii` |
 | Description | `Pass if NONE of the PII regex evaluators matched the response.` |
 | Output key | `heuristic_pass` |
@@ -333,10 +327,9 @@ In the Heuristic configuration: choose **All of**, then add 5 rules — for each
 
 Applies to the **user** turn (not the AI response).
 
-**Kind: LLM Judge**
-
 | Field | Value |
 |---|---|
+| Kind | `LLM Judge` |
 | Evaluator ID | `nc.sentiment` |
 | Description | `Categorical sentiment of the user's message (NEUTRAL / POSITIVE / FRUSTRATED / ANGRY).` |
 | Output key | `sentiment` |
@@ -374,10 +367,9 @@ Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_p
 
 **Why it matters:** some prompts ask the AI to return JSON. Catches formatting drift without needing an LLM judge — pure schema validation, free.
 
-**Kind: JSON Schema**
-
 | Field | Value |
 |---|---|
+| Kind | `JSON Schema` |
 | Evaluator ID | `json.valid` |
 | Description | `True if the assistant response is valid JSON.` |
 | Evaluate against | `Response` |
