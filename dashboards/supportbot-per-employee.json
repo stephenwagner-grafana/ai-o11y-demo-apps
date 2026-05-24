@@ -67,7 +67,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(5, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])) > 0))",
@@ -173,7 +173,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "count(count by (user_id) (increase(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[24h]) > 0))",
@@ -258,7 +258,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
@@ -281,7 +281,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
@@ -304,7 +304,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
@@ -327,7 +327,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
@@ -728,7 +728,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])) * 3600)",
@@ -862,7 +862,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[$__range])))",
@@ -1004,7 +1004,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\"}[24h]))"
@@ -1073,7 +1073,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\",status=\"pass\"}[1h])) / sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[1h]))"
@@ -1142,7 +1142,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"hallucination\",status=\"fail\"}[24h])) / sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"hallucination\"}[24h]))"
@@ -1211,7 +1211,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=~\"pii.*|secretApiKey\",status=\"fail\"}[24h]))"
@@ -1280,7 +1280,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbPirateMate\",status=\"pass\"}[24h]))"
@@ -1349,7 +1349,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(10, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\",status=\"pass\"}[24h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[24h])))",
@@ -1369,7 +1369,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[24h]))",
@@ -1569,7 +1569,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(15, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=\"WORTHY\"}[24h])))",
@@ -1589,7 +1589,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=\"BORDERLINE\"}[24h]))",
@@ -1609,7 +1609,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=~\"WASTEFUL|ABUSIVE\"}[24h]))",
@@ -1847,7 +1847,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(10, avg by (user_id) (sigil_eval_executions_value{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbPirateMate\"}))",
@@ -1926,7 +1926,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "topk(12, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbConciseness\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbConciseness\"}[1h])))",
@@ -1946,7 +1946,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbBrandVoice\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbBrandVoice\"}[1h]))",
@@ -1966,7 +1966,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "${DS_PROMETHEUS}"
+                        "name": "grafanacloud-prom"
                       },
                       "spec": {
                         "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbGroundedness\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbGroundedness\"}[1h]))",
@@ -2507,7 +2507,7 @@
             "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "${DS_PROMETHEUS}"
+              "name": "grafanacloud-prom"
             },
             "spec": {
               "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, gen_ai_agent_name)"
@@ -2542,7 +2542,7 @@
             "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "${DS_PROMETHEUS}"
+              "name": "grafanacloud-prom"
             },
             "spec": {
               "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, gen_ai_system)"
@@ -2577,7 +2577,7 @@
             "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "${DS_PROMETHEUS}"
+              "name": "grafanacloud-prom"
             },
             "spec": {
               "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, gen_ai_request_model)"
@@ -2612,7 +2612,7 @@
             "group": "prometheus",
             "version": "v0",
             "datasource": {
-              "name": "${DS_PROMETHEUS}"
+              "name": "grafanacloud-prom"
             },
             "spec": {
               "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, user_id)"
