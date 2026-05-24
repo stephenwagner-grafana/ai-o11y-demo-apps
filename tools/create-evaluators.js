@@ -327,6 +327,9 @@ Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<one-line pirate capta
         console.log(`%c  ✓ ${ev.evaluator_id.padEnd(18)} ${ev.kind.padEnd(12)} HTTP ${r.status}`,
                     "color: #39ff7e;");
         results.ok.push(ev.evaluator_id);
+      } else if (r.status === 409) {
+        // Already exists — silent skip
+        results.skipped.push(ev.evaluator_id);
       } else {
         console.log(`%c  ✗ ${ev.evaluator_id.padEnd(18)} ${ev.kind.padEnd(12)} HTTP ${r.status}`,
                     "color: #ff3b6b;");

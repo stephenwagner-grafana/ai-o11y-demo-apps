@@ -68,7 +68,7 @@
   console.log(`%cCreating ${RULES.length} rules on ${window.location.origin}`,
               "font-weight: bold; color: #00f0ff;");
 
-  const results = { ok: [], fail: [] };
+  const results = { ok: [], skipped: [], fail: [] };
   for (const r of RULES) {
     try {
       const resp = await fetch(URL, {
@@ -82,6 +82,9 @@
         console.log(`%c  ✓ ${r.rule_id.padEnd(45)} → ${r.evaluator_ids.join(",")} HTTP ${resp.status}`,
                     "color: #39ff7e;");
         results.ok.push(r.rule_id);
+      } else if (resp.status === 409) {
+        // Already exists — silent skip
+        results.skipped.push(r.rule_id);
       } else {
         console.log(`%c  ✗ ${r.rule_id.padEnd(45)} HTTP ${resp.status}`,
                     "color: #ff3b6b;");
@@ -94,7 +97,7 @@
     }
   }
 
-  console.log(`\n%c${results.ok.length} created, ${results.fail.length} failed`,
+  console.log(`\n%c${results.ok.length} created, ${results.skipped.length} already-existed, ${results.fail.length} failed`,
               "font-weight: bold; color: #b537ff;");
   if (results.fail.length) console.table(results.fail);
   return results;
