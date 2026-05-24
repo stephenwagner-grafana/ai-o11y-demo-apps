@@ -92,7 +92,7 @@ def heuristic_eval(eid, description, rule_tree, output_key="heuristic_pass"):
         "version": VERSION,
         "kind": "heuristic",
         "description": description,
-        "config": {"version": VERSION, **rule_tree},
+        "config": {"version": "1.0", **rule_tree},
         "output_keys": [{"key": output_key, "type": "bool", "pass_value": True}],
     }
 
