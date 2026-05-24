@@ -70,7 +70,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "topk(5, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])) > 0))",
+                        "expr": "topk(5, sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[1h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[1h])) > 0))",
                         "instant": true,
                         "legendFormat": "{{user_id}}"
                       }
@@ -180,7 +180,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "count(count by (user_id) (increase(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[24h]) > 0))",
+                        "expr": "count(count by (user_id) (increase(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}[24h]) > 0))",
                         "instant": true
                       }
                     },
@@ -281,7 +281,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])))",
+                        "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])))",
                         "format": "table",
                         "instant": true,
                         "queryType": "instant",
@@ -304,7 +304,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "topk(1, sum by (user_id, gen_ai_request_model) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[24h]))) by (user_id)",
+                        "expr": "topk(1, sum by (user_id, gen_ai_request_model) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\"}[24h]))) by (user_id)",
                         "format": "table",
                         "instant": true,
                         "queryType": "instant",
@@ -327,7 +327,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[24h])) > 0)",
+                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\"}[24h])) / (sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\"}[24h])) > 0)",
                         "format": "table",
                         "instant": true,
                         "queryType": "instant",
@@ -350,7 +350,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (user_id) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[24h]))",
+                        "expr": "sum by (user_id) (increase(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"sb-.*\"}[24h]))",
                         "format": "table",
                         "instant": true,
                         "queryType": "instant",
@@ -758,7 +758,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])) * 3600)",
+                        "expr": "topk(5, sum by (user_id) (rate(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}[1h])) * 3600)",
                         "legendFormat": "{{user_id}}"
                       }
                     },
@@ -882,7 +882,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[$__range])))",
+                        "expr": "topk(10, sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\"}[$__range])))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{user_id}}"
@@ -1035,7 +1035,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\"}[24h]))"
+                        "expr": "sum(increase(sigil_eval_executions_total[24h]))"
                       }
                     }
                   }
@@ -1134,7 +1134,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\",status=\"pass\"}[1h])) / sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[1h]))"
+                        "expr": "sum(increase(sigil_eval_executions_total{evaluator=\"sbQuality\",status=\"success\"}[1h])) / sum(increase(sigil_eval_executions_total{evaluator=\"sbQuality\"}[1h]))"
                       }
                     }
                   }
@@ -1233,7 +1233,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"hallucination\",status=\"fail\"}[24h])) / sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"hallucination\"}[24h]))"
+                        "expr": "sum(increase(sigil_eval_executions_total{evaluator=\"hallucination\",status=\"failed\"}[24h])) / sum(increase(sigil_eval_executions_total{evaluator=\"hallucination\"}[24h]))"
                       }
                     }
                   }
@@ -1332,7 +1332,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=~\"pii.*|secretApiKey\",status=\"fail\"}[24h]))"
+                        "expr": "sum(increase(sigil_eval_executions_total{evaluator=~\"pii.*|secretApiKey\",status=\"failed\"}[24h]))"
                       }
                     }
                   }
@@ -1431,7 +1431,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbPirateMate\",status=\"pass\"}[24h]))"
+                        "expr": "sum(increase(sigil_eval_executions_total{evaluator=\"sbPirateMate\",status=\"success\"}[24h]))"
                       }
                     }
                   }
@@ -1510,8 +1510,8 @@
         "kind": "Panel",
         "spec": {
           "id": 25,
-          "title": "\ud83c\udfc6 Top employees by quality pass rate (sbQuality, 24h)",
-          "description": "For each employee with sbQuality evaluations in 24h: pass rate on the 0-5 quality judge (\u2265 3 = pass). Higher = AI is consistently helpful for them.",
+          "title": "\ud83d\udea8 Worst offending evaluators (24h)",
+          "description": "Evaluators ranked by failure rate over the last 24h. Lower pass rate = the AI more often violates that evaluator's intent. Use this to focus eval-tuning effort.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1520,7 +1520,7 @@
                 {
                   "kind": "PanelQuery",
                   "spec": {
-                    "refId": "pass",
+                    "refId": "failrate",
                     "hidden": false,
                     "query": {
                       "kind": "DataQuery",
@@ -1530,7 +1530,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "topk(10, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\",status=\"pass\"}[24h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[24h])))",
+                        "expr": "sum by (evaluator) (increase(sigil_eval_executions_total{status=\"failed\"}[24h])) / sum by (evaluator) (increase(sigil_eval_executions_total[24h]))",
                         "format": "table",
                         "instant": true
                       }
@@ -1550,7 +1550,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbQuality\"}[24h]))",
+                        "expr": "sum by (evaluator) (increase(sigil_eval_executions_total[24h]))",
                         "format": "table",
                         "instant": true
                       }
@@ -1562,7 +1562,7 @@
                 {
                   "id": "joinByField",
                   "options": {
-                    "byField": "user_id",
+                    "byField": "evaluator",
                     "mode": "outer"
                   }
                 },
@@ -1574,13 +1574,13 @@
                       "Time 2": true
                     },
                     "indexByName": {
-                      "user_id": 0,
-                      "Value #pass": 1,
+                      "evaluator": 0,
+                      "Value #failrate": 1,
                       "Value #count": 2
                     },
                     "renameByName": {
-                      "user_id": "Employee",
-                      "Value #pass": "Pass rate",
+                      "evaluator": "Evaluator",
+                      "Value #failrate": "Fail rate",
                       "Value #count": "Evals run"
                     }
                   }
@@ -1592,7 +1592,7 @@
                     "sort": [
                       {
                         "desc": true,
-                        "field": "Pass rate"
+                        "field": "Fail rate"
                       }
                     ]
                   }
@@ -1629,23 +1629,19 @@
                     "steps": [
                       {
                         "value": 0,
-                        "color": "#FF4B7E"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "#F05A28"
-                      },
-                      {
-                        "value": 0.75,
-                        "color": "#FBCA0A"
-                      },
-                      {
-                        "value": 0.9,
                         "color": "#39FF7E"
                       },
                       {
-                        "value": 0.97,
-                        "color": "#00F0FF"
+                        "value": 0.05,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 0.15,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 0.4,
+                        "color": "#FF4B7E"
                       }
                     ]
                   },
@@ -1657,7 +1653,7 @@
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "Employee"
+                      "options": "Evaluator"
                     },
                     "properties": [
                       {
@@ -1673,7 +1669,7 @@
                   {
                     "matcher": {
                       "id": "byName",
-                      "options": "Pass rate"
+                      "options": "Fail rate"
                     },
                     "properties": [
                       {
@@ -1696,7 +1692,7 @@
                         "id": "color",
                         "value": {
                           "mode": "fixed",
-                          "fixedColor": "#FBCA0A"
+                          "fixedColor": "#FF4B7E"
                         }
                       },
                       {
@@ -1745,868 +1741,6 @@
                       {
                         "id": "fieldMinMax",
                         "value": true
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      "panel-26": {
-        "kind": "Panel",
-        "spec": {
-          "id": 26,
-          "title": "\ud83d\udcbc AI usage appropriateness (sbAiUsage, 24h)",
-          "description": "Per-employee breakdown of the sbAiUsage categorical judge: WORTHY = legit work question. WASTEFUL = trivial / could have Googled. The chargeback story \u2014 high-Wasteful employees burn AI budget without payoff.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "worthy",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "topk(15, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=\"WORTHY\"}[24h])))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "borderline",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=\"BORDERLINE\"}[24h]))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "wasteful",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbAiUsage\",output_value=~\"WASTEFUL|ABUSIVE\"}[24h]))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                }
-              ],
-              "transformations": [
-                {
-                  "id": "joinByField",
-                  "options": {
-                    "byField": "user_id",
-                    "mode": "outer"
-                  }
-                },
-                {
-                  "id": "organize",
-                  "options": {
-                    "excludeByName": {
-                      "Time 1": true,
-                      "Time 2": true,
-                      "Time 3": true
-                    },
-                    "indexByName": {
-                      "user_id": 0,
-                      "Value #worthy": 1,
-                      "Value #borderline": 2,
-                      "Value #wasteful": 3
-                    },
-                    "renameByName": {
-                      "user_id": "Employee",
-                      "Value #worthy": "Worthy",
-                      "Value #borderline": "Borderline",
-                      "Value #wasteful": "Wasteful"
-                    }
-                  }
-                },
-                {
-                  "id": "sortBy",
-                  "options": {
-                    "fields": {},
-                    "sort": [
-                      {
-                        "desc": true,
-                        "field": "Wasteful"
-                      }
-                    ]
-                  }
-                }
-              ],
-              "queryOptions": {
-                "instant": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "table",
-            "version": "13.1.0-25668120414",
-            "spec": {
-              "options": {
-                "cellHeight": "md",
-                "showHeader": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "align": "left",
-                    "cellOptions": {
-                      "type": "color-background",
-                      "mode": "gradient"
-                    }
-                  },
-                  "overrides": [
-                    {
-                      "matcher": {
-                        "id": "byName",
-                        "options": "Worthy"
-                      },
-                      "properties": [
-                        {
-                          "id": "color",
-                          "value": {
-                            "mode": "thresholds"
-                          }
-                        },
-                        {
-                          "id": "thresholds",
-                          "value": {
-                            "mode": "absolute",
-                            "steps": [
-                              {
-                                "value": 0,
-                                "color": "transparent"
-                              },
-                              {
-                                "value": 1,
-                                "color": "#0a3a1a"
-                              },
-                              {
-                                "value": 50,
-                                "color": "#39FF7E"
-                              },
-                              {
-                                "value": 200,
-                                "color": "#00F0FF"
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "matcher": {
-                        "id": "byName",
-                        "options": "Borderline"
-                      },
-                      "properties": [
-                        {
-                          "id": "color",
-                          "value": {
-                            "mode": "thresholds"
-                          }
-                        },
-                        {
-                          "id": "thresholds",
-                          "value": {
-                            "mode": "absolute",
-                            "steps": [
-                              {
-                                "value": 0,
-                                "color": "transparent"
-                              },
-                              {
-                                "value": 1,
-                                "color": "#3a2a0a"
-                              },
-                              {
-                                "value": 20,
-                                "color": "#FBCA0A"
-                              },
-                              {
-                                "value": 50,
-                                "color": "#F05A28"
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "matcher": {
-                        "id": "byName",
-                        "options": "Wasteful"
-                      },
-                      "properties": [
-                        {
-                          "id": "color",
-                          "value": {
-                            "mode": "thresholds"
-                          }
-                        },
-                        {
-                          "id": "thresholds",
-                          "value": {
-                            "mode": "absolute",
-                            "steps": [
-                              {
-                                "value": 0,
-                                "color": "transparent"
-                              },
-                              {
-                                "value": 1,
-                                "color": "#3a0a1a"
-                              },
-                              {
-                                "value": 5,
-                                "color": "#FF4B7E"
-                              },
-                              {
-                                "value": 15,
-                                "color": "#CF0DD6"
-                              },
-                              {
-                                "value": 30,
-                                "color": "#8B46DE"
-                              }
-                            ]
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Employee"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.width",
-                        "value": 260
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "left"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Worthy"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "short"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#FBCA0A"
-                        }
-                      },
-                      {
-                        "id": "fieldMinMax",
-                        "value": true
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Borderline"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "short"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#CF0DD6"
-                        }
-                      },
-                      {
-                        "id": "fieldMinMax",
-                        "value": true
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Wasteful"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "short"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 0
-                      },
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#F05A28"
-                        }
-                      },
-                      {
-                        "id": "fieldMinMax",
-                        "value": true
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
-        }
-      },
-      "panel-27": {
-        "kind": "Panel",
-        "spec": {
-          "id": 27,
-          "title": "\ud83c\udff4\u200d\u2620\ufe0f First-mate leaderboard (sbPirateMate, 24h)",
-          "description": "Average sbPirateMate score per employee. Higher = more likely to abandon their cubicle when you raise the Jolly Roger. Joke evaluator \u2014 keeps demo viewers awake.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "A",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "topk(10, avg by (user_id) (sigil_eval_executions_value{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbPirateMate\"}))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                }
-              ],
-              "transformations": [
-                {
-                  "id": "organize",
-                  "options": {
-                    "excludeByName": {
-                      "Time": true
-                    },
-                    "renameByName": {
-                      "Value": "Score",
-                      "user_id": "Employee"
-                    }
-                  }
-                }
-              ],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "barchart",
-            "version": "13.1.0-25668120414",
-            "spec": {
-              "options": {
-                "barWidth": 0.8,
-                "legend": {
-                  "showLegend": false
-                },
-                "orientation": "horizontal",
-                "showValue": "auto",
-                "xTickLabelRotation": 0,
-                "displayMode": "gradient",
-                "valueMode": "color"
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "color": {
-                    "mode": "fixed",
-                    "fixedColor": "#FBCA0A"
-                  },
-                  "decimals": 1,
-                  "unit": "short",
-                  "min": 0,
-                  "max": 10,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "#1a1a2e"
-                      },
-                      {
-                        "value": 1,
-                        "color": "#FBCA0A"
-                      },
-                      {
-                        "value": 3,
-                        "color": "#F05A28"
-                      },
-                      {
-                        "value": 7,
-                        "color": "#FF4B7E"
-                      },
-                      {
-                        "value": 15,
-                        "color": "#CF0DD6"
-                      },
-                      {
-                        "value": 30,
-                        "color": "#8B46DE"
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "panel-28": {
-        "kind": "Panel",
-        "spec": {
-          "id": 28,
-          "title": "\u2728 Compound bot health \u2014 pass rates by evaluator (1h)",
-          "description": "Per-employee pass rates on three key bot-health evaluators. Concise = no padding. On-brand = uses Acme lingo, not marketing-speak. Grounded = sticks to what the tools returned.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "concise",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "topk(12, sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbConciseness\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbConciseness\"}[1h])))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "brand",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbBrandVoice\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbBrandVoice\"}[1h]))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                },
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "refId": "grounded",
-                    "hidden": false,
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbGroundedness\",status=\"pass\"}[1h])) / sum by (user_id) (increase(sigil_eval_executions_total{service_namespace=\"ai-o11y-demo-apps\",evaluator=\"sbGroundedness\"}[1h]))",
-                        "format": "table",
-                        "instant": true
-                      }
-                    }
-                  }
-                }
-              ],
-              "transformations": [
-                {
-                  "id": "joinByField",
-                  "options": {
-                    "byField": "user_id",
-                    "mode": "outer"
-                  }
-                },
-                {
-                  "id": "organize",
-                  "options": {
-                    "excludeByName": {
-                      "Time 1": true,
-                      "Time 2": true,
-                      "Time 3": true
-                    },
-                    "indexByName": {
-                      "user_id": 0,
-                      "Value #concise": 1,
-                      "Value #brand": 2,
-                      "Value #grounded": 3
-                    },
-                    "renameByName": {
-                      "user_id": "Employee",
-                      "Value #concise": "Concise",
-                      "Value #brand": "On-brand",
-                      "Value #grounded": "Grounded"
-                    }
-                  }
-                }
-              ],
-              "queryOptions": {
-                "instant": true
-              }
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "table",
-            "version": "13.1.0-25668120414",
-            "spec": {
-              "options": {
-                "cellHeight": "md",
-                "showHeader": true
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "custom": {
-                    "align": "left",
-                    "cellOptions": {
-                      "type": "auto"
-                    }
-                  },
-                  "unit": "percentunit",
-                  "min": 0,
-                  "max": 1,
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "#FF4B7E"
-                      },
-                      {
-                        "value": 0.6,
-                        "color": "#F05A28"
-                      },
-                      {
-                        "value": 0.85,
-                        "color": "#FBCA0A"
-                      },
-                      {
-                        "value": 0.95,
-                        "color": "#39FF7E"
-                      },
-                      {
-                        "value": 0.99,
-                        "color": "#00F0FF"
-                      }
-                    ]
-                  },
-                  "overrides": [
-                    {
-                      "matcher": {
-                        "id": "byRegexp",
-                        "options": ".*[Cc]oncise.*"
-                      },
-                      "properties": [
-                        {
-                          "id": "color",
-                          "value": {
-                            "mode": "fixed",
-                            "fixedColor": "#FBCA0A"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "matcher": {
-                        "id": "byRegexp",
-                        "options": ".*[Bb]rand.*"
-                      },
-                      "properties": [
-                        {
-                          "id": "color",
-                          "value": {
-                            "mode": "fixed",
-                            "fixedColor": "#CF0DD6"
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "matcher": {
-                        "id": "byRegexp",
-                        "options": ".*[Gg]round.*"
-                      },
-                      "properties": [
-                        {
-                          "id": "color",
-                          "value": {
-                            "mode": "fixed",
-                            "fixedColor": "#3274D9"
-                          }
-                        }
-                      ]
-                    }
-                  ]
-                },
-                "overrides": [
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Employee"
-                    },
-                    "properties": [
-                      {
-                        "id": "custom.width",
-                        "value": 260
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "left"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Concise"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "percentunit"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 2
-                      },
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#3274D9"
-                        }
-                      },
-                      {
-                        "id": "min",
-                        "value": 0
-                      },
-                      {
-                        "id": "max",
-                        "value": 1
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "On-brand"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "percentunit"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 2
-                      },
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#CF0DD6"
-                        }
-                      },
-                      {
-                        "id": "min",
-                        "value": 0
-                      },
-                      {
-                        "id": "max",
-                        "value": 1
-                      },
-                      {
-                        "id": "custom.align",
-                        "value": "right"
-                      }
-                    ]
-                  },
-                  {
-                    "matcher": {
-                      "id": "byName",
-                      "options": "Grounded"
-                    },
-                    "properties": [
-                      {
-                        "id": "unit",
-                        "value": "percentunit"
-                      },
-                      {
-                        "id": "decimals",
-                        "value": 2
-                      },
-                      {
-                        "id": "custom.cellOptions",
-                        "value": {
-                          "mode": "gradient",
-                          "type": "gauge",
-                          "valueDisplayMode": "text"
-                        }
-                      },
-                      {
-                        "id": "color",
-                        "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#8B46DE"
-                        }
-                      },
-                      {
-                        "id": "min",
-                        "value": 0
-                      },
-                      {
-                        "id": "max",
-                        "value": 1
                       },
                       {
                         "id": "custom.align",
@@ -2801,7 +1935,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "\ud83c\udfc6 Per-employee eval leaderboards",
+              "title": "\ud83d\udea8 Evaluator pass/fail health",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2812,50 +1946,11 @@
                       "spec": {
                         "x": 0,
                         "y": 0,
-                        "width": 12,
-                        "height": 10,
+                        "width": 24,
+                        "height": 14,
                         "element": {
                           "kind": "ElementReference",
                           "name": "panel-25"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 12,
-                        "y": 0,
-                        "width": 12,
-                        "height": 10,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-26"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 0,
-                        "y": 10,
-                        "width": 14,
-                        "height": 9,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-28"
-                        }
-                      }
-                    },
-                    {
-                      "kind": "GridLayoutItem",
-                      "spec": {
-                        "x": 14,
-                        "y": 10,
-                        "width": 10,
-                        "height": 9,
-                        "element": {
-                          "kind": "ElementReference",
-                          "name": "panel-27"
                         }
                       }
                     }
@@ -2947,7 +2042,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, gen_ai_agent_name)"
+              "query": "label_values(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}, gen_ai_agent_name)"
             }
           },
           "regex": "",
@@ -2982,7 +2077,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, gen_ai_system)"
+              "query": "label_values(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}, gen_ai_system)"
             }
           },
           "regex": "",
@@ -3017,7 +2112,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, gen_ai_request_model)"
+              "query": "label_values(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}, gen_ai_request_model)"
             }
           },
           "regex": "",
@@ -3052,7 +2147,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}, user_id)"
+              "query": "label_values(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}, user_id)"
             }
           },
           "regex": "",

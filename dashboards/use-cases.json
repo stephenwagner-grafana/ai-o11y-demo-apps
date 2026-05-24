@@ -86,7 +86,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_operation_duration_seconds_count{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_request_model}}",
                         "range": true
@@ -212,7 +212,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_operation_duration_seconds_count{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_agent_name}}",
                         "range": true
@@ -432,7 +432,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le, gen_ai_agent_name) (rate(gen_ai_client_operation_duration_seconds_bucket{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])))",
+                        "expr": "histogram_quantile(0.95, sum by (le, gen_ai_agent_name) (rate(gen_ai_client_operation_duration_seconds_bucket{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])))",
                         "legendFormat": "{{gen_ai_agent_name}}"
                       }
                     },
@@ -706,7 +706,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le, gen_ai_request_model) (rate(gen_ai_client_operation_duration_seconds_bucket{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])))",
+                        "expr": "histogram_quantile(0.95, sum by (le, gen_ai_request_model) (rate(gen_ai_client_operation_duration_seconds_bucket{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])))",
                         "legendFormat": "{{gen_ai_request_model}}"
                       }
                     },
@@ -980,7 +980,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_token_type) (rate(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m]))",
+                        "expr": "sum by (gen_ai_token_type) (rate(gen_ai_client_token_usage_sum{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m]))",
                         "legendFormat": "{{gen_ai_token_type}}"
                       }
                     },
@@ -1255,7 +1255,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_token_usage_sum{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_request_model}}",
                         "range": true
@@ -1381,7 +1381,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_agent_name) (increase(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_agent_name}}",
                         "range": true
@@ -1598,7 +1598,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_request_model=~\"${model:regex}\",gen_ai_agent_name=~\"${agent:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_request_model) (increase(gen_ai_client_cost_usd_total{gen_ai_request_model=~\"${model:regex}\",gen_ai_agent_name=~\"${agent:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_request_model}}",
                         "range": true
@@ -1723,7 +1723,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))"
+                        "expr": "sum(increase(gen_ai_client_operation_duration_seconds_count{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -1808,7 +1808,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_system) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_system) (increase(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_system}}",
                         "range": true
@@ -1964,7 +1964,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",user_id=~\".+\"}[24h]))",
+                        "expr": "sum by (user_id) (increase(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\",user_id=~\".+\"}[24h]))",
                         "format": "table",
                         "instant": true
                       }
@@ -1984,7 +1984,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\",user_id=~\".+\"}[24h]))",
+                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"input\",user_id=~\".+\"}[24h]))",
                         "format": "table",
                         "instant": true
                       }
@@ -2004,7 +2004,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\",user_id=~\".+\"}[24h]))",
+                        "expr": "sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",gen_ai_token_type=\"output\",user_id=~\".+\"}[24h]))",
                         "format": "table",
                         "instant": true
                       }
@@ -2024,7 +2024,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (user_id) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",user_id=~\".+\"}[24h]))",
+                        "expr": "sum by (user_id) (increase(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"sb-.*\",user_id=~\".+\"}[24h]))",
                         "format": "table",
                         "instant": true
                       }
@@ -2330,7 +2330,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "topk(10, sum by (user_id) (rate(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[5m]) * 60))",
+                        "expr": "topk(10, sum by (user_id) (rate(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}[5m]) * 60))",
                         "legendFormat": "{{user_id}}"
                       }
                     },
@@ -2605,7 +2605,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "topk(10, sum by (user_id) (rate(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\",user_id=~\".+\"}[$__rate_interval]))) * 3600",
+                        "expr": "topk(10, sum by (user_id) (rate(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\",user_id=~\".+\"}[$__rate_interval]))) * 3600",
                         "legendFormat": "{{user_id}}"
                       }
                     },
@@ -2879,7 +2879,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "count(count by (user_id) (increase(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h]) > 0))"
+                        "expr": "count(count by (user_id) (increase(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}[1h]) > 0))"
                       }
                     },
                     "refId": "A",
@@ -2963,7 +2963,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "avg(sum by (user_id) (increase(gen_ai_user_calls_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])))"
+                        "expr": "avg(sum by (user_id) (increase(gen_ai_user_calls_total{gen_ai_agent_name=~\"sb-.*\"}[1h])))"
                       }
                     },
                     "refId": "A",
@@ -3047,7 +3047,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "avg(sum by (user_id) (increase(gen_ai_user_tokens_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])))"
+                        "expr": "avg(sum by (user_id) (increase(gen_ai_user_tokens_total{gen_ai_agent_name=~\"sb-.*\"}[1h])))"
                       }
                     },
                     "refId": "A",
@@ -3131,7 +3131,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "avg(sum by (user_id) (increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"sb-.*\"}[1h])))"
+                        "expr": "avg(sum by (user_id) (increase(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"sb-.*\"}[1h])))"
                       }
                     },
                     "refId": "A",
@@ -3215,7 +3215,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_agent_name) (rate(gen_ai_client_tool_calls_per_operation_count_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\"}[5m])) * 60",
+                        "expr": "sum by (gen_ai_agent_name) (rate(gen_ai_client_tool_calls_per_operation_count_sum{gen_ai_agent_name=~\"${agent:regex}\"}[5m])) * 60",
                         "legendFormat": "{{gen_ai_agent_name}}"
                       }
                     },
@@ -3489,7 +3489,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h])) / on(gen_ai_request_model) sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h]))",
+                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_ai_attributed_revenue_usd_total{gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h])) / on(gen_ai_request_model) sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h]))",
                         "legendFormat": "{{gen_ai_request_model}}"
                       }
                     },
@@ -3828,7 +3828,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (gen_ai_request_model) (last_over_time(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h])) / sum by (gen_ai_request_model) (last_over_time(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h]))",
+                        "expr": "sum by (gen_ai_request_model) (last_over_time(neoncart_ai_attributed_revenue_usd_total{gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h])) / sum by (gen_ai_request_model) (last_over_time(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[24h]))",
                         "format": "table",
                         "instant": true,
                         "legendFormat": "{{gen_ai_request_model}}"
@@ -4029,7 +4029,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (user_domain) (rate(neoncart_session_starts_total{service_namespace=\"ai-o11y-demo-apps\"}[5m])) * 60",
+                        "expr": "sum by (user_domain) (rate(neoncart_session_starts_total{}[5m])) * 60",
                         "legendFormat": "{{user_domain}}"
                       }
                     },
@@ -4303,7 +4303,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (source) (rate(neoncart_add_to_cart_total{service_namespace=\"ai-o11y-demo-apps\"}[5m]))",
+                        "expr": "sum by (source) (rate(neoncart_add_to_cart_total{}[5m]))",
                         "legendFormat": "{{source}}"
                       }
                     },
@@ -4577,7 +4577,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(gen_ai_client_token_usage_sum{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))"
+                        "expr": "sum(increase(gen_ai_client_token_usage_sum{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -4661,7 +4661,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(rate(neoncart_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\"}[5m])) * 3600",
+                        "expr": "sum(rate(neoncart_revenue_usd_total{}[5m])) * 3600",
                         "legendFormat": "revenue"
                       }
                     },
@@ -4936,7 +4936,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(neoncart_page_views_total{service_namespace=\"ai-o11y-demo-apps\"}[1h]))"
+                        "expr": "sum(increase(neoncart_page_views_total{}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -5020,7 +5020,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(neoncart_search_queries_total{service_namespace=\"ai-o11y-demo-apps\"}[1h]))"
+                        "expr": "sum(increase(neoncart_search_queries_total{}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -5104,7 +5104,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(neoncart_product_views_total{service_namespace=\"ai-o11y-demo-apps\"}[1h]))"
+                        "expr": "sum(increase(neoncart_product_views_total{}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -5188,7 +5188,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(neoncart_transactions_total{service_namespace=\"ai-o11y-demo-apps\"}[1h]))"
+                        "expr": "sum(increase(neoncart_transactions_total{}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -5272,7 +5272,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum by (service_name) (rate(http_server_duration_milliseconds_count{service_namespace=\"ai-o11y-demo-apps\"}[5m]))",
+                        "expr": "sum by (service_name) (rate(http_server_duration_milliseconds_count{}[5m]))",
                         "legendFormat": "{{service_name}}"
                       }
                     },
@@ -5545,7 +5545,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le, service_name) (rate(http_server_duration_milliseconds_bucket{service_namespace=\"ai-o11y-demo-apps\"}[5m])))",
+                        "expr": "histogram_quantile(0.95, sum by (le, service_name) (rate(http_server_duration_milliseconds_bucket{}[5m])))",
                         "legendFormat": "{{service_name}}"
                       }
                     },
@@ -5856,7 +5856,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(increase(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))"
+                        "expr": "sum(increase(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))"
                       }
                     },
                     "refId": "A",
@@ -5940,7 +5940,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "histogram_quantile(0.95, sum by (le) (rate(gen_ai_client_operation_duration_seconds_bucket{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])))"
+                        "expr": "histogram_quantile(0.95, sum by (le) (rate(gen_ai_client_operation_duration_seconds_bucket{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[5m])))"
                       }
                     },
                     "refId": "A",
@@ -6024,7 +6024,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(rate(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",error_type!=\"\",gen_ai_agent_name=~\"${agent:regex}\"}[5m])) / sum(rate(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\"}[5m])) * 100"
+                        "expr": "sum(rate(gen_ai_client_operation_duration_seconds_count{error_type!=\"\",gen_ai_agent_name=~\"${agent:regex}\"}[5m])) / sum(rate(gen_ai_client_operation_duration_seconds_count{gen_ai_agent_name=~\"${agent:regex}\"}[5m])) * 100"
                       }
                     },
                     "refId": "A",
@@ -6110,7 +6110,7 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "count(count by (gen_ai_agent_name) (rate(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\"}[5m]) > 0))"
+                        "expr": "count(count by (gen_ai_agent_name) (rate(gen_ai_client_operation_duration_seconds_count{}[5m]) > 0))"
                       }
                     },
                     "refId": "A",
@@ -6195,7 +6195,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_provider_name) (increase(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
+                        "expr": "sum by (gen_ai_provider_name) (increase(gen_ai_client_operation_duration_seconds_count{gen_ai_agent_name=~\"${agent:regex}\",gen_ai_provider_name=~\"${provider:regex}\",gen_ai_request_model=~\"${model:regex}\"}[1h]))",
                         "interval": "1h",
                         "legendFormat": "{{gen_ai_provider_name}}",
                         "range": true
@@ -6352,7 +6352,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 60",
+                        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 60",
                         "instant": false,
                         "legendFormat": "{{gen_ai_request_model}}",
                         "queryType": "range",
@@ -6474,7 +6474,7 @@
                       },
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_ai_attributed_revenue_usd_total{service_namespace=\"ai-o11y-demo-apps\",gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 60",
+                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_ai_attributed_revenue_usd_total{gen_ai_agent_name=~\"nc-.*\",gen_ai_request_model=~\"${model:regex}\"}[5m])) * 60",
                         "instant": false,
                         "legendFormat": "{{gen_ai_request_model}}",
                         "queryType": "range",
@@ -7333,7 +7333,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\"}, gen_ai_agent_name)",
+              "query": "label_values(gen_ai_client_operation_duration_seconds_count{}, gen_ai_agent_name)",
               "refId": "PrometheusVariableQueryEditor-VariableQuery"
             }
           },
@@ -7369,7 +7369,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\"}, gen_ai_provider_name)"
+              "query": "label_values(gen_ai_client_operation_duration_seconds_count{}, gen_ai_provider_name)"
             }
           },
           "regex": "",
@@ -7404,7 +7404,7 @@
               "name": "grafanacloud-prom"
             },
             "spec": {
-              "query": "label_values(gen_ai_client_operation_duration_seconds_count{service_namespace=\"ai-o11y-demo-apps\"}, gen_ai_request_model)"
+              "query": "label_values(gen_ai_client_operation_duration_seconds_count{}, gen_ai_request_model)"
             }
           },
           "regex": "",
