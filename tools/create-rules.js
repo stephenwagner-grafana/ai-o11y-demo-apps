@@ -17,8 +17,10 @@
   // ── Helper ──────────────────────────────────────────────────────────────────
   // match takes exact key-value pairs (no regex). For evaluators that should
   // span multiple agents, we emit one rule per agent.
+  // Sigil rule IDs only accept letters/digits/_/. — sanitize hyphens to underscores.
+  const sanitize = s => s.replace(/-/g, "_");
   const rule = (id, evaluators, agentName, sampleRate, selector = "user_visible_turn") => ({
-    rule_id: id,
+    rule_id: sanitize(id),
     enabled: true,
     selector,
     match: { "tags.gen_ai.agent.name": agentName },
