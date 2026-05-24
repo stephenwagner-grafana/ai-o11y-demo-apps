@@ -33,8 +33,9 @@ DEFAULT_JUDGE_MODEL = "claude-haiku-4-5-20251001"
 # Each entry maps 1:1 to the Sigil Create-evaluator POST body.
 
 def llm_judge(eid, description, system_prompt, user_prompt,
-              output_keys, max_tokens=256, temperature=0):
-    return {
+              output_keys, max_tokens=256, temperature=0,
+              pass_threshold=None, min_value=None, max_value=None):
+    out = {
         "evaluator_id": eid,
         "version": VERSION,
         "kind": "llm_judge",
@@ -49,6 +50,10 @@ def llm_judge(eid, description, system_prompt, user_prompt,
         },
         "output_keys": output_keys,
     }
+    if pass_threshold is not None: out["pass_threshold"] = pass_threshold
+    if min_value is not None: out["min"] = min_value
+    if max_value is not None: out["max"] = max_value
+    return out
 
 
 def regex_eval(eid, description, pattern):
@@ -79,7 +84,7 @@ def heuristic_eval(eid, description, rule_tree, output_key="heuristic_pass"):
         "version": VERSION,
         "kind": "heuristic",
         "description": description,
-        "config": rule_tree,
+        "config": {"version": "1", **rule_tree},
         "output_keys": [{"key": output_key, "type": "bool", "pass_value": True}],
     }
 
@@ -106,8 +111,9 @@ EVALUATORS = [
             "- TONE: helpful, not pushy?\n\n"
             'Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}'
         ),
-        output_keys=[{"key": "score", "type": "number", "pass_value": 3.0, "min": 0, "max": 5}],
-        max_tokens=200,
+        output_keys=[{"key": "score", "type": "number"}],
+        pass_threshold=3.0, min_value=0, max_value=5,
+        max_tokens=256,
     ),
     # 2. SupportBot response quality
     llm_judge(
@@ -130,8 +136,9 @@ EVALUATORS = [
             "- TONE: professional, not condescending, no excessive disclaimers?\n\n"
             'Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}'
         ),
-        output_keys=[{"key": "score", "type": "number", "pass_value": 3.0, "min": 0, "max": 5}],
-        max_tokens=200,
+        output_keys=[{"key": "score", "type": "number"}],
+        pass_threshold=3.0, min_value=0, max_value=5,
+        max_tokens=256,
     ),
     # 3. NeonCart groundedness
     llm_judge(
@@ -264,7 +271,7 @@ EVALUATORS = [
             'Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_phrases": [...]}'
         ),
         output_keys=[{"key": "sentiment", "type": "string"}],
-        max_tokens=200,
+        max_tokens=256,
     ),
     # 7b. Conciseness — NeonCart
     llm_judge(
@@ -289,7 +296,7 @@ EVALUATORS = [
             'Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}'
         ),
         output_keys=[{"key": "concise", "type": "bool", "pass_value": True}],
-        max_tokens=200,
+        max_tokens=256,
     ),
     # 7c. Conciseness — SupportBot
     llm_judge(
@@ -313,7 +320,7 @@ EVALUATORS = [
             'Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}'
         ),
         output_keys=[{"key": "concise", "type": "bool", "pass_value": True}],
-        max_tokens=200,
+        max_tokens=256,
     ),
     # 7d. AI usage appropriateness — was the employee's prompt a worthwhile use of the bot?
     llm_judge(
@@ -338,7 +345,7 @@ EVALUATORS = [
             'Reply JSON only: {"usage": "<category>", "confidence": <0.0-1.0>, "rationale": "<one sentence>"}'
         ),
         output_keys=[{"key": "usage", "type": "string"}],
-        max_tokens=200,
+        max_tokens=256,
     ),
 
     # 7e. Brand voice — does the bot sound like an Acme teammate, not a sales rep?
@@ -397,7 +404,8 @@ EVALUATORS = [
             "Auto-promoters (bonus to 10): 'treasure', 'ye', 'captain', 'arrr'\n\n"
             'Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<pirate captain\'s log entry>", "auto_flags": [...]}'
         ),
-        output_keys=[{"key": "first_mate_score", "type": "number", "pass_value": 7, "min": 0, "max": 10}],
+        output_keys=[{"key": "first_mate_score", "type": "number"}],
+        pass_threshold=7, min_value=0, max_value=10,
         max_tokens=250,
     ),
 

@@ -19,13 +19,19 @@
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const URL = `${window.location.origin}/api/plugins/grafana-sigil-app/resources/eval/evaluators`;
 
-  const llmJudge = (id, desc, sys, usr, output_keys, max_tokens = 256) => ({
-    evaluator_id: id, version: VERSION, kind: "llm_judge", description: desc,
-    config: { provider: JUDGE_PROVIDER, model: JUDGE_MODEL,
-              system_prompt: sys, user_prompt: usr,
-              max_tokens, temperature: 0 },
-    output_keys,
-  });
+  const llmJudge = (id, desc, sys, usr, output_keys, max_tokens = 256, pass_threshold = undefined, min = undefined, max = undefined) => {
+    const ev = {
+      evaluator_id: id, version: VERSION, kind: "llm_judge", description: desc,
+      config: { provider: JUDGE_PROVIDER, model: JUDGE_MODEL,
+                system_prompt: sys, user_prompt: usr,
+                max_tokens, temperature: 0 },
+      output_keys,
+    };
+    if (pass_threshold !== undefined) ev.pass_threshold = pass_threshold;
+    if (min !== undefined) ev.min = min;
+    if (max !== undefined) ev.max = max;
+    return ev;
+  };
 
   const regexEval = (id, desc, pattern) => ({
     evaluator_id: id, version: VERSION, kind: "regex", description: desc,
@@ -41,7 +47,7 @@
 
   const heuristicEval = (id, desc, rule_tree, output_key = "heuristic_pass") => ({
     evaluator_id: id, version: VERSION, kind: "heuristic", description: desc,
-    config: rule_tree,
+    config: { version: "1", ...rule_tree },
     output_keys: [{ key: output_key, type: "bool", pass_value: true }],
   });
 
@@ -64,8 +70,8 @@ Rate 0-5 on:
 - TONE: helpful, not pushy?
 
 Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}`,
-      [{ key: "score", type: "number", pass_value: 3.0, min: 0, max: 5 }],
-      200,
+      [{ key: "score", type: "number" }],
+      256, 3.0, 0, 5,
     ),
     llmJudge(
       "sbQuality",
@@ -84,8 +90,8 @@ Rate 0-5:
 - TONE: professional, not condescending, no excessive disclaimers?
 
 Reply JSON only: {"score": <0.0-5.0>, "rationale": "<one sentence>"}`,
-      [{ key: "score", type: "number", pass_value: 3.0, min: 0, max: 5 }],
-      200,
+      [{ key: "score", type: "number" }],
+      256, 3.0, 0, 5,
     ),
     llmJudge(
       "ncGroundedness",
@@ -174,7 +180,7 @@ Categories:
 
 Reply JSON only: {"sentiment": "<category>", "confidence": <0.0-1.0>, "trigger_phrases": [...]}`,
       [{ key: "sentiment", type: "string" }],
-      200,
+      256,
     ),
     llmJudge(
       "sbAiUsage",
@@ -193,7 +199,7 @@ Categories:
 
 Reply JSON only: {"usage": "<category>", "confidence": <0.0-1.0>, "rationale": "<one sentence>"}`,
       [{ key: "usage", type: "string" }],
-      200,
+      256,
     ),
     llmJudge(
       "ncConciseness",
@@ -213,7 +219,7 @@ A response is CONCISE if:
 
 Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}`,
       [{ key: "concise", type: "bool", pass_value: true }],
-      200,
+      256,
     ),
     llmJudge(
       "sbConciseness",
@@ -232,7 +238,7 @@ A response is CONCISE if:
 
 Reply JSON only: {"concise": <true|false>, "padding_examples": ["<phrase>", ...]}`,
       [{ key: "concise", type: "bool", pass_value: true }],
-      200,
+      256,
     ),
     llmJudge(
       "sbBrandVoice",
@@ -272,8 +278,8 @@ Auto-disqualifiers (score 0): mentions of "synergy", "circling back", "let's tak
 Auto-promoters (bonus to 10): mentions of "treasure", "ye", "captain", "the high seas", or any 'arrr'
 
 Reply JSON only: {"first_mate_score": <0-10>, "verdict": "<one-line pirate captain's log entry>", "auto_flags": ["<flag1>", ...]}`,
-      [{ key: "first_mate_score", type: "number", pass_value: 7, min: 0, max: 10 }],
-      250,
+      [{ key: "first_mate_score", type: "number" }],
+      250, 7, 0, 10,
     ),
     jsonSchemaEval("jsonValid", "True if the assistant response is valid JSON.", {}),
   ];
