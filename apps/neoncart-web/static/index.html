@@ -2178,7 +2178,7 @@ footer {
         <div class="gift-row">
           <div class="gift-field">
             <label for="giftBudget">Budget (USD)</label>
-            <input type="text" id="giftBudget" placeholder="$120" value="$120">
+            <input type="text" id="giftBudget" placeholder="$250" value="$250">
           </div>
           <div class="gift-field">
             <label for="giftOccasion">Occasion</label>
@@ -3113,7 +3113,7 @@ fetch('/api/whoami', { credentials: 'same-origin' })
       e.preventDefault();
       var who = recipient.value.trim();
       if (!who) return;
-      var bud = budget.value.trim() || '$100';
+      var bud = budget.value.trim() || '$250';
       var occ = occasion.value.trim();
       submit.disabled = true;
       renderTyping();
