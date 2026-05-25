@@ -79,6 +79,12 @@ def search_by_criteria(
         keywords = ["motherboard"]
         category = None
         max_budget_usd = None
+        # Catalog SQL is `ORDER BY price DESC LIMIT %s`. With max_results=3
+        # the LLM only saw the 3 most expensive motherboards — every one
+        # over $250 — and would apologise about budget. Bumping to 10
+        # surfaces the $189 cheapest motherboard so the gag actually
+        # lands a recommendation in-budget.
+        max_results = 10
 
     dsn = _postgres_dsn()
     if not dsn:
