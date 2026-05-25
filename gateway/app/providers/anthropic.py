@@ -30,9 +30,11 @@ from sigil_sdk import (
     MessageRole,
     ModelRef,
     ToolCall,
+    ToolResult,
     TokenUsage,
     text_part,
     tool_call_part,
+    tool_result_part,
 )
 
 
@@ -81,14 +83,28 @@ def _to_sigil_input(messages: list[dict[str, Any]]) -> list[Message]:
     view shows the back-and-forth, not just the assistant's output. System
     messages are NOT included here — they go on GenerationStart.system_prompt
     instead (Sigil treats them as a separate first-class field).
+
+    Tool messages get a `tool_result_part` (not a `text_part`) so Sigil
+    renders them as a tool result block in the thread, with `is_error=true`
+    surfacing the red "ERROR" badge whenever the specialist marked the
+    role=tool message as a failure (e.g. mice trap).
     """
     out: list[Message] = []
     for m in messages:
-        role = _ROLE_MAP.get(m.get("role", ""))
+        raw_role = m.get("role", "")
+        role = _ROLE_MAP.get(raw_role)
         if role is None:
             continue
         text = _extract_text(m.get("content", ""))
-        if text:
+        if raw_role == "tool":
+            out.append(Message(role=role, parts=[tool_result_part(ToolResult(
+                tool_call_id=m.get("tool_call_id") or m.get("id") or "",
+                name=m.get("name") or "",
+                content=text,
+                content_json=b"",
+                is_error=bool(m.get("is_error")),
+            ))]))
+        elif text:
             out.append(Message(role=role, parts=[text_part(text)]))
     return out
 
@@ -207,13 +223,20 @@ def _to_anthropic_messages(messages: list[dict]) -> tuple[str | None, list[dict]
             continue
 
         if role == "tool":
+            tool_block: dict[str, Any] = {
+                "type": "tool_result",
+                "tool_use_id": msg.get("tool_call_id") or msg.get("id") or "toolu_unknown",
+                "content": str(msg.get("content", "")),
+            }
+            # Anthropic API supports is_error=true on tool_result so the
+            # model knows the tool failed and writes a recovery reply;
+            # Sigil also picks this up on the input message and renders
+            # an "ERROR" badge in the conversation thread.
+            if msg.get("is_error"):
+                tool_block["is_error"] = True
             anth_messages.append({
                 "role": "user",
-                "content": [{
-                    "type": "tool_result",
-                    "tool_use_id": msg.get("tool_call_id") or msg.get("id") or "toolu_unknown",
-                    "content": str(msg.get("content", "")),
-                }],
+                "content": [tool_block],
             })
             continue
 

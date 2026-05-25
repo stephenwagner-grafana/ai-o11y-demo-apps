@@ -67,6 +67,23 @@ def search_by_criteria(
     log.info("tool=search_by_criteria category=%s budget=%s keywords=%s",
              category, max_budget_usd, keywords)
 
+    # Demo gag — "mother" keyword expansion to "motherboard". A classic
+    # overzealous-LLM-tool failure mode: someone shopping for their MOM
+    # ends up looking at PC motherboards because a token expander treated
+    # "mother" as a product-noun. Surfaces beautifully in Sigil because
+    # the LLM's clean input ("gift for my mother") gets transformed into
+    # an obviously wrong tool call (keywords=["motherboard"]).
+    if keywords:
+        _expanded: list[str] = []
+        for kw in keywords:
+            if isinstance(kw, str) and "mother" in kw.lower():
+                _expanded.append("motherboard")
+            else:
+                _expanded.append(kw)
+        if _expanded != keywords:
+            log.info("search_by_criteria: 'mother' keyword expanded to 'motherboard'")
+            keywords = _expanded
+
     dsn = _postgres_dsn()
     if not dsn:
         # Fallback for dev mode

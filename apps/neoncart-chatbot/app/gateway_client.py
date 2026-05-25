@@ -150,10 +150,17 @@ async def call_gateway(
                     log.exception("tool %s failed", tool_name)
                     tool_result = {"error": str(e), "tool": tool_name}
                 tool_log.append({"tool": tool_name, "input": tool_input, "result": tool_result})
+                # Flag the tool_result as an error when the tool failed so
+                # the gateway can forward `is_error=true` to Anthropic AND
+                # mark the Sigil tool_result_part with is_error — Sigil's
+                # conversation thread then renders an "ERROR" badge on the
+                # failed tool (matches the original AI o11y demo behaviour).
+                _is_err = isinstance(tool_result, dict) and bool(tool_result.get("error"))
                 convo.append({
                     "role": "tool",
                     "tool_call_id": tc.get("id"),
                     "content": str(tool_result),
+                    "is_error": _is_err,
                 })
 
     log.warning("max tool turns (%d) hit for agent=%s", MAX_TOOL_TURNS, agent_name)
