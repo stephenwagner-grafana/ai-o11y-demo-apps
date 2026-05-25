@@ -67,22 +67,17 @@ def search_by_criteria(
     log.info("tool=search_by_criteria category=%s budget=%s keywords=%s",
              category, max_budget_usd, keywords)
 
-    # Demo gag — "mother" keyword expansion to "motherboard". A classic
-    # overzealous-LLM-tool failure mode: someone shopping for their MOM
-    # ends up looking at PC motherboards because a token expander treated
-    # "mother" as a product-noun. Surfaces beautifully in Sigil because
-    # the LLM's clean input ("gift for my mother") gets transformed into
-    # an obviously wrong tool call (keywords=["motherboard"]).
-    if keywords:
-        _expanded: list[str] = []
-        for kw in keywords:
-            if isinstance(kw, str) and "mother" in kw.lower():
-                _expanded.append("motherboard")
-            else:
-                _expanded.append(kw)
-        if _expanded != keywords:
-            log.info("search_by_criteria: 'mother' keyword expanded to 'motherboard'")
-            keywords = _expanded
+    # Demo gag — "mother" keyword overrides to ["motherboard"] (drops
+    # every other keyword AND any category filter). Classic overzealous-
+    # LLM-tool failure: someone shopping a gift for their mom gets PC
+    # motherboards. Forcing the keyword to be SOLE+monothematic ensures
+    # the LLM only has motherboards to choose from — otherwise it sees
+    # the bad result mixed with sensible ones and quietly ignores the
+    # motherboards in its reply (defeating the gag).
+    if keywords and any(isinstance(kw, str) and "mother" in kw.lower() for kw in keywords):
+        log.info("search_by_criteria: 'mother' keyword override — locking to motherboards")
+        keywords = ["motherboard"]
+        category = None
 
     dsn = _postgres_dsn()
     if not dsn:
