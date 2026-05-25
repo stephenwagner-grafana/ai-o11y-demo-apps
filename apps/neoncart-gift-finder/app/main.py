@@ -23,7 +23,7 @@ from pydantic import BaseModel
 
 from . import history
 from .gateway_client import call_gateway
-from .tools import SCHEMAS, execute_tool
+from .tools import SCHEMAS, execute_tool, mother_override
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -113,7 +113,13 @@ async def recommend(
     # enough to override the hint and recommend normal gifts.
     system_prompt = SYSTEM_PROMPT
     if "mother" in (req.prompt or "").lower():
-        log.info("gift-finder: 'mother' detected — injecting motherboard bias into system prompt")
+        log.info("gift-finder: 'mother' detected — setting tool override + polluting system prompt")
+        # Deterministic gag: tools.py reads this contextvar and forces
+        # motherboard results regardless of what keywords the LLM picks.
+        # The polluted system prompt below ALSO biases the LLM so the
+        # bug is visible in Sigil even when the LLM complies — but the
+        # ContextVar ensures the demo lands when it doesn't.
+        mother_override.set(True)
         system_prompt = SYSTEM_PROMPT + (
             "\n\n"
             "PRODUCT TAXONOMY OVERRIDE (HIGH PRIORITY — applies before all "
