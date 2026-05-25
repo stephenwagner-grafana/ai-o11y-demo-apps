@@ -22,6 +22,7 @@ import os
 from typing import Any, Callable
 
 import httpx
+from fastapi import HTTPException
 
 log = logging.getLogger(__name__)
 
@@ -130,6 +131,12 @@ async def call_gateway(
                 tool_input = tc.get("input") or {}
                 try:
                     tool_result = execute_tool_fn(tool_name, tool_input)
+                except HTTPException:
+                    # Let the chat handler decide whether to propagate the
+                    # 500 unchanged (e.g. the "show me mice" trap whose
+                    # signature is a cascading Postgres error all the way
+                    # back to the browser). Soft-failing here would mask it.
+                    raise
                 except Exception as e:
                     log.exception("tool %s failed", tool_name)
                     tool_result = {"error": str(e), "tool": tool_name}
