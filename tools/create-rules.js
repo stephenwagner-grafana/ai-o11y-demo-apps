@@ -54,6 +54,16 @@
     "online.sb.brand_voice.sb_tech_support", "online.sb.brand_voice.sb_account_management",
     "online.sb.pirate_mate.sb_router", "online.sb.pirate_mate.sb_billing",
     "online.sb.pirate_mate.sb_tech_support", "online.sb.pirate_mate.sb_account_management",
+    // Stale rules from the prior observibelity project — these still emit
+    // sigil_eval_executions_total against historical agents (sb-hr-info,
+    // sb-escalator, sb-employee-info, etc.) and the 5 old Ollama models
+    // (tinyllama, mistral-nemo, mistral:7b-instruct, qwen2.5:1.5b, qwen2.5:7b),
+    // polluting the "Pass Rate · by Model" panel with bars that never receive
+    // current traffic.
+    "online.observibelity.safety_regex",
+    "online.observibelity.cost_efficiency",
+    "online.observibelity.compliance_judges",
+    "online.observibelity.conversation_quality",
   ];
 
   console.log(`%cDeleting ${STALE_IDS.length} prior rule IDs…`,
