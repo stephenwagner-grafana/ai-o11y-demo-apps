@@ -179,8 +179,12 @@ def _pick_model(req: ProviderRequest) -> str:
         return req.model
     if not _MODEL_WEIGHTS:
         return DEFAULT_MODEL
-    # Sticky-per-session: deterministic mapping (session_id, hour bucket) -> model
-    sticky_key = (req.session_id or "") + "|" + req.conversation_id or ""
+    # Sticky-per-session: deterministic (session_id, conversation_id) -> model.
+    # The `|model` salt decorrelates this hash from the router's provider-pick
+    # hash on the same key — without it, anthropic's PROVIDER_WEIGHTS slice
+    # nests inside haiku's MODEL_WEIGHTS slice and Sonnet/Opus become
+    # unreachable from synthetic traffic.
+    sticky_key = (req.session_id or "") + "|" + (req.conversation_id or "") + "|model"
     if sticky_key.strip("|"):
         # Map the key to a [0,1) value and walk the weight CDF
         h = int(hashlib.md5(sticky_key.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
