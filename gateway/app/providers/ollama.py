@@ -144,7 +144,7 @@ def _pick_model(req: ProviderRequest) -> str:
         return req.model
     if not _MODEL_WEIGHTS:
         return DEFAULT_MODEL
-    sticky_key = (req.session_id or "") + "|" + (req.conversation_id or "")
+    sticky_key = (req.session_id or "") + "|" + (req.conversation_id or "") + "|model"
     if sticky_key.strip("|"):
         h = int(hashlib.md5(sticky_key.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
         cumulative = 0.0
