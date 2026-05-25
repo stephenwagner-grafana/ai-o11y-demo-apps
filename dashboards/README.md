@@ -1,6 +1,6 @@
 # Dashboards
 
-Four portable dashboards live here. **None are installed automatically** —
+Five portable dashboards live here. **None are installed automatically** —
 import them after install once the loadgen has warmed up.
 
 | File | Purpose |
@@ -9,6 +9,7 @@ import them after install once the loadgen has warmed up.
 | `cost-per-model.json` | Per-model cost & throughput — $/hr stacked bars, gradient-gauge leaderboard, input:output token ratio. For "compare 2+ models side-by-side". |
 | `neoncart-business.json` | NeonCart business impact — ATC by source/model, AI conversion lift, projected revenue, per-agent ROI table. The "is the AI making us money" view. |
 | `supportbot-per-employee.json` | Per-employee SupportBot usage — top-10 table, calls/min trends, input:output ratio per employee. The "internal AI chargeback" view. |
+| `ai-eval-results-full-breakdown.json` | Sigil eval results over 24h — pass/fail rates by agent/model/evaluator, eval volume trends, agent × score-key heatmap. LLM-judge sub-metrics filtered out so only real Prom data renders. |
 
 Three ways to import them into your Grafana:
 
