@@ -3,18 +3,20 @@
   "kind": "Dashboard",
   "metadata": {
     "name": "st6b9f8",
-    "namespace": "stacks-1664580",
-    "uid": "295e245b-8a45-45bf-a683-c4591c33a5fe",
-    "resourceVersion": "2058318520730517995",
-    "generation": 1,
-    "creationTimestamp": "2026-05-23T22:45:51Z",
+    "namespace": "stacks-1372178",
+    "uid": "ebe7b2fe-351c-412a-a346-39bd8a936aa5",
+    "resourceVersion": "1779742306181295",
+    "generation": 2,
+    "creationTimestamp": "2026-05-24T23:11:48Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "173490947297280"
+      "grafana.app/deprecatedInternalID": "542410512322560"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:efmyq5rboa5tsb",
+      "grafana.app/createdBy": "service-account:dfh3lqi3mzda8f",
       "grafana.app/folder": "",
-      "grafana.app/saved-from-ui": "Grafana Cloud"
+      "grafana.app/saved-from-ui": "Grafana Cloud",
+      "grafana.app/updatedBy": "user:eexm63g36yku8c",
+      "grafana.app/updatedTimestamp": "2026-05-25T20:51:46Z"
     }
   },
   "spec": {
@@ -35,10 +37,7 @@
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
           "name": "Annotations & Alerts",
-          "builtIn": true,
-          "legacyOptions": {
-            "type": "dashboard"
-          }
+          "builtIn": true
         }
       },
       {
@@ -56,10 +55,7 @@
           "enable": true,
           "hide": false,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "legacyOptions": {
-            "type": "dashboard"
-          }
+          "name": "Annotations & Alerts"
         }
       }
     ],
@@ -197,7 +193,7 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "cellHeight": "md",
@@ -211,12 +207,34 @@
               },
               "fieldConfig": {
                 "defaults": {
+                  "decimals": 0,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  },
                   "custom": {
                     "align": "left",
                     "cellOptions": {
-                      "type": "color-background",
-                      "mode": "gradient"
-                    }
+                      "mode": "gradient",
+                      "type": "color-background"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
                   }
                 },
                 "overrides": [
@@ -248,7 +266,7 @@
                       },
                       {
                         "id": "decimals",
-                        "value": 2
+                        "value": 0
                       },
                       {
                         "id": "custom.cellOptions",
@@ -261,7 +279,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "continuous-GrYlRd"
+                          "mode": "continuous-YlOrRd"
                         }
                       },
                       {
@@ -286,7 +304,7 @@
                       },
                       {
                         "id": "decimals",
-                        "value": 4
+                        "value": 2
                       },
                       {
                         "id": "custom.cellOptions",
@@ -299,7 +317,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "continuous-YlRd"
+                          "mode": "continuous-purples"
                         }
                       },
                       {
@@ -320,11 +338,11 @@
                     "properties": [
                       {
                         "id": "unit",
-                        "value": "none"
+                        "value": "suffix:x"
                       },
                       {
                         "id": "decimals",
-                        "value": 2
+                        "value": 0
                       },
                       {
                         "id": "custom.cellOptions",
@@ -337,7 +355,7 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "continuous-purples"
+                          "mode": "continuous-blues"
                         }
                       },
                       {
@@ -365,7 +383,7 @@
         "spec": {
           "id": 11,
           "title": "AI agent ROI (combined, 1h)",
-          "description": "Combined AI agent ROI \u2014 attributed revenue / token cost over the last hour, across ALL nc-* agents. > 1.0 = AI pays for itself. < 1.0 = bleeding.",
+          "description": "Combined AI agent ROI — attributed revenue / token cost over the last hour, across ALL nc-* agents. > 1.0 = AI pays for itself. < 1.0 = bleeding.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -382,8 +400,12 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
+                        "app": "grafana-assistant-app",
                         "expr": "sum(rate(neoncart_ai_attributed_revenue_usd_total{}[1h])) / sum(rate(gen_ai_client_cost_usd_total{gen_ai_agent_name=~\"nc-.*\"}[1h]))",
-                        "instant": true
+                        "instant": false,
+                        "legendFormat": "ROI",
+                        "queryType": "range",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -398,29 +420,41 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
-                  ]
+                  ],
+                  "fields": "",
+                  "values": false
                 },
+                "showPercentChange": false,
                 "textMode": "value",
-                "wideLayout": true,
-                "percentChangeColorMode": "standard",
-                "showPercentChange": false
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "none",
-                  "decimals": 2,
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "suffix:x",
+                  "decimals": 0,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -446,18 +480,9 @@
                       }
                     ]
                   },
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
+                  "color": {
+                    "mode": "thresholds"
+                  }
                 },
                 "overrides": []
               }
@@ -504,20 +529,23 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
-                    "mean",
-                    "max"
+                    "mean"
                   ],
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
                 },
                 "tooltip": {
+                  "hideZeros": false,
                   "mode": "multi",
                   "sort": "desc"
                 }
@@ -527,506 +555,56 @@
                   "unit": "short",
                   "decimals": 3,
                   "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
                   "color": {
                     "mode": "palette-classic"
                   },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
                     "barAlignment": 0,
                     "barWidthFactor": 0.9,
                     "drawStyle": "bars",
                     "fillOpacity": 85,
-                    "gradientMode": "scheme",
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
                     "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
                     "spanNulls": false,
                     "stacking": {
                       "group": "A",
                       "mode": "normal"
                     },
-                    "lineInterpolation": "smooth",
-                    "showPoints": "never"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-3": {
-        "kind": "Panel",
-        "spec": {
-          "id": 3,
-          "title": "Add-to-Cart per model",
-          "description": "ATC events sliced by gen_ai_request_model. Populates as the model label rolls out across new loadgen traffic (parallel commit landing 2026-05-23). Empty before that.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_add_to_cart_total{gen_ai_request_model!=\"unknown\",gen_ai_request_model!=\"\"}[1h])) * 3600",
-                        "interval": "1h",
-                        "legendFormat": "{{gen_ai_request_model}}"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean",
-                    "max"
-                  ],
-                  "displayMode": "table",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "short",
-                  "decimals": 3,
-                  "min": 0,
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "noValue": "(pending model-label rollout)",
-                  "custom": {
-                    "barAlignment": 0,
-                    "barWidthFactor": 0.9,
-                    "drawStyle": "bars",
-                    "fillOpacity": 85,
-                    "gradientMode": "scheme",
-                    "lineWidth": 2,
-                    "spanNulls": false,
-                    "stacking": {
-                      "group": "A",
-                      "mode": "normal"
-                    },
-                    "lineInterpolation": "smooth",
-                    "showPoints": "never"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-4": {
-        "kind": "Panel",
-        "spec": {
-          "id": 4,
-          "title": "AI conversion lift (AI ATC / manual ATC, 1h)",
-          "description": "Ratio: AI-attributed ATC rate vs manual ATC rate. >1 = AI is suggesting more cart-adds than humans are clicking on their own. 1h window.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum(rate(neoncart_add_to_cart_total{source=~\"ai_.*\"}[1h])) / sum(rate(neoncart_add_to_cart_total{source=\"manual\"}[1h]))",
-                        "instant": true
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "",
-            "spec": {
-              "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ]
-                },
-                "textMode": "value",
-                "wideLayout": true,
-                "percentChangeColorMode": "standard",
-                "showPercentChange": false
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "none",
-                  "decimals": 2,
-                  "color": {
-                    "mode": "thresholds"
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "#1a1a2e"
-                      },
-                      {
-                        "value": 0.5,
-                        "color": "#FF4B7E"
-                      },
-                      {
-                        "value": 1,
-                        "color": "#CF0DD6"
-                      },
-                      {
-                        "value": 1.5,
-                        "color": "#8B46DE"
-                      },
-                      {
-                        "value": 3,
-                        "color": "#00F0FF"
-                      }
-                    ]
-                  },
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
+                    "thresholdsStyle": {
+                      "mode": "off"
                     }
-                  ]
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-6": {
-        "kind": "Panel",
-        "spec": {
-          "id": 6,
-          "title": "Revenue rate ($/hour)",
-          "description": "Realized revenue from completed checkouts, projected to $/hour.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum(rate(neoncart_revenue_usd_total{}[5m])) * 3600",
-                        "legendFormat": "revenue"
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
                   }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "timeseries",
-            "version": "",
-            "spec": {
-              "options": {
-                "legend": {
-                  "calcs": [
-                    "lastNotNull",
-                    "mean",
-                    "max"
-                  ],
-                  "displayMode": "table",
-                  "placement": "right",
-                  "showLegend": true
-                },
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "desc"
-                }
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "currencyUSD",
-                  "decimals": 2,
-                  "color": {
-                    "mode": "palette-classic"
-                  },
-                  "custom": {
-                    "drawStyle": "line",
-                    "fillOpacity": 40,
-                    "gradientMode": "scheme",
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 2,
-                    "spanNulls": false,
-                    "showPoints": "never"
-                  }
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-7": {
-        "kind": "Panel",
-        "spec": {
-          "id": 7,
-          "title": "Projected weekly revenue",
-          "description": "Current 1h revenue rate projected forward by 7 days (rate \u00d7 86400 \u00d7 7). Linear extrapolation \u2014 assumes constant traffic.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum(rate(neoncart_revenue_usd_total{}[1h])) * 86400 * 7",
-                        "instant": true
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "",
-            "spec": {
-              "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ]
-                },
-                "textMode": "value",
-                "wideLayout": true,
-                "percentChangeColorMode": "standard",
-                "showPercentChange": false
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "currencyUSD",
-                  "decimals": 2,
-                  "color": {
-                    "mode": "thresholds"
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "#0a3a1a"
-                      },
-                      {
-                        "value": 100,
-                        "color": "#39FF7E"
-                      },
-                      {
-                        "value": 1000,
-                        "color": "#00F0FF"
-                      },
-                      {
-                        "value": 10000,
-                        "color": "#CF0DD6"
-                      },
-                      {
-                        "value": 50000,
-                        "color": "#8B46DE"
-                      }
-                    ]
-                  },
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
-                },
-                "overrides": []
-              }
-            }
-          }
-        }
-      },
-      "panel-8": {
-        "kind": "Panel",
-        "spec": {
-          "id": 8,
-          "title": "AI-attributed revenue (last 24h)",
-          "description": "Cumulative revenue attributed to AI agents (gift-finder + chatbot) in the trailing 24h.",
-          "links": [],
-          "data": {
-            "kind": "QueryGroup",
-            "spec": {
-              "queries": [
-                {
-                  "kind": "PanelQuery",
-                  "spec": {
-                    "query": {
-                      "kind": "DataQuery",
-                      "group": "prometheus",
-                      "version": "v0",
-                      "datasource": {
-                        "name": "grafanacloud-prom"
-                      },
-                      "spec": {
-                        "expr": "sum(increase(neoncart_ai_attributed_revenue_usd_total{}[24h]))",
-                        "instant": true
-                      }
-                    },
-                    "refId": "A",
-                    "hidden": false
-                  }
-                }
-              ],
-              "transformations": [],
-              "queryOptions": {}
-            }
-          },
-          "vizConfig": {
-            "kind": "VizConfig",
-            "group": "stat",
-            "version": "",
-            "spec": {
-              "options": {
-                "colorMode": "background",
-                "graphMode": "area",
-                "justifyMode": "center",
-                "reduceOptions": {
-                  "calcs": [
-                    "lastNotNull"
-                  ]
-                },
-                "textMode": "value",
-                "wideLayout": true,
-                "percentChangeColorMode": "standard",
-                "showPercentChange": false
-              },
-              "fieldConfig": {
-                "defaults": {
-                  "unit": "currencyUSD",
-                  "decimals": 2,
-                  "color": {
-                    "mode": "thresholds"
-                  },
-                  "thresholds": {
-                    "mode": "absolute",
-                    "steps": [
-                      {
-                        "value": 0,
-                        "color": "#1a1a2e"
-                      },
-                      {
-                        "value": 10,
-                        "color": "#FBCA0A"
-                      },
-                      {
-                        "value": 100,
-                        "color": "#F05A28"
-                      },
-                      {
-                        "value": 500,
-                        "color": "#CF0DD6"
-                      },
-                      {
-                        "value": 2000,
-                        "color": "#8B46DE"
-                      }
-                    ]
-                  },
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
                 },
                 "overrides": []
               }
@@ -1072,27 +650,41 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "center",
-                "textMode": "value",
-                "wideLayout": true,
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "short",
+                  "decimals": 0,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1114,21 +706,11 @@
                       }
                     ]
                   },
-                  "unit": "short",
-                  "decimals": 0,
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
-                }
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -1172,27 +754,43 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "center",
-                "textMode": "value",
-                "wideLayout": true,
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "min": 0,
+                  "max": 1,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1218,21 +816,11 @@
                       }
                     ]
                   },
-                  "unit": "percentunit",
-                  "decimals": 1,
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
-                }
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -1276,27 +864,43 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "center",
-                "textMode": "value",
-                "wideLayout": true,
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "min": 0,
+                  "max": 1,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1322,21 +926,11 @@
                       }
                     ]
                   },
-                  "unit": "percentunit",
-                  "decimals": 1,
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
-                }
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -1380,27 +974,43 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "center",
-                "textMode": "value",
-                "wideLayout": true,
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "percentunit",
+                  "decimals": 2,
+                  "min": 0,
+                  "max": 1,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1426,21 +1036,11 @@
                       }
                     ]
                   },
-                  "unit": "percentunit",
-                  "decimals": 2,
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
-                }
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -1484,27 +1084,43 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "stat",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "colorMode": "background",
                 "graphMode": "area",
                 "justifyMode": "center",
-                "textMode": "value",
-                "wideLayout": true,
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "",
                   "values": false
-                }
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "percentunit",
+                  "decimals": 1,
+                  "min": 0,
+                  "max": 1,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1530,21 +1146,11 @@
                       }
                     ]
                   },
-                  "unit": "percentunit",
-                  "decimals": 1,
-                  "mappings": [
-                    {
-                      "options": {
-                        "match": "null",
-                        "result": {
-                          "text": "\u2014",
-                          "color": "text"
-                        }
-                      },
-                      "type": "special"
-                    }
-                  ]
-                }
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -1588,12 +1194,12 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "desc"
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
                 },
                 "legend": {
                   "calcs": [
@@ -1603,25 +1209,68 @@
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "percentunit",
+                  "min": 0,
+                  "max": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
                   "color": {
                     "mode": "palette-classic"
                   },
                   "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
                     "drawStyle": "line",
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 2,
                     "fillOpacity": 25,
                     "gradientMode": "opacity",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
                     "spanNulls": false,
-                    "showPoints": "never"
-                  },
-                  "min": 0,
-                  "max": 1
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
                 },
                 "overrides": []
               }
@@ -1633,7 +1282,7 @@
         "kind": "Panel",
         "spec": {
           "id": 26,
-          "title": "Pass rate per agent \u2014 ncQuality (1h)",
+          "title": "Pass rate per agent — ncQuality (1h)",
           "description": "Quality pass-rate split by nc-chatbot vs nc-gift-finder.",
           "links": [],
           "data": {
@@ -1652,8 +1301,8 @@
                       },
                       "spec": {
                         "expr": "sum by (gen_ai_agent_name) (rate(sigil_eval_executions_total{gen_ai_agent_name=~\"nc-.*\",evaluator=\"ncQuality\",status=\"success\"}[1h])) / clamp_min(sum by (gen_ai_agent_name) (rate(sigil_eval_executions_total{gen_ai_agent_name=~\"nc-.*\",evaluator=\"ncQuality\"}[1h])), 0.0001)",
-                        "legendFormat": "{{gen_ai_agent_name}}",
-                        "instant": true
+                        "instant": true,
+                        "legendFormat": "{{gen_ai_agent_name}}"
                       }
                     },
                     "refId": "A",
@@ -1668,26 +1317,38 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "bargauge",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "displayMode": "gradient",
-                "valueMode": "color",
+                "legend": {
+                  "calcs": [],
+                  "displayMode": "list",
+                  "placement": "bottom",
+                  "showLegend": false
+                },
+                "maxVizHeight": 300,
+                "minVizHeight": 16,
+                "minVizWidth": 8,
+                "namePlacement": "auto",
                 "orientation": "horizontal",
-                "showUnfilled": true,
                 "reduceOptions": {
                   "calcs": [
                     "lastNotNull"
                   ],
                   "fields": "",
                   "values": false
-                }
+                },
+                "showUnfilled": true,
+                "sizing": "auto",
+                "valueMode": "color"
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "percentunit",
+                  "decimals": 2,
+                  "min": 0,
+                  "max": 1,
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1713,11 +1374,11 @@
                       }
                     ]
                   },
-                  "unit": "percentunit",
-                  "min": 0,
-                  "max": 1,
-                  "decimals": 2
-                }
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
               }
             }
           }
@@ -1728,7 +1389,7 @@
         "spec": {
           "id": 27,
           "title": "Verdict mix (1h stacked)",
-          "description": "Stacked verdicts per hour \u2014 green pass, rose fail, orange error.",
+          "description": "Stacked verdicts per hour — green pass, rose fail, orange error.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1761,12 +1422,12 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "timeseries",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
-                "tooltip": {
-                  "mode": "multi",
-                  "sort": "desc"
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
                 },
                 "legend": {
                   "calcs": [
@@ -1776,27 +1437,64 @@
                   "displayMode": "table",
                   "placement": "right",
                   "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
                 }
               },
               "fieldConfig": {
                 "defaults": {
                   "unit": "short",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
                   "color": {
                     "mode": "palette-classic"
                   },
                   "custom": {
-                    "drawStyle": "bars",
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 2,
-                    "fillOpacity": 85,
-                    "gradientMode": "scheme",
-                    "spanNulls": false,
-                    "showPoints": "never",
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
                     "barAlignment": 0,
                     "barWidthFactor": 0.9,
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
                     "stacking": {
-                      "mode": "normal",
-                      "group": "A"
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
                     }
                   }
                 },
@@ -1810,8 +1508,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#39FF7E"
+                          "fixedColor": "#39FF7E",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -1825,8 +1523,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#FF4B7E"
+                          "fixedColor": "#FF4B7E",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -1840,8 +1538,8 @@
                       {
                         "id": "color",
                         "value": {
-                          "mode": "fixed",
-                          "fixedColor": "#F05A28"
+                          "fixedColor": "#F05A28",
+                          "mode": "fixed"
                         }
                       }
                     ]
@@ -1925,9 +1623,9 @@
                         "Time 2": true
                       },
                       "renameByName": {
-                        "gen_ai_agent_name": "Agent",
                         "Value #A": "Hallucination fails",
-                        "Value #B": "Groundedness fails"
+                        "Value #B": "Groundedness fails",
+                        "gen_ai_agent_name": "Agent"
                       }
                     }
                   }
@@ -1939,24 +1637,15 @@
           "vizConfig": {
             "kind": "VizConfig",
             "group": "table",
-            "version": "",
+            "version": "13.1.0-25668120414",
             "spec": {
               "options": {
                 "cellHeight": "md",
-                "showHeader": true,
-                "footer": {
-                  "show": false,
-                  "reducer": [
-                    "sum"
-                  ],
-                  "fields": ""
-                }
+                "showHeader": true
               },
               "fieldConfig": {
                 "defaults": {
-                  "color": {
-                    "mode": "thresholds"
-                  },
+                  "unit": "short",
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
@@ -1986,14 +1675,20 @@
                       }
                     ]
                   },
-                  "custom": {
-                    "cellOptions": {
-                      "type": "color-background",
-                      "mode": "gradient"
-                    },
-                    "align": "auto"
+                  "color": {
+                    "mode": "thresholds"
                   },
-                  "unit": "short"
+                  "custom": {
+                    "align": "auto",
+                    "cellOptions": {
+                      "mode": "gradient",
+                      "type": "color-background"
+                    },
+                    "footer": {
+                      "reducers": []
+                    },
+                    "inspect": false
+                  }
                 },
                 "overrides": [
                   {
@@ -2017,6 +1712,579 @@
             }
           }
         }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "id": 3,
+          "title": "Add-to-Cart per model",
+          "description": "ATC events sliced by gen_ai_request_model. Populates as the model label rolls out across new loadgen traffic (parallel commit landing 2026-05-23). Empty before that.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum by (gen_ai_request_model) (rate(neoncart_add_to_cart_total{gen_ai_request_model!=\"unknown\",gen_ai_request_model!=\"\"}[1h])) * 3600",
+                        "interval": "1h",
+                        "legendFormat": "{{gen_ai_request_model}}"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "short",
+                  "decimals": 3,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "noValue": "(pending model-label rollout)",
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.9,
+                    "drawStyle": "bars",
+                    "fillOpacity": 85,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "normal"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "id": 4,
+          "title": "AI conversion lift (AI ATC / manual ATC, 1h)",
+          "description": "Ratio: AI-attributed ATC rate vs manual ATC rate. >1 = AI is suggesting more cart-adds than humans are clicking on their own. 1h window.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_add_to_cart_total{source=~\"ai_.*\"}[1h])) / sum(rate(neoncart_add_to_cart_total{source=\"manual\"}[1h]))",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "none",
+                  "decimals": 2,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#1a1a2e"
+                      },
+                      {
+                        "value": 0.5,
+                        "color": "#FF4B7E"
+                      },
+                      {
+                        "value": 1,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 1.5,
+                        "color": "#8B46DE"
+                      },
+                      {
+                        "value": 3,
+                        "color": "#00F0FF"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "id": 6,
+          "title": "Revenue rate ($/hour)",
+          "description": "Realized revenue from completed checkouts, projected to $/hour.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_revenue_usd_total{}[5m])) * 3600",
+                        "legendFormat": "revenue"
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "timeseries",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "lastNotNull",
+                    "mean",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 2,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "green"
+                      },
+                      {
+                        "value": 80,
+                        "color": "red"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 40,
+                    "gradientMode": "scheme",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 2,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": false,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "id": 7,
+          "title": "Projected weekly revenue",
+          "description": "Current 1h revenue rate projected forward by 7 days (rate × 86400 × 7). Linear extrapolation — assumes constant traffic.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "expr": "sum(rate(neoncart_revenue_usd_total{}[1h])) * 86400 * 7",
+                        "instant": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 2,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#0a3a1a"
+                      },
+                      {
+                        "value": 100,
+                        "color": "#39FF7E"
+                      },
+                      {
+                        "value": 1000,
+                        "color": "#00F0FF"
+                      },
+                      {
+                        "value": 10000,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 50000,
+                        "color": "#8B46DE"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "id": 8,
+          "title": "AI-attributed revenue (last 24h)",
+          "description": "Cumulative revenue attributed to AI agents (gift-finder + chatbot) in the trailing 24h.",
+          "links": [],
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "query": {
+                      "kind": "DataQuery",
+                      "group": "prometheus",
+                      "version": "v0",
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "spec": {
+                        "app": "grafana-assistant-app",
+                        "expr": "sum(increase(neoncart_ai_attributed_revenue_usd_total{}[24h]))",
+                        "instant": false,
+                        "legendFormat": "AI Revenue",
+                        "queryType": "range",
+                        "range": true
+                      }
+                    },
+                    "refId": "A",
+                    "hidden": false
+                  }
+                }
+              ],
+              "transformations": [],
+              "queryOptions": {}
+            }
+          },
+          "vizConfig": {
+            "kind": "VizConfig",
+            "group": "stat",
+            "version": "13.1.0-25668120414",
+            "spec": {
+              "options": {
+                "colorMode": "background",
+                "graphMode": "area",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "value",
+                "wideLayout": true
+              },
+              "fieldConfig": {
+                "defaults": {
+                  "unit": "currencyUSD",
+                  "decimals": 2,
+                  "mappings": [
+                    {
+                      "type": "special",
+                      "options": {
+                        "match": "null",
+                        "result": {
+                          "text": "—",
+                          "color": "text"
+                        }
+                      }
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "value": 0,
+                        "color": "#1a1a2e"
+                      },
+                      {
+                        "value": 10,
+                        "color": "#FBCA0A"
+                      },
+                      {
+                        "value": 100,
+                        "color": "#F05A28"
+                      },
+                      {
+                        "value": 500,
+                        "color": "#CF0DD6"
+                      },
+                      {
+                        "value": 2000,
+                        "color": "#8B46DE"
+                      }
+                    ]
+                  },
+                  "color": {
+                    "mode": "thresholds"
+                  }
+                },
+                "overrides": []
+              }
+            }
+          }
+        }
       }
     },
     "layout": {
@@ -2026,7 +2294,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "\ud83d\udecd Add-to-Cart \u2014 by source & model",
+              "title": "🛍 Add-to-Cart — by source & model",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2079,7 +2347,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "\ud83d\udcb5 Revenue",
+              "title": "💵 Revenue",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2132,7 +2400,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "\ud83c\udfaf AI agent ROI",
+              "title": "🎯 AI agent ROI",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2172,7 +2440,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "\ud83c\udfaf AI quality at a glance \u2014 eval results",
+              "title": "🎯 AI quality at a glance — eval results",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2251,7 +2519,7 @@
           {
             "kind": "RowsLayoutRow",
             "spec": {
-              "title": "\ud83d\udcca Eval trends & per-agent breakdowns",
+              "title": "📊 Eval trends & per-agent breakdowns",
               "collapse": false,
               "layout": {
                 "kind": "GridLayout",
@@ -2346,7 +2614,7 @@
       "hideTimepicker": false,
       "fiscalYearStartMonth": 0
     },
-    "title": "AI o11y \u2014 NeonCart Business Impact",
+    "title": "AI o11y — NeonCart Business Impact",
     "variables": [
       {
         "kind": "QueryVariable",
@@ -2374,6 +2642,7 @@
             }
           },
           "regex": "",
+          "regexApplyTo": "value",
           "sort": "alphabeticalAsc",
           "options": [],
           "multi": true,
@@ -2408,6 +2677,7 @@
             }
           },
           "regex": "",
+          "regexApplyTo": "value",
           "sort": "alphabeticalAsc",
           "options": [],
           "multi": true,
@@ -2442,6 +2712,7 @@
             }
           },
           "regex": "",
+          "regexApplyTo": "value",
           "sort": "alphabeticalAsc",
           "options": [],
           "multi": true,
