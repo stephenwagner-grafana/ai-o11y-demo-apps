@@ -5,8 +5,8 @@
     "name": "c77ff540-d9fb-468f-8026-7c7dd52d6292",
     "namespace": "stacks-1372178",
     "uid": "5fa2e55d-8f14-4e74-878d-8b923b06930d",
-    "resourceVersion": "1779737290217593",
-    "generation": 6,
+    "resourceVersion": "1779738892247786",
+    "generation": 7,
     "creationTimestamp": "2026-05-24T23:11:49Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "542413635010560"
@@ -16,7 +16,7 @@
       "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana Cloud",
       "grafana.app/updatedBy": "user:eexm63g36yku8c",
-      "grafana.app/updatedTimestamp": "2026-05-25T19:28:10Z"
+      "grafana.app/updatedTimestamp": "2026-05-25T19:54:52Z"
     }
   },
   "spec": {
@@ -2208,7 +2208,6 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
                     "mean",
                     "max"
                   ],
@@ -2483,7 +2482,6 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
                     "mean"
                   ],
                   "displayMode": "table",
@@ -5959,12 +5957,12 @@
                 },
                 "legend": {
                   "calcs": [
-                    "sum"
+                    "mean"
                   ],
                   "displayMode": "table",
                   "placement": "bottom",
                   "showLegend": true,
-                  "sortBy": "Sum",
+                  "sortBy": "Mean",
                   "sortDesc": true
                 },
                 "tooltip": {
@@ -6086,7 +6084,6 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
                     "mean"
                   ],
                   "displayMode": "table",
