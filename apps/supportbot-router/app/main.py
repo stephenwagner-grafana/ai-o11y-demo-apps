@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from typing import Any
 
 import httpx
@@ -102,6 +103,11 @@ async def ask(
     if caller_type not in ("synthetic", "interactive"):
         caller_type = "interactive"
 
+    # Mint a conversation_id up front so the router and the downstream
+    # specialist share one identity — required for Sigil to thread them
+    # together as a single conversation.
+    conv_id = req.conversation_id or f"conv_{uuid.uuid4().hex[:16]}"
+
     # ── Step 1: LLM-driven classification ────────────────────────────────────
     employee = req.employee_email or "anonymous@acme.com"
     messages = [
@@ -117,7 +123,7 @@ async def ask(
             agent_version=os.getenv("APP_VERSION", "0.1.0"),
             app="supportbot",
             session_id=req.session_id or "",
-            conversation_id=req.conversation_id or "",
+            conversation_id=conv_id,
             user_id=employee,
             caller_type=caller_type,
             max_tokens=16,        # category name is short
@@ -140,12 +146,14 @@ async def ask(
             "model": cls_result.get("model"),
             "provider": cls_result.get("provider"),
             "usage": cls_result.get("usage"),
-            "conversation_id": req.conversation_id or "conv_stub",
+            "conversation_id": conv_id,
         }
 
     # ── Step 2: Forward to chosen domain specialist ──────────────────────────
     target_url = DOMAIN_URLS[domain]
     fwd_payload = req.model_dump()
+    # Force the downstream to use the same conversation_id we just minted.
+    fwd_payload["conversation_id"] = conv_id
     fwd_headers = {"X-Caller-Type": caller_type}
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -166,5 +174,5 @@ async def ask(
         "provider": downstream.get("provider"),
         "usage": downstream.get("usage"),
         "tool_calls": downstream.get("tool_calls"),
-        "conversation_id": req.conversation_id or downstream.get("conversation_id") or "conv_stub",
+        "conversation_id": conv_id,
     }

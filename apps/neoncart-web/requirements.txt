@@ -3,6 +3,7 @@ uvicorn[standard]==0.32.0
 pydantic==2.9.0
 httpx==0.27.2
 psycopg[binary,pool]==3.2.3
+pyyaml==6.0.2
 # OTel auto-instrumentation (lights up http.server.*, db.client.*, http.client.* metrics)
 opentelemetry-distro==0.49b0
 opentelemetry-exporter-otlp-proto-http==1.28.0

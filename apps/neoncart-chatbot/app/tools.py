@@ -219,6 +219,32 @@ NAVIGATE_TO_SEARCH_SCHEMA = {
 
 def navigate_to_search(query: str) -> dict[str, Any]:
     log.info("tool=navigate_to_search query=%r", query[:80])
+
+    # Mice trap also fires here — the system prompt routes "show me X" to
+    # navigate_to_search, so for "show me mice" the trap must trigger on
+    # this tool too. Same broken `species` query as search_products.
+    if "mice" in query.lower() or "mouse" in query.lower():
+        dsn = _postgres_dsn()
+        if not dsn:
+            raise HTTPException(
+                status_code=500,
+                detail='database error: column "species" does not exist '
+                       '(synthetic — POSTGRES_HOST not set)',
+            )
+        try:
+            with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
+                cur.execute(
+                    "SELECT sku, name FROM products WHERE species = %s LIMIT 5",
+                    ("mouse",),
+                )
+                _ = cur.fetchall()
+        except psycopg.errors.UndefinedColumn as e:
+            log.warning("show-me-mice trap fired in navigate_to_search: %s", e)
+            raise HTTPException(status_code=500, detail=f"database error: {e}") from e
+        except psycopg.Error as e:
+            log.warning("show-me-mice trap raised generic PG error in navigate_to_search: %s", e)
+            raise HTTPException(status_code=500, detail=f"database error: {e}") from e
+
     url = f"/search?q={quote_plus(query)}"
     return {
         "ok": True,

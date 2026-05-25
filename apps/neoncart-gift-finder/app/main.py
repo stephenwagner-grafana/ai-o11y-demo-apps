@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from typing import Any
 
 import httpx
@@ -101,7 +102,7 @@ async def recommend(
     if req.budget_usd is not None:
         user_text += f"\n\nBudget: ${req.budget_usd:.2f} max."
 
-    conv_id = req.conversation_id or ""
+    conv_id = req.conversation_id or f"conv_{uuid.uuid4().hex[:16]}"
     prior = history.get(conv_id)
     user_turn = {"role": "user", "content": user_text}
     messages = [{"role": "system", "content": SYSTEM_PROMPT}, *prior, user_turn]
@@ -115,15 +116,23 @@ async def recommend(
             agent_version=os.getenv("APP_VERSION", "0.1.0"),
             app="neoncart",
             session_id=req.session_id or "",
-            conversation_id=req.conversation_id or "",
+            conversation_id=conv_id,
             user_id=req.user_id or "",
             caller_type=caller_type,
         )
     except httpx.HTTPError as e:
         log.warning("gateway call failed: %s", e)
         raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
-    # Persist this turn so subsequent calls in the same conv see it.
-    history.put(conv_id, [*prior, user_turn, {"role": "assistant", "content": result.get("content", "")}])
+    # Persist with a flattened tool-call summary so follow-up turns retain context.
+    _assistant_text = result.get("content", "") or ""
+    _tool_calls = result.get("tool_calls") or []
+    if _tool_calls:
+        _summary = "\n".join(
+            f"[tool {tc.get('tool')}({tc.get('input')}) -> {tc.get('result')}]"
+            for tc in _tool_calls
+        )
+        _assistant_text = (_assistant_text + "\n" + _summary).strip()
+    history.put(conv_id, [*prior, user_turn, {"role": "assistant", "content": _assistant_text}])
 
 
     return {
@@ -134,5 +143,5 @@ async def recommend(
         "usage": result.get("usage"),
         "tool_calls": result.get("tool_calls"),
         "reply": result["content"],
-        "conversation_id": req.conversation_id or "conv_stub",
+        "conversation_id": conv_id,
     }

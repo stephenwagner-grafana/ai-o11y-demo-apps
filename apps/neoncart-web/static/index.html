@@ -2199,6 +2199,27 @@ footer {
 
 <!-- ── Scripts ─────────────────────────────────────────────────────────── -->
 <script>
+// Boot: pull a synthetic shopper identity from /api/whoami before the rest
+// of the page wires up its widgets. On first page load this assigns the
+// session a random user from the loadgen pool (email + cohort), so manual
+// NeonCart traffic shows up in Sigil with the same shape as synthetic VUs
+// instead of "shopper-xxxxxx". Sticky via the nc_user_id cookie set by the
+// backend, so a refresh keeps the same identity.
+window.__ncUser = window.__ncUser || null;
+try {
+  var __cached = localStorage.getItem('nc_user');
+  if (__cached) window.__ncUser = JSON.parse(__cached);
+} catch (e) { /* localStorage blocked — keep going */ }
+fetch('/api/whoami', { credentials: 'same-origin' })
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(u) {
+    if (u && u.email) {
+      window.__ncUser = u;
+      try { localStorage.setItem('nc_user', JSON.stringify(u)); } catch (e) { /* ignore */ }
+    }
+  })
+  .catch(function() { /* offline — fall back to shopper-* id */ });
+
 (function() {
   'use strict';
 
@@ -2418,7 +2439,7 @@ footer {
             '<span class="product-rating">' + renderStars(p.rating) + '</span>' +
           '</div>' +
           stockPillHtml +
-          '<button class="add-btn" onclick="window.__addToCart(' + p.id + ')">Add to Cart</button>' +
+          '<button class="add-btn" onclick="window.__addToCart(\'' + p.id + '\')">Add to Cart</button>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -2580,7 +2601,7 @@ footer {
     modal.querySelector('.oc-body').innerHTML =
       '<div class="oc-icon">&#10003;</div>' +
       '<div class="oc-title">Order placed</div>' +
-      '<div class="oc-sub">Confirmation ' + escapeHtml(orderId) + ' &middot; we\\'ll email a receipt</div>' +
+      '<div class="oc-sub">Confirmation ' + escapeHtml(orderId) + ' &middot; we\'ll email a receipt</div>' +
       '<div class="oc-lines">' + lines + '</div>' +
       '<div class="oc-total"><span>Total paid</span><strong>' + total + '</strong></div>' +
       '<button class="oc-close-btn" onclick="window.__closeOrderModal()">Continue shopping</button>';
@@ -2597,7 +2618,7 @@ footer {
       const data = await r.json();
       const items = Array.isArray(data) ? data : (data.products || data.recommendations || []);
       recGrid.innerHTML = items.slice(0, 6).map(function(p) {
-        return '<div class="rec-card" onclick="window.__addToCart(' + p.id + ')">' +
+        return '<div class="rec-card" onclick="window.__addToCart(\'' + p.id + '\')">' +
           '<div class="rec-emoji">' + (p.image_emoji || '&#128230;') + '</div>' +
           '<div class="rec-name">' + escapeHtml(p.name) + '</div>' +
           '<div class="rec-price">' + formatPrice(p.price) + '</div>' +
@@ -2665,14 +2686,14 @@ footer {
           '<span class="feature-hero-price">' + formatPrice(p.price) + '</span>' +
           '<span class="feature-hero-rating">' + renderStars(p.rating) + '</span>' +
         '</div>' +
-        '<button class="feature-hero-cta" onclick="event.stopPropagation();window.__addToCart(' + p.id + ')">Add to Cart</button>' +
+        '<button class="feature-hero-cta" onclick="event.stopPropagation();window.__addToCart(\'' + p.id + '\')">Add to Cart</button>' +
       '</div>';
     featureHero.onclick = function() { window.__addToCart(p.id); };
   }
 
   function renderTrending(items) {
     trendingRail.innerHTML = items.map(function(p) {
-      return '<div class="trend-card" onclick="window.__addToCart(' + p.id + ')">' +
+      return '<div class="trend-card" onclick="window.__addToCart(\'' + p.id + '\')">' +
         '<div class="trend-card-img"><img loading="lazy" alt="" src="' + productImage(p) + '"></div>' +
         '<div class="trend-card-body">' +
           '<div class="trend-card-name">' + escapeHtml(p.name) + '</div>' +
@@ -2714,7 +2735,7 @@ footer {
       const items = (byCat[catKey] || []).slice(0, 4);
       if (items.length === 0) return '';
       const cards = items.map(function(p) {
-        return '<div class="trend-card" onclick="window.__addToCart(' + p.id + ')">' +
+        return '<div class="trend-card" onclick="window.__addToCart(\'' + p.id + '\')">' +
           '<div class="trend-card-img"><img loading="lazy" alt="" src="' + productImage(p) + '"></div>' +
           '<div class="trend-card-body">' +
             '<div class="trend-card-name">' + escapeHtml(p.name) + '</div>' +
@@ -3059,7 +3080,7 @@ footer {
             '<div class="gift-card-title">' + escapeHtml(p.name || ('Product #' + p.id)) + '</div>' +
             '<div class="gift-card-price">$' + price + '</div>' +
             (why ? '<div class="gift-card-why">' + escapeHtml(why) + '</div>' : '') +
-            '<button class="gift-card-add" onclick="window.__addToCart(' + p.id + ')">Add to Cart</button>' +
+            '<button class="gift-card-add" onclick="window.__addToCart(\'' + p.id + '\')">Add to Cart</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -3087,19 +3108,24 @@ footer {
       submit.disabled = true;
       renderTyping();
 
-      var input = 'Recipient: ' + who + '\\nBudget: ' + bud + (occ ? '\\nOccasion: ' + occ : '');
+      var prompt = 'Recipient: ' + who + (occ ? '\nOccasion: ' + occ : '') +
+        '\n\nSuggest 3 specific gifts. For each: 1-line pitch.';
+      var budgetNum = parseFloat(String(bud).replace(/[^0-9.]/g, '')) || null;
 
       fetch('/api/ai/gift-finder', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          task: 'Suggest 3 specific gifts. For each: 1-line pitch.',
-          input: input,
+          prompt: prompt,
+          budget_usd: budgetNum,
+          user_id: window.__ncUser && window.__ncUser.email,
         }),
       })
       .then(function(r) { return r.json(); })
       .then(function(data) {
         submit.disabled = false;
+        // Backend returns {reply}, older UI read {output}. Alias so renderResult works.
+        if (data && data.reply && !data.output) data.output = data.reply;
         if (data && data.ok && data.output) renderResult(data);
         else output.innerHTML = '<div class="gift-result" style="border-left-color:var(--red);color:var(--red)">' +
           'Sorry, the AI specialist had trouble: ' +
@@ -3160,7 +3186,12 @@ footer {
   // generations + spans visible in Grafana).
   (function copilotWidget() {
     var convId = null;
-    var userId = 'shopper-' + Math.random().toString(36).slice(2, 8);
+    // Identity: prefer the synthetic shopper picked by /api/whoami (set on
+    // first page load — see the whoamiBoot IIFE near the top of the page).
+    // Falls back to a one-off shopper-* id if /api/whoami hasn't resolved
+    // yet (offline / startup race).
+    var userId = (window.__ncUser && window.__ncUser.email)
+      || ('shopper-' + Math.random().toString(36).slice(2, 8));
     var openState = false;
     var lastUserText = '';
 
@@ -3261,14 +3292,14 @@ footer {
     function renderMarkdown(text) {
       var s = escapeHtml(String(text || ''));
       // Bold then italic — bold uses ** which would otherwise eat the *italic*
-      s = s.replace(/\\*\\*([^*]+)\\*\\*/g, '<strong>$1</strong>');
-      s = s.replace(/(^|\\W)\\*([^*\\n]+)\\*(\\W|$)/g, '$1<em>$2</em>$3');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/(^|\W)\*([^*\n]+)\*(\W|$)/g, '$1<em>$2</em>$3');
       // Bullet lines: "- foo" or "* foo" at line start
-      s = s.replace(/(^|\\n)\\s*[-*]\\s+(.+?)(?=\\n|$)/g, '$1<li>$2</li>');
+      s = s.replace(/(^|\n)\s*[-*]\s+(.+?)(?=\n|$)/g, '$1<li>$2</li>');
       // Wrap consecutive <li> blocks into <ul>
-      s = s.replace(/((?:<li>[^<]*<\\/li>\\s*)+)/g, '<ul class="cp-list">$1</ul>');
+      s = s.replace(/((?:<li>[^<]*<\/li>\s*)+)/g, '<ul class="cp-list">$1</ul>');
       // Remaining newlines → <br>
-      s = s.replace(/\\n/g, '<br>');
+      s = s.replace(/\n/g, '<br>');
       return s;
     }
     function appendBadges(wrap, model, specialists, toolCalls, escalated, tools) {
@@ -3278,7 +3309,7 @@ footer {
       // function names ("search_products", "navigate_storefront") which read
       // like internal labels. Specialists below get their own glowing chip
       // since those are the actually delegated sub-agents.
-      var toolCount = toolCalls || (Array.isArray(tools) ? tools.length : 0);
+      var toolCount = Array.isArray(toolCalls) ? toolCalls.length : (toolCalls || (Array.isArray(tools) ? tools.length : 0));
       if (toolCount) {
         meta.push('<span class="cp-badge cp-b-tools">' + toolCount + ' tool' + (toolCount === 1 ? '' : 's') + '</span>');
       }
@@ -3423,6 +3454,31 @@ footer {
         return r.json().then(function(j) { if (j && typeof j === 'object') j.__trace_id = traceId; return j; });
       }).then(function(data) {
         thinking.remove();
+        // Backend emits {reply, tool_calls, specialist}; UI was written
+        // against an older {response, actions, products, specialists}
+        // contract. Bridge here so the rest of the handler stays the same.
+        if (data && typeof data === 'object') {
+          if (data.reply && !data.response) data.response = data.reply;
+          if (!data.specialists && data.specialist) data.specialists = [data.specialist];
+          if (!data.actions) data.actions = [];
+          if (!data.products) data.products = [];
+          (data.tool_calls || []).forEach(function(tc) {
+            if (!tc || !tc.tool) return;
+            var inp = tc.input || {};
+            var res = tc.result || {};
+            if (tc.tool === 'navigate_to_search' && inp.query) {
+              data.actions.push({ type: 'navigate', target: 'search', value: inp.query });
+            } else if (tc.tool === 'navigate_to_page') {
+              if (inp.page === 'cart') data.actions.push({ type: 'navigate', target: 'cart' });
+              else if (inp.page === 'search' && inp.query) data.actions.push({ type: 'navigate', target: 'search', value: inp.query });
+              else if (inp.page === 'product' && inp.sku) data.actions.push({ type: 'navigate', target: 'product', value: inp.sku });
+            } else if (tc.tool === 'search_products' && Array.isArray(res.results)) {
+              res.results.forEach(function(r) {
+                data.products.push({ id: r.sku, name: r.name, price: r.price_usd, description: r.description, category: r.category });
+              });
+            }
+          });
+        }
         if (data && data.response) {
           convId = data.conversation_id || convId;
           var w = appendMsg('bot', renderMarkdown(data.response));

@@ -28,6 +28,12 @@ spec:
             {{- include "aio11y.envOtelSigil" (list $ "neoncart-web") | nindent 12 }}
             {{- include "aio11y.envGatewayUrl" . | nindent 12 }}
             {{- include "aio11y.envPostgres" . | nindent 12 }}
+            - name: USERS_CONFIG_PATH
+              value: /etc/neoncart/users.yaml
+          volumeMounts:
+            - name: users
+              mountPath: /etc/neoncart
+              readOnly: true
           livenessProbe:
             httpGet:
               path: /health
@@ -42,4 +48,8 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.neoncart.web.resources | nindent 12 }}
+      volumes:
+        - name: users
+          configMap:
+            name: neoncart-users
 {{- end }}

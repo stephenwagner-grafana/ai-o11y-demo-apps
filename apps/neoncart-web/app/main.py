@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import logging
 import os
+import random
 import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncIterator
 
 import httpx
+import yaml
 from fastapi import Cookie, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -157,6 +159,52 @@ def _enrich(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# ── Synthetic user pool (mirrors loadgen) ───────────────────────────────────
+# Loaded once at module import. Same users.yaml the loadgen reads, so a
+# manual NeonCart session in the browser shows up in Sigil with the same
+# email/cohort identity a synthetic VU would have.
+_USERS_PATH = os.getenv("USERS_CONFIG_PATH", "/etc/neoncart/users.yaml")
+_USER_POOL: list[dict[str, Any]] = []
+try:
+    _p = Path(_USERS_PATH)
+    if _p.is_file():
+        _doc = yaml.safe_load(_p.read_text()) or {}
+        _USER_POOL = list(_doc.get("nc_users") or [])
+        log.info("loaded %d nc_users from %s", len(_USER_POOL), _USERS_PATH)
+except Exception as e:  # noqa: BLE001
+    log.warning("could not load users from %s: %s", _USERS_PATH, e)
+
+
+@app.get("/api/whoami")
+async def whoami(
+    response: Response,
+    nc_user_id: str | None = Cookie(default=None),
+) -> dict[str, Any]:
+    """Identify the browser session as a random shopper from the loadgen pool.
+
+    Sticky via the `nc_user_id` cookie: first hit picks a random user and
+    sets the cookie; subsequent hits return the same user. If the pool is
+    empty (users.yaml not generated), we fall back to a guest identity.
+    """
+    if _USER_POOL:
+        chosen = None
+        if nc_user_id:
+            chosen = next((u for u in _USER_POOL if u.get("id") == nc_user_id), None)
+        if chosen is None:
+            chosen = random.choice(_USER_POOL)
+            response.set_cookie(
+                "nc_user_id", str(chosen.get("id")),
+                max_age=60 * 60 * 24 * 30, httponly=False, samesite="lax",
+            )
+        return {
+            "id": chosen.get("id"),
+            "name": chosen.get("name"),
+            "email": chosen.get("email"),
+            "cohort": chosen.get("cohort"),
+        }
+    return {"id": "guest", "name": "Guest", "email": "guest@neoncart.local", "cohort": "non_ai"}
+
+
 @app.get("/api/products")
 async def list_products(
     response: Response,
@@ -212,9 +260,16 @@ async def search(
         return {"query": q, "results": [], "session_id": sid}
     if not db.pool_ready():
         raise HTTPException(status_code=503, detail="postgres not ready")
+    # Loose plural handling: also match the singular form so "keyboards" finds
+    # products named "Keyboard". Catalog names are mostly singular ("NeonTech
+    # Glow Keyboard"), so a strict substring search on "keyboards" returns 0.
+    qs = q.strip()
+    q_stem = qs[:-1] if len(qs) > 3 and qs.lower().endswith("s") else qs
+    pat1, pat2 = f"%{qs}%", f"%{q_stem}%"
     rows = await db.fetch(
-        f"{_PRODUCTS_SELECT} WHERE p.name ILIKE %s OR p.description ILIKE %s LIMIT %s",
-        (f"%{q}%", f"%{q}%", max(1, min(limit, 50))),
+        f"{_PRODUCTS_SELECT} WHERE p.name ILIKE %s OR p.description ILIKE %s "
+        "OR p.name ILIKE %s OR p.description ILIKE %s LIMIT %s",
+        (pat1, pat1, pat2, pat2, max(1, min(limit, 50))),
     )
     return {"query": q, "results": [_enrich(r) for r in rows], "session_id": sid}
 

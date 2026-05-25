@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from typing import Any
 
 import httpx
@@ -99,7 +100,7 @@ async def chat(
     if caller_type not in ("synthetic", "interactive"):
         caller_type = "interactive"
 
-    conv_id = req.conversation_id or ""
+    conv_id = req.conversation_id or f"conv_{uuid.uuid4().hex[:16]}"
     prior = history.get(conv_id)
     user_turn = {"role": "user", "content": msg}
     messages = [{"role": "system", "content": SYSTEM_PROMPT}, *prior, user_turn]
@@ -113,7 +114,7 @@ async def chat(
             agent_version=os.getenv("APP_VERSION", "0.1.0"),
             app="neoncart",
             session_id=req.session_id or "",
-            conversation_id=req.conversation_id or "",
+            conversation_id=conv_id,
             user_id=req.user_id or "",
             caller_type=caller_type,
         )
@@ -124,9 +125,20 @@ async def chat(
         log.warning("gateway call failed: %s", e)
         raise HTTPException(status_code=502, detail=f"gateway unreachable: {e}") from e
 
-    # Persist the turn so the next /chat call sees this exchange.
-    assistant_turn = {"role": "assistant", "content": result.get("content", "")}
-    history.put(conv_id, [*prior, user_turn, assistant_turn])
+    # Persist the turn so the next /chat call sees this exchange. We flatten
+    # tool_calls into the assistant text so follow-ups like "tell me more
+    # about the first one" can reference what the tools actually returned —
+    # without this, only the bot's bare reply ("Taking you to webcams!") is
+    # remembered and the LLM has no idea what was shown.
+    _assistant_text = result.get("content", "") or ""
+    _tool_calls = result.get("tool_calls") or []
+    if _tool_calls:
+        _summary = "\n".join(
+            f"[tool {tc.get('tool')}({tc.get('input')}) -> {tc.get('result')}]"
+            for tc in _tool_calls
+        )
+        _assistant_text = (_assistant_text + "\n" + _summary).strip()
+    history.put(conv_id, [*prior, user_turn, {"role": "assistant", "content": _assistant_text}])
 
     return {
         "ok": True,
@@ -136,5 +148,5 @@ async def chat(
         "provider": result.get("provider"),
         "usage": result.get("usage"),
         "tool_calls": result.get("tool_calls"),
-        "conversation_id": req.conversation_id or "conv_stub",
+        "conversation_id": conv_id,
     }
