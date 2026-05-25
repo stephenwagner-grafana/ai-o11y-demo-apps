@@ -83,7 +83,7 @@ jobs:
           printf '  %s\n' "${files[@]}"
 
       - name: Run hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           # hadolint-action takes a single dockerfile arg; we glob via recursive=true.
           dockerfile: "**/Dockerfile*"
