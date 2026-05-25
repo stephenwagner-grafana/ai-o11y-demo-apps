@@ -169,23 +169,25 @@ collect_required() {
     '^[0-9]+$' \
     "Expected numeric instance id."
 
-  # OTLP token — many Grafana Cloud stacks issue a SEPARATE Cloud Access Policy
+  # OTLP token — Grafana Cloud stacks issue a SEPARATE Cloud Access Policy
   # token for OTLP ingestion (metrics + logs + traces) vs Sigil's plugin token.
-  # If you use the same token for both, hit Enter to reuse SIGIL_AUTH_TOKEN.
-  # Otherwise paste the token from the "Send to OpenTelemetry" / OTLP card.
+  # Paste the token from the "Send to OpenTelemetry" / OTLP card.
   #
-  # How to tell them apart: in Grafana Cloud → Connections → Add new connection,
-  # the Sigil plugin and the OTLP endpoint each show their own access-policy
-  # token field. If those tokens differ (visually or copy-pasted from different
-  # pages), you NEED to enter the OTLP one here.
+  # How to find it: in Grafana Cloud → Connections → Add new connection →
+  # OpenTelemetry → the "Password / API Token" field on the OTLP card. This
+  # is distinct from the Sigil plugin's token; do not reuse the Sigil token
+  # unless you have explicitly granted it metrics:write scope.
   say ""
   say "─── OTLP write token ───"
-  say "Required separately when your stack issues distinct tokens for Sigil"
-  say "and OTLP. Press Enter to REUSE the Sigil token above (the common case)."
-  prompt_value OTEL_OTLP_TOKEN "OTEL_OTLP_TOKEN (Enter = reuse SIGIL_AUTH_TOKEN)" "${OTEL_OTLP_TOKEN:-}"
+  say "Paste the OTLP write token from Grafana Cloud's OpenTelemetry card."
+  say "(Distinct from the Sigil token. Type 'reuse' only if you have"
+  say " confirmed your Sigil token has metrics:write scope.)"
+  prompt_value OTEL_OTLP_TOKEN "OTEL_OTLP_TOKEN" "${OTEL_OTLP_TOKEN:-}"
   if [ -z "${OTEL_OTLP_TOKEN:-}" ]; then
+    die "OTEL_OTLP_TOKEN is required. Get it from Grafana Cloud → Connections → OpenTelemetry."
+  elif [ "${OTEL_OTLP_TOKEN}" = "reuse" ]; then
     OTEL_OTLP_TOKEN="${SIGIL_AUTH_TOKEN}"
-    ok "Reusing SIGIL_AUTH_TOKEN for OTLP."
+    ok "Reusing SIGIL_AUTH_TOKEN for OTLP (per explicit 'reuse' input)."
   else
     ok "Using separate OTLP token."
   fi
