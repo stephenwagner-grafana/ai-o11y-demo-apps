@@ -82,8 +82,10 @@ def calculate_cost(
 ) -> float:
     """Return cost in USD for a single LLM call.
 
-    Cloud providers: input_tokens × input_rate + output_tokens × output_rate.
-    Ollama: only output_tokens counted (input is cheap on local inference).
+    All providers (cloud + Ollama): input_tokens × input_rate + output_tokens × output_rate.
+    Ollama rates model all-in compute cost (electricity + GPU amortization).
+    Every call with non-zero tokens produces a non-zero cost so dashboards
+    populate for every message.
     Returns 0 if pricing is unknown.
     """
     rates = _pricing.get(provider, {}).get(model)
@@ -106,9 +108,6 @@ def calculate_cost(
     if rates is None:
         log.warning("No pricing for %s/%s — cost = 0", provider, model)
         return 0.0
-
-    if provider == "ollama":
-        return output_tokens * rates.get("output_usd_per_mtoken", 0.0) / 1_000_000
 
     input_rate = rates.get("input_usd_per_mtoken", 0.0)
     output_rate = rates.get("output_usd_per_mtoken", 0.0)
