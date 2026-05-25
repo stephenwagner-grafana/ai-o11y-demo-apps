@@ -58,65 +58,65 @@ Active development. The full demo cycle (`helm uninstall` → `./tools/install.s
 
 ```mermaid
 flowchart LR
-  subgraph k6["k6-loadgen ns"]
-    LG["loadgen<br/>(K6 orchestrator)"]
-  end
+  LG["k6 loadgen"]
+  USR["real user"]
 
-  subgraph nc["neoncart ns"]
+  subgraph apps["AI apps"]
+    direction TB
     NCW["neoncart-web"]
-    NCB["nc-chatbot<br/>+ tools"]
-    NCG["nc-gift-finder<br/>+ tools"]
+    SBW["supportbot-web"]
   end
 
-  subgraph sb["support-bot ns"]
-    SBW["supportbot-web"]
-    SBR["sb-router<br/>(LLM classifier)"]
+  subgraph spec["AI specialists"]
+    direction TB
+    NCB["nc-chatbot"]
+    NCG["nc-gift-finder"]
+    SBR["sb-router"]
     SBB["sb-billing"]
     SBT["sb-tech-support"]
     SBA["sb-account-management"]
   end
 
-  subgraph gw["llm-gateway ns"]
-    GW["llm-gateway<br/>(routing + caps + cost)"]
+  subgraph back["Backends"]
+    direction TB
+    GW["llm-gateway"]
+    PG["postgres"]
   end
 
-  subgraph pg["ai-o11y-postgres ns"]
-    PG["postgres<br/>(catalog + carts + orders)"]
-  end
+  GC[("Grafana Cloud")]
 
-  GC["Grafana Cloud<br/>(metrics, logs, traces, Sigil)"]
+  LG --> NCW
+  LG --> SBW
+  USR --> NCW
+  USR --> SBW
 
-  ANT["Anthropic"]
-  OAI["OpenAI"]
-  GEM["Gemini"]
-  OL["Ollama (local)"]
-
-  LG -- "X-Caller-Type: synthetic" --> NCW
-  LG -- "X-Caller-Type: synthetic" --> SBW
   NCW --> NCB
   NCW --> NCG
-  NCW <-->|catalog + carts + orders| PG
-  NCB --> GW
-  NCB <-.->|search_products / mice trap| PG
-  NCG --> GW
-  NCG <-.->|search_by_criteria| PG
-  SBW --> SBR
-  SBR --> SBB & SBT & SBA
-  SBR --> GW
-  SBB & SBT & SBA --> GW
-  GW --> ANT
-  GW --> OAI
-  GW --> GEM
-  GW --> OL
+  NCW --> PG
 
-  NCW & NCB & NCG -.->|OTel| GC
-  SBW & SBR & SBB & SBT & SBA -.->|OTel| GC
-  GW -.->|OTel + Sigil generation events| GC
-  PG -.->|OTel| GC
-  LG -.->|OTel| GC
+  SBW --> SBR
+  SBR --> SBB
+  SBR --> SBT
+  SBR --> SBA
+
+  NCB --> GW
+  NCG --> GW
+  SBR --> GW
+  SBB --> GW
+  SBT --> GW
+  SBA --> GW
+
+  NCB --> PG
+  NCG --> PG
+
+  apps -.->|OTel| GC
+  spec -.->|OTel| GC
+  back -.->|OTel + Sigil| GC
 ```
 
-5 namespaces, ~10 pods. Pods emit OTLP directly to the customer's Grafana Cloud (or via their own Alloy if installed). No in-cluster Prometheus scraper is required — every custom metric (`neoncart_*`, `loadgen_*`) ships via the OTel meter SDK on the same OTLP push pipeline as traces and logs.
+5 namespaces, ~10 pods. All pods auto-instrument and push OTLP directly to Grafana Cloud (metrics, logs, traces) plus Sigil generation events from the LLM gateway. No in-cluster Prometheus scraper required — every custom metric (`neoncart_*`, `loadgen_*`) ships via the OTel meter SDK on the same OTLP push pipeline as traces and logs (or via the customer's own Alloy if they have one).
+
+The gateway fans out to **Anthropic** (required), and optionally **OpenAI**, **Gemini**, and a local **Ollama** — provider mix is configurable per install.
 
 ---
 

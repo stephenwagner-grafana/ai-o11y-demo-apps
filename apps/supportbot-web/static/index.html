@@ -41,20 +41,39 @@
       <div class="rainbow-strip" aria-hidden="true"></div>
       <div class="hero-eyebrow">Ask Acme · AI support</div>
       <h1>What can I help you with today?</h1>
-      <p>I can answer questions about HR policy, PTO, benefits, IT tickets, payroll,
-         and the company KB. I run every question through 18 specialist sub-agents
-         and four LLM judges before replying. Pick a demo verb below or type your own.</p>
-      <div class="capabilities">
-        <div class="cap"><span class="cap-icon">🏖️</span> <span class="cap-name">Time off</span></div>
-        <div class="cap"><span class="cap-icon">📋</span> <span class="cap-name">HR policy</span></div>
-        <div class="cap"><span class="cap-icon">💼</span> <span class="cap-name">Benefits</span></div>
-        <div class="cap"><span class="cap-icon">💻</span> <span class="cap-name">IT tickets</span></div>
-        <div class="cap"><span class="cap-icon">💰</span> <span class="cap-name">Payroll</span></div>
-        <div class="cap"><span class="cap-icon">🏢</span> <span class="cap-name">Facilities</span></div>
-        <div class="cap"><span class="cap-icon">📚</span> <span class="cap-name">KB search</span></div>
-        <div class="cap"><span class="cap-icon">🔀</span> <span class="cap-name">Escalation</span></div>
-        <div class="cap"><span class="cap-icon">🛡️</span> <span class="cap-name">PII redact</span></div>
-        <div class="cap"><span class="cap-icon">🚫</span> <span class="cap-name">Injection guard</span></div>
+      <p>Acme's internal AI helpdesk — ask anything about HR, IT, billing, or company policy.
+         Every question runs through real LLM tool-calls against live systems and emits
+         end-to-end telemetry to Grafana Cloud.</p>
+    </section>
+
+    <section class="arch">
+      <div class="arch-eyebrow">How a question flows</div>
+      <div class="arch-flow">
+        <div class="arch-col arch-col--blue">
+          <div class="arch-col-label">Traffic</div>
+          <div class="arch-node">k6 loadgen</div>
+          <div class="arch-node">real user</div>
+        </div>
+        <div class="arch-arrow" aria-hidden="true">→</div>
+        <div class="arch-col arch-col--purple">
+          <div class="arch-col-label">AI apps</div>
+          <div class="arch-node">neoncart-web</div>
+          <div class="arch-node">supportbot-web</div>
+        </div>
+        <div class="arch-arrow" aria-hidden="true">→</div>
+        <div class="arch-col arch-col--pink">
+          <div class="arch-col-label">Specialists</div>
+          <div class="arch-node">nc-chatbot</div>
+          <div class="arch-node">nc-gift-finder</div>
+          <div class="arch-node">sb-router</div>
+          <div class="arch-node">sb-billing · tech · account</div>
+        </div>
+        <div class="arch-arrow" aria-hidden="true">→</div>
+        <div class="arch-col arch-col--orange">
+          <div class="arch-col-label">Backends</div>
+          <div class="arch-node">llm-gateway</div>
+          <div class="arch-node">postgres</div>
+        </div>
       </div>
     </section>
 
@@ -111,21 +130,16 @@
 
     <section class="footer-grid">
       <div class="card">
-        <h3>What this demo is</h3>
-        <p>An internal support bot for a fictional 50-employee company called Acme.
-           Every <code>/ask</code> walks an 18-step specialist chain across HRIS,
-           ITSM, Payroll, Org-chart and a Postgres-backed policy KB. Adversarial
-           probes (prompt injection, cross-role asks, PII inputs, escalation triggers)
-           drive realistic failures into the dashboard.</p>
+        <h3>Real product · real telemetry</h3>
+        <p>Every <code>/ask</code> exercises real LLM tool-calls, a real Postgres
+           knowledge base, and a multi-provider gateway. No fake metrics — what
+           you see in Grafana is what the bot actually did.</p>
       </div>
       <div class="card">
-        <h3>What's instrumented</h3>
-        <ul class="bullets">
-          <li>Per-request Sigil generation tree (parent → child)</li>
-          <li>OTel auto-instrumentation across FastAPI / httpx / Postgres</li>
-          <li>Four LLM judges on every response</li>
-          <li>Loadgen feeds Ollama; live (browser) traffic feeds Claude</li>
-        </ul>
+        <h3>One observability story · two apps</h3>
+        <p>SupportBot and its sister storefront <code>NeonCart</code> ship into
+           the same Grafana Cloud dashboards. Traces, generations, evals, and
+           per-agent ROI all populate within minutes of install.</p>
       </div>
     </section>
   </main>
