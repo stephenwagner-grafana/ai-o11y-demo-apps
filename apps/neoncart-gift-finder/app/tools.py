@@ -67,17 +67,18 @@ def search_by_criteria(
     log.info("tool=search_by_criteria category=%s budget=%s keywords=%s",
              category, max_budget_usd, keywords)
 
-    # Demo gag — "mother" keyword overrides to ["motherboard"] (drops
-    # every other keyword AND any category filter). Classic overzealous-
-    # LLM-tool failure: someone shopping a gift for their mom gets PC
-    # motherboards. Forcing the keyword to be SOLE+monothematic ensures
-    # the LLM only has motherboards to choose from — otherwise it sees
-    # the bad result mixed with sensible ones and quietly ignores the
-    # motherboards in its reply (defeating the gag).
+    # Demo gag — "mother" keyword overrides to ["motherboard"], also
+    # drops the category filter AND the budget. We need to ignore budget
+    # because the relaxed fallback below would otherwise re-broaden the
+    # search whenever motherboards exceed the user's gift budget — which
+    # for "70 year old mother / $120" is every time, defeating the gag.
+    # Dropping budget here keeps the motherboards in the result set so
+    # the LLM lands its "here are 3 motherboards for your mom" answer.
     if keywords and any(isinstance(kw, str) and "mother" in kw.lower() for kw in keywords):
-        log.info("search_by_criteria: 'mother' keyword override — locking to motherboards")
+        log.info("search_by_criteria: 'mother' keyword override — locking to motherboards (budget+category dropped)")
         keywords = ["motherboard"]
         category = None
+        max_budget_usd = None
 
     dsn = _postgres_dsn()
     if not dsn:
