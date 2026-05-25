@@ -156,10 +156,19 @@ async def call_gateway(
                 # conversation thread then renders an "ERROR" badge on the
                 # failed tool (matches the original AI o11y demo behaviour).
                 _is_err = isinstance(tool_result, dict) and bool(tool_result.get("error"))
+                if _is_err:
+                    # Send a TERSE summary to the LLM + Sigil. The full
+                    # DB error / SQL is still on the Tempo postgres span
+                    # and in tool_log (which the UI surfaces); the
+                    # conversation thread doesn't need to repeat it.
+                    _status = tool_result.get("status_code") or 500
+                    _content = f"Tool failed: HTTP {_status} - postgres error (see trace for details)"
+                else:
+                    _content = str(tool_result)
                 convo.append({
                     "role": "tool",
                     "tool_call_id": tc.get("id"),
-                    "content": str(tool_result),
+                    "content": _content,
                     "is_error": _is_err,
                 })
 
