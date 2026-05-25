@@ -113,7 +113,7 @@ jobs:
 
       - name: Build and push
         if: steps.context_check.outputs.exists == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.component.context }}
           file: ${{ matrix.component.context }}/Dockerfile
