@@ -83,8 +83,6 @@ flowchart LR
     PG["postgres"]
   end
 
-  GC[("Grafana Cloud")]
-
   LG --> NCW
   LG --> SBW
   USR --> NCW
@@ -108,10 +106,6 @@ flowchart LR
 
   NCB --> PG
   NCG --> PG
-
-  apps -.->|OTel| GC
-  spec -.->|OTel| GC
-  back -.->|OTel + Sigil| GC
 ```
 
 5 namespaces, ~10 pods. All pods auto-instrument and push OTLP directly to Grafana Cloud (metrics, logs, traces) plus Sigil generation events from the LLM gateway. No in-cluster Prometheus scraper required — every custom metric (`neoncart_*`, `loadgen_*`) ships via the OTel meter SDK on the same OTLP push pipeline as traces and logs (or via the customer's own Alloy if they have one).
