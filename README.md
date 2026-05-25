@@ -157,6 +157,30 @@ kubectl -n support-bot port-forward svc/supportbot-web 8081:8000  # http://local
 
 Or set `ingress.enabled=true` (see [Optional Ingress](#optional-ingress) below) to skip port-forwarding.
 
+### Install walkthrough
+
+End-to-end on a fresh GKE Cloud Shell takes about 5 minutes.
+
+**1. Cluster prereqs** — install `helm`, confirm `python3`, clone the repo, install the wizard's Python deps:
+
+![Cluster prereqs in Cloud Shell](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/install-1-prereqs.png)
+
+**2. Run `./tools/install.sh`** — the wizard verifies prereqs, then prompts for required credentials (Claude API key, Sigil endpoint + tenant + token, OTLP endpoint + instance + token), optional providers (OpenAI / Gemini / Ollama), and tunables (Anthropic daily cap, NC AI adoption rate, user counts):
+
+![Install wizard prompting for credentials](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/install-2-wizard.png)
+
+**3. Install completes** — Helm finishes, the wizard prints next-steps (port-forwards, dashboard navigation, verify):
+
+![Install completes — next steps printed](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/install-3-next-steps.png)
+
+**4. Pods come up** — 5 namespaces, ~10 pods, all `Running` within ~3 minutes:
+
+![All pods Running across the 5 chart namespaces](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/install-4-pods-running.png)
+
+**5. Telemetry flowing** — Grafana Cloud's Traces Drilldown auto-discovers every service (`nc-chatbot`, `sb-router`, `llm-gateway`, etc.) within a minute of pods becoming Ready:
+
+![Traces Drilldown populated with every service](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/install-5-traces.png)
+
 ### Uninstall
 
 ```bash
