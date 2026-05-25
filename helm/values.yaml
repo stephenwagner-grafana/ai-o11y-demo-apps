@@ -206,6 +206,15 @@ neoncart:
     resources:
       requests: {cpu: 100m, memory: 256Mi}
       limits:   {cpu: 500m, memory: 512Mi}
+  # postgres-db is a thin HTTP proxy nc-chatbot calls instead of psycopg
+  # direct, so the demo trace cascades visibly through a `postgres-db`
+  # service span (mirrors the original AI o11y demo's `search-service`).
+  postgresDb:
+    enabled: true
+    replicas: 1
+    resources:
+      requests: {cpu: 50m, memory: 128Mi}
+      limits:   {cpu: 250m, memory: 256Mi}
 
 # =============================================================================
 # SupportBot — `support-bot` namespace

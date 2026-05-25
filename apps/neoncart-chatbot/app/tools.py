@@ -21,8 +21,18 @@ import os
 from typing import Any
 from urllib.parse import quote_plus
 
+import httpx
 import psycopg
 from fastapi import HTTPException
+
+# postgres-db is the thin proxy service that owns all SQL for the chatbot.
+# Going via it (instead of psycopg direct) gives the demo trace an extra
+# visible hop: nc-chatbot -> postgres-db -> postgres, with the failing
+# SQL captured in postgres-db's logs (Loki under service.name=postgres-db).
+POSTGRES_DB_URL = os.getenv(
+    "POSTGRES_DB_URL",
+    "http://postgres-db.neoncart.svc.cluster.local:8000",
+)
 
 log = logging.getLogger(__name__)
 
@@ -60,65 +70,38 @@ def _postgres_dsn() -> str | None:
 
 
 def search_products(query: str, max_results: int = 5) -> dict[str, Any]:
-    """Search the catalog. Contains the 'show me mice' trap."""
+    """Search the catalog by calling postgres-db.
+
+    All SQL execution (including the mice trap) lives in the postgres-db
+    service — this just forwards. The trace cascade then reads:
+      browser → neoncart-web → nc-chatbot → postgres-db → postgres
+    with the postgres SELECT span and its db.statement appearing under
+    service.name=postgres-db (matches the original AI o11y demo layout).
+    """
     log.info("tool=search_products query=%r max_results=%d", query[:80], max_results)
-
-    # ── Mice trap ─────────────────────────────────────────────────────────────
-    # If the query mentions mice/mouse, the chatbot (or LLM) tries to filter
-    # by `species` — a column that doesn't exist in our schema. Postgres
-    # returns "column \"species\" does not exist". This is the signature
-    # AI o11y demo moment: browser -> nc-chatbot -> search_products tool ->
-    # postgres -> error, all in one trace.
-    if "mice" in query.lower() or "mouse" in query.lower():
-        dsn = _postgres_dsn()
-        if not dsn:
-            raise HTTPException(
-                status_code=500,
-                detail='database error: column "species" does not exist '
-                       '(synthetic — POSTGRES_HOST not set; will be a real PG error once deployed)',
-            )
-        try:
-            with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
-                cur.execute(
-                    "SELECT sku, name, price_usd FROM products "
-                    "WHERE species = %s LIMIT %s",  # <-- `species` column does not exist
-                    ("mouse", max_results),
-                )
-                _ = cur.fetchall()
-        except psycopg.errors.UndefinedColumn as e:
-            log.warning("show-me-mice trap fired: %s", e)
-            raise HTTPException(status_code=500, detail=f"database error: {e}") from e
-        except psycopg.Error as e:
-            log.warning("show-me-mice trap raised generic PG error: %s", e)
-            raise HTTPException(status_code=500, detail=f"database error: {e}") from e
-
-    # Normal path: real Postgres ILIKE search on name + description.
-    dsn = _postgres_dsn()
-    if not dsn:
-        # No Postgres — fall back to stubs so dev mode still returns *something*.
-        return {
-            "ok": True,
-            "query": query,
-            "results": [
-                {"sku": "GMG-002", "name": "Voltura Stormcaster Mouse", "price_usd": 89.00},
-                {"sku": "ACC-003", "name": "LumenWorks Aurora Desk Light", "price_usd": 65.00},
-            ][:max_results],
-        }
     try:
-        with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
-            cur.execute(
-                "SELECT sku, name, description, price_usd FROM products "
-                "WHERE name ILIKE %s OR description ILIKE %s LIMIT %s",
-                (f"%{query}%", f"%{query}%", max_results),
+        with httpx.Client(timeout=10.0) as client:
+            r = client.post(
+                f"{POSTGRES_DB_URL}/search",
+                json={"query": query, "max_results": max_results},
             )
-            rows = [
-                {"sku": r[0], "name": r[1], "description": r[2], "price_usd": float(r[3] or 0)}
-                for r in cur.fetchall()
-            ]
-        return {"ok": True, "query": query, "results": rows}
-    except psycopg.Error as e:
-        log.warning("search_products PG error: %s", e)
-        return {"ok": False, "query": query, "results": [], "error": str(e)}
+            r.raise_for_status()
+            return r.json()
+    except httpx.HTTPStatusError as e:
+        # Surface the downstream postgres-db error unchanged so the chat
+        # handler / gateway client can see and present it.
+        log.warning("postgres-db returned %d: %s", e.response.status_code, e.response.text[:200])
+        detail = e.response.text
+        try:
+            parsed = e.response.json()
+            if isinstance(parsed, dict) and "detail" in parsed:
+                detail = parsed["detail"]
+        except (ValueError, TypeError):
+            pass
+        raise HTTPException(status_code=e.response.status_code, detail=detail) from e
+    except httpx.HTTPError as e:
+        log.warning("postgres-db unreachable: %s", e)
+        raise HTTPException(status_code=502, detail=f"postgres-db unreachable: {e}") from e
 
 
 # ── Tool: navigate_to_page ────────────────────────────────────────────────────
@@ -220,30 +203,31 @@ NAVIGATE_TO_SEARCH_SCHEMA = {
 def navigate_to_search(query: str) -> dict[str, Any]:
     log.info("tool=navigate_to_search query=%r", query[:80])
 
-    # Mice trap also fires here — the system prompt routes "show me X" to
-    # navigate_to_search, so for "show me mice" the trap must trigger on
-    # this tool too. Same broken `species` query as search_products.
+    # Mice trap — the system prompt routes "show me X" to this tool, so
+    # for "show me mice" we go through postgres-db too (one hop, returns
+    # 500 with `column "species" does not exist`). Same trace cascade as
+    # search_products: nc-chatbot → postgres-db → postgres → error.
     if "mice" in query.lower() or "mouse" in query.lower():
-        dsn = _postgres_dsn()
-        if not dsn:
-            raise HTTPException(
-                status_code=500,
-                detail='database error: column "species" does not exist '
-                       '(synthetic — POSTGRES_HOST not set)',
-            )
         try:
-            with psycopg.connect(dsn, connect_timeout=3) as conn, conn.cursor() as cur:
-                cur.execute(
-                    "SELECT sku, name FROM products WHERE species = %s LIMIT 5",
-                    ("mouse",),
+            with httpx.Client(timeout=10.0) as client:
+                r = client.post(
+                    f"{POSTGRES_DB_URL}/search",
+                    json={"query": query, "max_results": 5},
                 )
-                _ = cur.fetchall()
-        except psycopg.errors.UndefinedColumn as e:
-            log.warning("show-me-mice trap fired in navigate_to_search: %s", e)
-            raise HTTPException(status_code=500, detail=f"database error: {e}") from e
-        except psycopg.Error as e:
-            log.warning("show-me-mice trap raised generic PG error in navigate_to_search: %s", e)
-            raise HTTPException(status_code=500, detail=f"database error: {e}") from e
+                r.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            log.warning("postgres-db returned %d for mice query: %s",
+                        e.response.status_code, e.response.text[:200])
+            detail = e.response.text
+            try:
+                parsed = e.response.json()
+                if isinstance(parsed, dict) and "detail" in parsed:
+                    detail = parsed["detail"]
+            except (ValueError, TypeError):
+                pass
+            raise HTTPException(status_code=e.response.status_code, detail=detail) from e
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=502, detail=f"postgres-db unreachable: {e}") from e
 
     url = f"/search?q={quote_plus(query)}"
     return {

@@ -1,0 +1,44 @@
+{{- if .Values.neoncart.postgresDb.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-db
+  namespace: neoncart
+  labels:
+    {{- include "aio11y.labels" "postgres-db" | nindent 4 }}
+spec:
+  replicas: {{ .Values.neoncart.postgresDb.replicas }}
+  selector:
+    matchLabels:
+      {{- include "aio11y.selectorLabels" "postgres-db" | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aio11y.labels" "postgres-db" | nindent 8 }}
+    spec:
+      containers:
+        - name: postgres-db
+          image: {{ include "aio11y.image" (list $ "postgres-db") }}
+          imagePullPolicy: {{ .Values.global.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            {{- include "aio11y.envOtelSigil" (list $ "postgres-db") | nindent 12 }}
+            {{- include "aio11y.envPostgres" . | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.neoncart.postgresDb.resources | nindent 12 }}
+{{- end }}

@@ -41,6 +41,9 @@ jobs:
           - name: neoncart-gift-finder
             context: apps/neoncart-gift-finder
             image: neoncart-gift-finder
+          - name: postgres-db
+            context: apps/postgres-db
+            image: postgres-db
           - name: supportbot-web
             context: apps/supportbot-web
             image: supportbot-web
