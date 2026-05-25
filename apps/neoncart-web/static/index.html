@@ -1684,28 +1684,14 @@ footer {
 }
 #copilotPanel .cp-report-btn svg { flex: 0 0 auto; }
 #copilotPanel .cp-tool-error {
-  margin-top: 8px;
-  background: rgba(255,59,107,0.06);
-  border: 1px solid rgba(255,59,107,0.30);
-  border-radius: 8px;
-  padding: 8px 10px;
-}
-#copilotPanel .cp-tool-error-head {
+  margin-top: 6px;
+  display: inline-block;
   color: var(--red);
   font-family: var(--mono); font-size: 11px;
-  margin-bottom: 6px;
-}
-#copilotPanel .cp-tool-error-detail {
-  font-family: var(--mono); font-size: 11px;
-  color: var(--red);
-  background: rgba(0,0,0,0.35);
-  padding: 8px 10px;
-  border-radius: 6px;
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 200px;
-  overflow: auto;
+  background: rgba(255,59,107,0.08);
+  border: 1px solid rgba(255,59,107,0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
 }
 
 /* Inline product cards rendered under bot replies when search_products
@@ -3508,22 +3494,21 @@ fetch('/api/whoami', { credentials: 'same-origin' })
           var w = appendMsg('bot', renderMarkdown(data.response));
           appendProductCards(w, data.products);
           appendBadges(w, data.model, data.specialists, data.tool_calls, data.escalated, data.tools);
-          // Surface tool failures (e.g. mice trap's postgres error) as a
-          // readable panel under the bot reply. Without this the user only
-          // sees the LLM's graceful "I'm having trouble" reply and the
-          // actual DB error is invisible — even though it's right there in
-          // tool_calls[].result.error.
-          (data.tool_calls || []).forEach(function(tc) {
-            if (!tc || !tc.result || !tc.result.error) return;
+          // Surface tool failures (e.g. mice trap) as a single compact
+          // chip per turn — "⚠ 2 tool errors". The full detail (DB query,
+          // postgres error) stays in tool_calls[].result.error for the
+          // Investigate flow / Tempo trace; UI keeps it terse.
+          var _failedTools = (data.tool_calls || []).filter(function(tc) {
+            return tc && tc.result && tc.result.error;
+          });
+          if (_failedTools.length) {
             var box = document.createElement('div');
             box.className = 'cp-tool-error';
-            box.innerHTML =
-              '<div class="cp-tool-error-head">⚠️ Tool ' + escapeHtml(tc.tool || 'unknown') +
-                ' failed (HTTP ' + (tc.result.status_code || '?') + ')</div>' +
-              '<pre class="cp-tool-error-detail">' + escapeHtml(String(tc.result.error)) + '</pre>';
+            box.textContent = '⚠ ' + _failedTools.length + ' tool error' +
+              (_failedTools.length === 1 ? '' : 's');
             w.appendChild(box);
             data.failed = true;
-          });
+          }
           // Drive the storefront from the chat: when the agent emits a
           // navigate action ("show me keyboards" → category=peripherals or
           // search=keyboards), reroute the grid behind the chat panel so
