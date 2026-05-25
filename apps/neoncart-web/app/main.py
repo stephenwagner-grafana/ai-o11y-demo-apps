@@ -456,7 +456,17 @@ async def _forward(url: str, payload: dict, caller_type: str) -> dict[str, Any]:
             return r.json()
     except httpx.HTTPStatusError as e:
         log.warning("specialist returned %d: %s", e.response.status_code, e.response.text[:200])
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.text) from e
+        # Unwrap the downstream JSON if present so we don't double-encode
+        # `{"detail": "{\"detail\":\"...\"}"}` — surface the inner detail
+        # string directly to the client.
+        detail: Any = e.response.text
+        try:
+            parsed = e.response.json()
+            if isinstance(parsed, dict) and "detail" in parsed:
+                detail = parsed["detail"]
+        except (ValueError, TypeError):
+            pass
+        raise HTTPException(status_code=e.response.status_code, detail=detail) from e
     except httpx.HTTPError as e:
         log.warning("specialist unreachable: %s", e)
         raise HTTPException(status_code=502, detail=f"specialist unreachable: {e}") from e
