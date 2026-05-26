@@ -498,9 +498,20 @@ Four portable Grafana dashboards live in [`dashboards/`](./dashboards). **None a
 | File | What it tells you |
 |---|---|
 | [`use-cases.json`](./dashboards/use-cases.json) | **The headline dashboard** — 38 panels covering KPI tiles, model diversity, per-agent ROI, the "Top Models by ROI Multiple" ranked table, ATC + revenue funnel, latency p50/p95/p99, tool calls per agent, and SupportBot per-employee usage. Start here. |
-| [`cost-per-model.json`](./dashboards/cost-per-model.json) | Per-model cost & throughput — $/hour stacked bars, per-model leaderboard table with gradient gauge cells, input:output token ratio per model. Useful when comparing 2+ models side-by-side. |
 | [`neoncart-business.json`](./dashboards/neoncart-business.json) | NeonCart business impact — ATC by source + model, AI conversion lift, projected weekly revenue, per-agent ROI table, combined AI agent ROI tile, **plus an "AI quality at a glance" row** (eval verdicts, ncQuality / ncGroundedness / hallucination / ncSentiment KPIs) and per-evaluator pass-rate trends. The "is the AI making us money — and behaving" view. |
-| [`supportbot-per-employee.json`](./dashboards/supportbot-per-employee.json) | Per-employee SupportBot usage — top-10 employees table (calls, in/out tokens, ratio, cost), calls/min trends, input:output ratio per employee, **plus eval-result panels** (sbQuality pass rate, hallucination, PII / secret leaks, AI usage worthiness, first-mate / pirate-rate leaderboards, compound bot health). The "internal AI chargeback + quality" view. |
+| [`cost-per-model.json`](./dashboards/cost-per-model.json) | Per-model cost & throughput — $/hour stacked bars, per-model leaderboard table with gradient gauge cells, input:output token ratio per model. Useful when comparing 2+ models side-by-side. |
+| [`ai-eval-results-full-breakdown.json`](./dashboards/ai-eval-results-full-breakdown.json) | Sigil eval results across 24h — total evals, pass-rate KPI tiles, fail-rate by model, pass-rate by agent + evaluator leaderboards, trends. The "is AI quality holding up across models" view. |
+
+### Dashboard previews
+
+![NeonCart Business Impact dashboard](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/neoncart-business-dashboard.png)
+*[`neoncart-business.json`](./dashboards/neoncart-business.json) — ATC by source + model, AI conversion lift, per-agent ROI, eval quality at a glance.*
+
+![Per-model leaderboard dashboard](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/cost-per-model-dashboard.png)
+*[`cost-per-model.json`](./dashboards/cost-per-model.json) — calls, tokens, and cost per model with gradient bars; cost-per-1k-requests ranking.*
+
+![AI eval results dashboard](https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/docs/screenshots/ai-eval-results-dashboard.png)
+*[`ai-eval-results-full-breakdown.json`](./dashboards/ai-eval-results-full-breakdown.json) — eval volume, pass-rate, and fail-rate breakdowns across agents, models, and evaluators.*
 
 Each JSON ships with the datasource UID **pinned to `grafanacloud-prom`** (Grafana Cloud's standard Prometheus DS UID) so import doesn't prompt for remapping. If your stack uses a different UID, search-and-replace `grafanacloud-prom` in the JSON before importing. Setup happens **after** install once you've let the loadgen warm up (~10 min for the main models, 30-60 min for low-weight Anthropic models like Opus 4.7).
 
