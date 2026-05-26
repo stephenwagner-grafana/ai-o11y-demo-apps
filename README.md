@@ -41,13 +41,6 @@ The result: every signal type — metric, log, trace, generation event, evaluati
 - **Per-user metrics** with `user_id` attribution on cost, calls, and tokens — supports per-employee chargeback panels for SupportBot
 - **The "show me mice" trap**: nc-chatbot's product-search tool hardcodes a query against a column that doesn't exist. The resulting Postgres error propagates through a 5-service trace cascade, making it a perfect "spot the bug in the trace waterfall" demo
 
-## What you don't have to do
-
-- **No manual OTel setup.** Every Python service is auto-instrumented; metrics, logs, and traces ship via OTLP push. No in-cluster Prometheus scraper required.
-- **No dashboard hand-building.** Paste `dashboards/use-cases-prompt.md` into Grafana Assistant and it builds the comprehensive use-case dashboard. Or import JSON via `dashboards/import.sh`.
-- **No Cloudflare / DNS / ingress work to demo locally.** `kubectl port-forward` is documented inline; optional Ingress objects ship via chart values for public hostnames.
-- **No babysitting once installed.** The loadgen runs continuously, the chart's `pullPolicy: Always` picks up image refreshes, and `tools/verify.sh` exits cleanly when everything's healthy.
-
 ## Status
 
 Active development. The full demo cycle (`helm uninstall` → `./tools/install.sh` → `./tools/verify.sh`) has been validated end-to-end and produces ~50 products seeded, all 11 pods healthy, and real LLM traffic flowing within 90 seconds.
@@ -238,35 +231,6 @@ The shipped Ollama default is a 4-model pool spanning the practical
 parameter-count range you'd see on a single-GPU box, with one llama3.1
 entry mixed into the qwen2.5 family for vendor diversity on the model-name
 label. All four are tool-capable.
-
-| Model | Weight | Tier |
-|---|---|---|
-| `qwen2.5:3b` | 25% | small (~2GB VRAM, fast feedback) |
-| `qwen2.5:7b` | 30% | medium (workhorse) |
-| `llama3.1:8b` | 25% | medium (different family — vendor diversity) |
-| `qwen2.5:14b` | 20% | large (current default) |
-
-> **Heads-up:** the customer's Ollama server must have all four models pulled
-> AND configured to keep them resident concurrently. The gateway does not
-> auto-pull; a missing model surfaces as a 500. With Ollama's default
-> `OLLAMA_MAX_LOADED_MODELS=1` only one model is hot at a time and the other
-> three return `"maximum pending requests exceeded"` 503s, which the gateway
-> then transparently falls back to Anthropic for — so the "ATC per model"
-> dashboard never sees the rotated-out Ollama models. Run this on your
-> Ollama host once (idempotent) to fix that:
->
-> ```bash
-> bash <(curl -sSLk https://raw.githubusercontent.com/stephenwagner-grafana/ai-o11y-demo-apps/main/tools/setup-ollama-host.sh)
-> ```
->
-> It sets `OLLAMA_HOST=0.0.0.0:11434`, `OLLAMA_MAX_LOADED_MODELS=4`,
-> `OLLAMA_NUM_PARALLEL=2`, `OLLAMA_KEEP_ALIVE=30m`, pulls any missing models,
-> and warms each one. Needs ~28GB VRAM for the default 4-model pool — adjust
-> the `MODELS=` array in the script for smaller GPUs and edit
-> `global.modelWeights.ollama` in your values to match.
->
-> Avoid `tinyllama`, `llama3.2:1b|3b`, and `gemma2` — they don't support tool
-> calling and produce 400s on tool-using prompts.
 
 Override the pool via `ANTHROPIC_MODEL_WEIGHTS` / `OLLAMA_MODEL_WEIGHTS` in your `.env` (picked up by `tools/install.sh`), or edit `global.modelWeights.<provider>` in your values file:
 
