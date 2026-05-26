@@ -202,6 +202,13 @@ collect_optional() {
   prompt_value OPENAI_API_KEY "OpenAI API key" "${OPENAI_API_KEY:-}"
   prompt_value GEMINI_API_KEY "Gemini API key" "${GEMINI_API_KEY:-}"
   prompt_value OLLAMA_BASE_URL "Ollama base URL (e.g. http://ollama.ollama:11434)" "${OLLAMA_BASE_URL:-}"
+  say ""
+  say "─── Auto-import dashboards (optional) ───"
+  say "Provide a Grafana stack URL + service-account token (glsa_*) with"
+  say "dashboards:write to have install.sh import the 4 dashboards in dashboards/"
+  say "at the end. Skip both prompts to import manually later."
+  prompt_value GRAFANA_URL "Grafana stack URL (e.g. https://acme.grafana.net)" "${GRAFANA_URL:-}"
+  prompt_value GRAFANA_API_TOKEN "Grafana service-account token (glsa_...)" "${GRAFANA_API_TOKEN:-}"
 }
 
 collect_ingress() {
@@ -305,6 +312,10 @@ INGRESS_SUPPORTBOT_HOST="${INGRESS_SUPPORTBOT_HOST:-}"
 
 # ── Cross-provider traffic split (empty = chart default anthropic:1,ollama:2) ─
 PROVIDER_WEIGHTS="${PROVIDER_WEIGHTS:-}"
+
+# ── Dashboard auto-import (both blank = skip; see next-steps for manual cmd) ──
+GRAFANA_URL="${GRAFANA_URL:-}"
+GRAFANA_API_TOKEN="${GRAFANA_API_TOKEN:-}"
 EOF
   chmod 600 "$ENV_FILE"
   ok "Wrote ${ENV_FILE} (chmod 600)"
@@ -444,6 +455,28 @@ helm_install() {
   ok "Helm install complete"
 }
 
+# ── Dashboard auto-import ─────────────────────────────────────────────────────
+import_dashboards() {
+  hdr "Dashboard import"
+  if [[ -z "${GRAFANA_URL:-}" || -z "${GRAFANA_API_TOKEN:-}" ]]; then
+    say "GRAFANA_URL or GRAFANA_API_TOKEN not set — skipping auto-import."
+    say "Run it later with:"
+    say "  GRAFANA_URL=https://your-stack.grafana.net \\"
+    say "  GRAFANA_API_TOKEN=glsa_... \\"
+    say "  bash ${REPO_ROOT}/dashboards/import.sh"
+    DASHBOARDS_IMPORTED=0
+    return 0
+  fi
+  if GRAFANA_URL="$GRAFANA_URL" GRAFANA_API_TOKEN="$GRAFANA_API_TOKEN" \
+       bash "${REPO_ROOT}/dashboards/import.sh"; then
+    ok "Dashboards imported"
+    DASHBOARDS_IMPORTED=1
+  else
+    say "Dashboard import returned a non-zero status — see output above."
+    DASHBOARDS_IMPORTED=0
+  fi
+}
+
 # ── Next steps banner ─────────────────────────────────────────────────────────
 print_next_steps() {
   hdr "Next steps"
@@ -464,6 +497,15 @@ print_next_steps() {
   5. To regenerate the synthetic-user pool with a new seed:
         python3 tools/regenerate-users.py --seed 99
 EOF
+  if [[ "${DASHBOARDS_IMPORTED:-0}" -ne 1 ]]; then
+    cat <<EOF
+
+  6. Import the 4 use-case dashboards into your Grafana:
+        GRAFANA_URL=https://your-stack.grafana.net \\
+        GRAFANA_API_TOKEN=glsa_... \\
+        bash ${REPO_ROOT}/dashboards/import.sh
+EOF
+  fi
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -484,6 +526,7 @@ main() {
   generate_users
   write_values_override
   helm_install
+  import_dashboards
   print_next_steps
 
   hdr "Done"
