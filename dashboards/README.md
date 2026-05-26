@@ -37,22 +37,32 @@ this stack — no speculative panels.
 
 ## Option B — Import the JSON via API (scriptable, needs API token)
 
-If you have a Grafana service-account API token, run:
+If you have a Grafana service-account API token with `dashboards:write`, run:
 
 ```bash
 export GRAFANA_URL=https://YOUR-STACK.grafana.net
 export GRAFANA_API_TOKEN=glsa_XXX
+# Optional: override the K8s-style namespace (auto-discovered from
+# /api/frontend/settings if unset):
+# export GRAFANA_STACK_NAMESPACE=stacks-<your_stack_id>
 # Optional: override if your Prometheus datasource UID is not the
-# default "grafanacloud-prom":
+# default "grafanacloud-prom" (only used by the v1 portable-export path):
 # export PROM_DS_UID=my-prom-uid
 
 ./dashboards/import.sh
 ```
 
-This POSTs every `.json` file in this directory to your Grafana. Files
-with a portable `__inputs` block (e.g. `use-cases.json`) go through
-`/api/dashboards/import` with `${DS_PROMETHEUS}` resolved to
-`$PROM_DS_UID`; everything else falls back to `/api/dashboards/db`.
+Each `*.json` file is auto-detected:
+- **v2 schema** (`apiVersion: dashboard.grafana.app/v2`) — `PUT` to
+  `/apis/dashboard.grafana.app/v2/namespaces/<ns>/dashboards/<name>`.
+  PUT is upsert (201 on create / 200 on update); server-managed
+  metadata (`resourceVersion`, `generation`, timestamps,
+  `createdBy/updatedBy`) is stripped before send.
+- **v1 schema** — falls back to `/api/dashboards/import` (when
+  `__inputs` is present) or `/api/dashboards/db`.
+
+`install.sh` calls this script automatically when `GRAFANA_URL` and
+`GRAFANA_API_TOKEN` are provided during the install wizard.
 
 ## What's in the demo's dashboards
 
