@@ -5,8 +5,8 @@
     "name": "st6b9f8",
     "namespace": "stacks-1372178",
     "uid": "ebe7b2fe-351c-412a-a346-39bd8a936aa5",
-    "resourceVersion": "1779742306181295",
-    "generation": 2,
+    "resourceVersion": "1779809123858330",
+    "generation": 5,
     "creationTimestamp": "2026-05-24T23:11:48Z",
     "labels": {
       "grafana.app/deprecatedInternalID": "542410512322560"
@@ -16,7 +16,7 @@
       "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana Cloud",
       "grafana.app/updatedBy": "user:eexm63g36yku8c",
-      "grafana.app/updatedTimestamp": "2026-05-25T20:51:46Z"
+      "grafana.app/updatedTimestamp": "2026-05-26T15:25:23Z"
     }
   },
   "spec": {
@@ -1948,8 +1948,8 @@
         "kind": "Panel",
         "spec": {
           "id": 6,
-          "title": "Revenue rate ($/hour)",
-          "description": "Realized revenue from completed checkouts, projected to $/hour.",
+          "title": "Successful ATC per Request by model",
+          "description": "Ratio of successful add-to-cart events per AI request, broken down by model.",
           "links": [],
           "data": {
             "kind": "QueryGroup",
@@ -1966,8 +1966,14 @@
                         "name": "grafanacloud-prom"
                       },
                       "spec": {
-                        "expr": "sum(rate(neoncart_revenue_usd_total{}[5m])) * 3600",
-                        "legendFormat": "revenue"
+                        "app": "grafana-assistant-app",
+                        "expr": "sum by(gen_ai_request_model) (rate(neoncart_add_to_cart_total[1h]))\n/\nsum by(gen_ai_request_model) (rate(gen_ai_user_calls_total[1h]))",
+                        "instant": false,
+                        "interval": "1h",
+                        "intervalFactor": 1,
+                        "legendFormat": "{{gen_ai_request_model}}",
+                        "queryType": "range",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -1991,7 +1997,6 @@
                 },
                 "legend": {
                   "calcs": [
-                    "lastNotNull",
                     "mean",
                     "max"
                   ],
@@ -2000,14 +2005,14 @@
                   "showLegend": true
                 },
                 "tooltip": {
-                  "hideZeros": false,
+                  "hideZeros": true,
                   "mode": "multi",
                   "sort": "desc"
                 }
               },
               "fieldConfig": {
                 "defaults": {
-                  "unit": "currencyUSD",
+                  "unit": "percentunit",
                   "decimals": 2,
                   "thresholds": {
                     "mode": "absolute",
@@ -2015,15 +2020,12 @@
                       {
                         "value": 0,
                         "color": "green"
-                      },
-                      {
-                        "value": 80,
-                        "color": "red"
                       }
                     ]
                   },
                   "color": {
-                    "mode": "palette-classic"
+                    "mode": "palette-classic",
+                    "seriesBy": "max"
                   },
                   "custom": {
                     "axisBorderShow": false,
@@ -2032,23 +2034,26 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "barAlignment": 0,
-                    "barWidthFactor": 0.6,
+                    "barWidthFactor": 0.9,
                     "drawStyle": "line",
-                    "fillOpacity": 40,
-                    "gradientMode": "scheme",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
                       "viz": false
                     },
                     "insertNulls": false,
-                    "lineInterpolation": "smooth",
-                    "lineWidth": 2,
-                    "pointSize": 5,
+                    "lineInterpolation": "linear",
+                    "lineStyle": {
+                      "fill": "solid"
+                    },
+                    "lineWidth": 1,
+                    "pointSize": 1,
                     "scaleDistribution": {
                       "type": "linear"
                     },
-                    "showPoints": "never",
+                    "showPoints": "always",
                     "showValues": false,
                     "spanNulls": false,
                     "stacking": {
@@ -2089,7 +2094,9 @@
                       },
                       "spec": {
                         "expr": "sum(rate(neoncart_revenue_usd_total{}[1h])) * 86400 * 7",
-                        "instant": true
+                        "instant": false,
+                        "queryType": "range",
+                        "range": true
                       }
                     },
                     "refId": "A",
@@ -2596,9 +2603,9 @@
     ],
     "timeSettings": {
       "timezone": "browser",
-      "from": "now-6h",
+      "from": "now-24h",
       "to": "now",
-      "autoRefresh": "30s",
+      "autoRefresh": "5m",
       "autoRefreshIntervals": [
         "5s",
         "10s",
