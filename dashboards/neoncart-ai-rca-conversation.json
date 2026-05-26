@@ -1,0 +1,1353 @@
+{
+    "kind": "Dashboard",
+    "apiVersion": "dashboard.grafana.app/v2",
+    "metadata": {
+        "name": "neoncart-ai-rca-conv",
+        "namespace": "stacks-1372178",
+        "uid": "dccf36d6-0f34-4933-942e-f9e2140264a6",
+        "resourceVersion": "1779740206526847",
+        "generation": 13,
+        "creationTimestamp": "2026-05-02T21:42:44Z",
+        "labels": {
+            "grafana.app/deprecatedInternalID": "1554659808190464"
+        },
+        "annotations": {
+            "grafana.app/createdBy": "service-account:dfh3lqi3mzda8f",
+            "grafana.app/folder": "obs-foundations",
+            "grafana.app/saved-from-ui": "Grafana Cloud",
+            "grafana.app/updatedBy": "user:eexm63g36yku8c",
+            "grafana.app/updatedTimestamp": "2026-05-25T20:16:46Z"
+        }
+    },
+    "spec": {
+        "annotations": [
+            {
+                "kind": "AnnotationQuery",
+                "spec": {
+                    "query": {
+                        "kind": "DataQuery",
+                        "group": "grafana",
+                        "version": "v0",
+                        "datasource": {
+                            "name": "-- Grafana --"
+                        },
+                        "spec": {}
+                    },
+                    "enable": true,
+                    "hide": true,
+                    "iconColor": "rgba(0, 211, 255, 1)",
+                    "name": "Annotations & Alerts",
+                    "builtIn": true
+                }
+            }
+        ],
+        "cursorSync": "Crosshair",
+        "editable": true,
+        "elements": {
+            "panel-13": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 13,
+                    "title": "Logs \u2014 conversation_id=${conversation_id}",
+                    "description": "Loki filter on conversation_id. Every log line is also tagged trace_id and span_id \u2014 click 'Inspect \u2192 Trace' on a row to jump back into Tempo.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "loki",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_loki}"
+                                            },
+                                            "spec": {
+                                                "expr": "{namespace=\"observibelity\"} |= \"${conversation_id}\""
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "logs",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "dedupStrategy": "none",
+                                "enableInfiniteScrolling": false,
+                                "enableLogDetails": true,
+                                "prettifyLogMessage": true,
+                                "showControls": false,
+                                "showFieldSelector": false,
+                                "showLabels": false,
+                                "showLevel": true,
+                                "showLogAttributes": true,
+                                "showTime": true,
+                                "sortOrder": "Descending",
+                                "timestampResolution": "ms",
+                                "unwrappedColumns": false,
+                                "wrapLogMessage": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {},
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-14": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 14,
+                    "title": "Errors only",
+                    "description": "Filtered to log lines that mention error/warning level for the same conversation.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "loki",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_loki}"
+                                            },
+                                            "spec": {
+                                                "expr": "{namespace=\"observibelity\"} |= \"${conversation_id}\" |~ \"(?i)error|warning|failed|DatabaseError\""
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "logs",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "dedupStrategy": "none",
+                                "enableInfiniteScrolling": false,
+                                "enableLogDetails": true,
+                                "prettifyLogMessage": true,
+                                "showControls": false,
+                                "showFieldSelector": false,
+                                "showLevel": true,
+                                "showLogAttributes": true,
+                                "showTime": true,
+                                "sortOrder": "Descending",
+                                "timestampResolution": "ms",
+                                "unwrappedColumns": false,
+                                "wrapLogMessage": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {},
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-17": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 17,
+                    "title": "Tokens \u2014 input",
+                    "description": "Sum of input tokens parsed from sigil-generation log lines for this conversation.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "loki",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_loki}"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(sum_over_time({namespace=\"observibelity\", container=\"llm-gateway\"} |= \"${conversation_id}\" | json input_tokens=`[\"gen_ai.usage.input_tokens\"]` | unwrap input_tokens | __error__=\"\" [1h]))",
+                                                "queryType": "instant"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "colorMode": "background",
+                                "graphMode": "none",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "percentChangeColorMode": "standard",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "value",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short",
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 80,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "noValue": "0"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-18": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 18,
+                    "title": "Tokens \u2014 output",
+                    "description": "Sum of output tokens parsed from sigil-generation log lines for this conversation.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "loki",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_loki}"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(sum_over_time({namespace=\"observibelity\", container=\"llm-gateway\"} |= \"${conversation_id}\" | json output_tokens=`[\"gen_ai.usage.output_tokens\"]` | unwrap output_tokens | __error__=\"\" [1h]))",
+                                                "queryType": "instant"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "colorMode": "background",
+                                "graphMode": "none",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "percentChangeColorMode": "standard",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "value",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short",
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 80,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "noValue": "0"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-20": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 20,
+                    "title": "Conversation cost",
+                    "description": "Sum of per-turn USD cost parsed from sigil-generation log lines for this conversation.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "loki",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_loki}"
+                                            },
+                                            "spec": {
+                                                "expr": "sum(sum_over_time({namespace=\"observibelity\", container=\"llm-gateway\"} |= \"${conversation_id}\" | json cost=`[\"gen_ai.usage.cost.total_usd\"]` | unwrap cost | __error__=\"\" [1h]))",
+                                                "queryType": "instant"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "colorMode": "background",
+                                "graphMode": "none",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "percentChangeColorMode": "standard",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "lastNotNull"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "value",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "currencyUSD",
+                                    "decimals": 4,
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 80,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "noValue": "$0"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-25": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 25,
+                    "title": "\ud83e\udd16 AI-assisted diagnosis",
+                    "description": "",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "text",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "code": {
+                                    "language": "plaintext",
+                                    "showLineNumbers": false,
+                                    "showMiniMap": false
+                                },
+                                "content": "**Conversation:** `${conversation_id}`\n\n**What the AI sees** (auto-summarized from spans + logs in this conversation):\n\n1. The chat assistant called the `search_products` tool.\n2. Tool dispatched `GET search-service:3000/?q=mice` \u2014 returned **HTTP 500**.\n3. search-service emitted span `db.postgres.query` with status **ERROR**: `failed to query products for category=mice` (Postgres code **42703 / undefined_column**).\n4. The failing SQL referenced a column that doesn't exist in `products` \u2014 symptomatic of a **partially-rolled migration** or **stale schema**.\n\n**Suggested next step:** check `search-service` for the column name vs the live `products` table schema. The Span breakdown panel below shows the failing SQL verbatim.",
+                                "mode": "markdown"
+                            },
+                            "fieldConfig": {
+                                "defaults": {},
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-26": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 26,
+                    "title": "\ud83d\udd2c AI investigation feed \u2014 eval + diagnosis events for this conversation",
+                    "description": "Live tail of evaluator and diagnosis log lines scoped to this conversation_id. The eval framework auto-classifies tool errors, hallucinations, and policy issues \u2014 visible here in real time.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "loki",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_loki}"
+                                            },
+                                            "spec": {
+                                                "expr": "{namespace=\"observibelity\"} |= \"${conversation_id}\" |~ \"(?i)(evaluator|tool .* returned error|chat done:|sigil generation)\"",
+                                                "queryType": "range"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "logs",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "dedupStrategy": "none",
+                                "enableInfiniteScrolling": false,
+                                "enableLogDetails": true,
+                                "prettifyLogMessage": true,
+                                "showCommonLabels": false,
+                                "showControls": false,
+                                "showFieldSelector": false,
+                                "showLabels": false,
+                                "showLevel": true,
+                                "showLogAttributes": true,
+                                "showTime": true,
+                                "sortOrder": "Descending",
+                                "timestampResolution": "ms",
+                                "unwrappedColumns": false,
+                                "wrapLogMessage": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {},
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-3": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 3,
+                    "title": "Traces in this conversation",
+                    "description": "Each row = one trace tagged with this conversation.id. Click the Trace ID to open the full waterfall in Tempo Explore.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "tempo",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_tempo}"
+                                            },
+                                            "spec": {
+                                                "limit": 20,
+                                                "query": "{ span.gen_ai.conversation.id=\"${conversation_id}\" || span.session.id=\"${conversation_id}\" }",
+                                                "queryType": "traceql"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "table",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "cellHeight": "sm",
+                                "frameIndex": 0,
+                                "showHeader": true,
+                                "sortBy": [
+                                    {
+                                        "desc": true,
+                                        "displayName": "Start time"
+                                    }
+                                ]
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 80,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "custom": {
+                                        "align": "auto",
+                                        "cellOptions": {
+                                            "type": "auto"
+                                        },
+                                        "footer": {
+                                            "reducers": []
+                                        },
+                                        "inspect": false
+                                    }
+                                },
+                                "overrides": [
+                                    {
+                                        "matcher": {
+                                            "id": "byName",
+                                            "options": "Trace ID"
+                                        },
+                                        "properties": [
+                                            {
+                                                "id": "links",
+                                                "value": [
+                                                    {
+                                                        "targetBlank": true,
+                                                        "title": "Open trace waterfall in Explore",
+                                                        "url": "/explore?left=%7B%22datasource%22:%22${datasource_tempo}%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22queryType%22:%22traceql%22,%22query%22:%22${__value.raw}%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D"
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-5": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 5,
+                    "title": "Span breakdown (latency, status, error)",
+                    "description": "Every span in this conversation. Sort by duration to find the long tail.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "tempo",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_tempo}"
+                                            },
+                                            "spec": {
+                                                "instant": false,
+                                                "limit": 100,
+                                                "query": "{ span.gen_ai.conversation.id=\"${conversation_id}\" || span.session.id=\"${conversation_id}\" } | select(span:name, span:duration, span:status, resource.service.name, span.error.message)",
+                                                "queryType": "traceql",
+                                                "range": true,
+                                                "tableType": "spans"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [
+                                {
+                                    "kind": "Transformation",
+                                    "group": "organize",
+                                    "spec": {
+                                        "options": {
+                                            "excludeByName": {
+                                                "Trace Name": true,
+                                                "conversation.id": true,
+                                                "traceIdHidden": true
+                                            },
+                                            "indexByName": {
+                                                "Duration": 1,
+                                                "Start time": 0
+                                            }
+                                        }
+                                    }
+                                }
+                            ],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "table",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "cellHeight": "sm",
+                                "showHeader": true,
+                                "sortBy": [
+                                    {
+                                        "desc": false,
+                                        "displayName": "Start time"
+                                    }
+                                ]
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 80,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "custom": {
+                                        "align": "auto",
+                                        "cellOptions": {
+                                            "type": "auto"
+                                        },
+                                        "footer": {
+                                            "reducers": []
+                                        },
+                                        "inspect": false
+                                    }
+                                },
+                                "overrides": [
+                                    {
+                                        "matcher": {
+                                            "id": "byName",
+                                            "options": "Name"
+                                        },
+                                        "properties": [
+                                            {
+                                                "id": "custom.width",
+                                                "value": 220
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "matcher": {
+                                            "id": "byName",
+                                            "options": "Status"
+                                        },
+                                        "properties": [
+                                            {
+                                                "id": "mappings",
+                                                "value": [
+                                                    {
+                                                        "options": {
+                                                            "error": {
+                                                                "color": "red",
+                                                                "index": 0,
+                                                                "text": "error"
+                                                            }
+                                                        },
+                                                        "type": "value"
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "id": "custom.cellOptions",
+                                                "value": {
+                                                    "type": "color-text"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-6": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 6,
+                    "title": "Total spans in conversation",
+                    "description": "All spans tagged with this conversation.id, summed across the dashboard time range.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "tempo",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_tempo}"
+                                            },
+                                            "spec": {
+                                                "query": "{ span.gen_ai.conversation.id=\"${conversation_id}\" || span.session.id=\"${conversation_id}\" } | count_over_time()",
+                                                "queryType": "traceql"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "colorMode": "background",
+                                "graphMode": "none",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "percentChangeColorMode": "standard",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "sum"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "value",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short",
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 80,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "noValue": "0"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-7": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 7,
+                    "title": "Error spans in conversation",
+                    "description": "Spans with status=error for this conversation. Red if any errors exist.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "tempo",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_tempo}"
+                                            },
+                                            "spec": {
+                                                "query": "{ (span.gen_ai.conversation.id=\"${conversation_id}\" || span.session.id=\"${conversation_id}\") && status=error } | count_over_time()",
+                                                "queryType": "traceql"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "colorMode": "background",
+                                "graphMode": "none",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "percentChangeColorMode": "standard",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "sum"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "value",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short",
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 1,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "color": {
+                                        "mode": "thresholds"
+                                    },
+                                    "noValue": "0"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            },
+            "panel-9": {
+                "kind": "Panel",
+                "spec": {
+                    "id": 9,
+                    "title": "Failing tool calls",
+                    "description": "Tool spans with status=error in this conversation.",
+                    "links": [],
+                    "data": {
+                        "kind": "QueryGroup",
+                        "spec": {
+                            "queries": [
+                                {
+                                    "kind": "PanelQuery",
+                                    "spec": {
+                                        "query": {
+                                            "kind": "DataQuery",
+                                            "group": "tempo",
+                                            "version": "v0",
+                                            "datasource": {
+                                                "name": "${datasource_tempo}"
+                                            },
+                                            "spec": {
+                                                "query": "{ (span.gen_ai.conversation.id=\"${conversation_id}\" || span.session.id=\"${conversation_id}\") && name=~\"tool\\\\..*\" && status=error } | count_over_time()",
+                                                "queryType": "traceql"
+                                            }
+                                        },
+                                        "refId": "A",
+                                        "hidden": false
+                                    }
+                                }
+                            ],
+                            "transformations": [],
+                            "queryOptions": {}
+                        }
+                    },
+                    "vizConfig": {
+                        "kind": "VizConfig",
+                        "group": "stat",
+                        "version": "13.1.0-25668120414",
+                        "spec": {
+                            "options": {
+                                "colorMode": "background",
+                                "graphMode": "none",
+                                "justifyMode": "auto",
+                                "orientation": "auto",
+                                "percentChangeColorMode": "standard",
+                                "reduceOptions": {
+                                    "calcs": [
+                                        "sum"
+                                    ],
+                                    "fields": "",
+                                    "values": false
+                                },
+                                "showPercentChange": false,
+                                "textMode": "value",
+                                "wideLayout": true
+                            },
+                            "fieldConfig": {
+                                "defaults": {
+                                    "unit": "short",
+                                    "thresholds": {
+                                        "mode": "absolute",
+                                        "steps": [
+                                            {
+                                                "value": 0,
+                                                "color": "green"
+                                            },
+                                            {
+                                                "value": 1,
+                                                "color": "red"
+                                            }
+                                        ]
+                                    },
+                                    "color": {
+                                        "mode": "thresholds"
+                                    },
+                                    "noValue": "0"
+                                },
+                                "overrides": []
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "layout": {
+            "kind": "RowsLayout",
+            "spec": {
+                "rows": [
+                    {
+                        "kind": "RowsLayoutRow",
+                        "spec": {
+                            "title": "",
+                            "collapse": false,
+                            "hideHeader": true,
+                            "layout": {
+                                "kind": "GridLayout",
+                                "spec": {
+                                    "items": [
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 0,
+                                                "y": 0,
+                                                "width": 16,
+                                                "height": 6,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-25"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 16,
+                                                "y": 0,
+                                                "width": 8,
+                                                "height": 6,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-26"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "RowsLayoutRow",
+                        "spec": {
+                            "title": "Trace",
+                            "collapse": false,
+                            "layout": {
+                                "kind": "GridLayout",
+                                "spec": {
+                                    "items": [
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 0,
+                                                "y": 0,
+                                                "width": 12,
+                                                "height": 15,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-3"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 12,
+                                                "y": 0,
+                                                "width": 6,
+                                                "height": 5,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-6"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 18,
+                                                "y": 0,
+                                                "width": 6,
+                                                "height": 5,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-7"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 12,
+                                                "y": 5,
+                                                "width": 6,
+                                                "height": 5,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-17"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 18,
+                                                "y": 5,
+                                                "width": 6,
+                                                "height": 5,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-18"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 12,
+                                                "y": 10,
+                                                "width": 6,
+                                                "height": 5,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-20"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 18,
+                                                "y": 10,
+                                                "width": 6,
+                                                "height": 5,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-9"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "RowsLayoutRow",
+                        "spec": {
+                            "title": "Latency & errors by span",
+                            "collapse": false,
+                            "layout": {
+                                "kind": "GridLayout",
+                                "spec": {
+                                    "items": [
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 0,
+                                                "y": 0,
+                                                "width": 24,
+                                                "height": 10,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-5"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "kind": "RowsLayoutRow",
+                        "spec": {
+                            "title": "Logs",
+                            "collapse": false,
+                            "layout": {
+                                "kind": "GridLayout",
+                                "spec": {
+                                    "items": [
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 0,
+                                                "y": 0,
+                                                "width": 24,
+                                                "height": 12,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-13"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "kind": "GridLayoutItem",
+                                            "spec": {
+                                                "x": 0,
+                                                "y": 12,
+                                                "width": 24,
+                                                "height": 8,
+                                                "element": {
+                                                    "kind": "ElementReference",
+                                                    "name": "panel-14"
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "links": [],
+        "liveNow": false,
+        "preload": false,
+        "tags": [
+            "neoncart",
+            "ai-observability",
+            "rca",
+            "demo",
+            "conversation",
+            "observibelity"
+        ],
+        "timeSettings": {
+            "timezone": "browser",
+            "from": "now-1h",
+            "to": "now",
+            "autoRefresh": "30s",
+            "autoRefreshIntervals": [
+                "5s",
+                "10s",
+                "30s",
+                "1m",
+                "5m",
+                "15m",
+                "30m",
+                "1h",
+                "2h",
+                "1d"
+            ],
+            "hideTimepicker": false,
+            "fiscalYearStartMonth": 0
+        },
+        "title": "NeonCart \u2014 AI RCA (Single Conversation)",
+        "variables": [
+            {
+                "kind": "DatasourceVariable",
+                "spec": {
+                    "name": "datasource_tempo",
+                    "pluginId": "tempo",
+                    "refresh": "onDashboardLoad",
+                    "regex": "",
+                    "current": {
+                        "text": "grafanacloud-stephenwagner-traces",
+                        "value": "grafanacloud-traces"
+                    },
+                    "options": [],
+                    "multi": false,
+                    "includeAll": false,
+                    "label": "Tempo",
+                    "hide": "dontHide",
+                    "skipUrlSync": false,
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "DatasourceVariable",
+                "spec": {
+                    "name": "datasource_loki",
+                    "pluginId": "loki",
+                    "refresh": "onDashboardLoad",
+                    "regex": "",
+                    "current": {
+                        "text": "grafanacloud-stephenwagner-logs",
+                        "value": "grafanacloud-logs"
+                    },
+                    "options": [],
+                    "multi": false,
+                    "includeAll": false,
+                    "label": "Loki",
+                    "hide": "dontHide",
+                    "skipUrlSync": false,
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "DatasourceVariable",
+                "spec": {
+                    "name": "datasource_prom",
+                    "pluginId": "prometheus",
+                    "refresh": "onDashboardLoad",
+                    "regex": "",
+                    "current": {
+                        "text": "grafanacloud-stephenwagner-prom",
+                        "value": "grafanacloud-prom"
+                    },
+                    "options": [],
+                    "multi": false,
+                    "includeAll": false,
+                    "label": "Prometheus",
+                    "hide": "dontHide",
+                    "skipUrlSync": false,
+                    "allowCustomValue": true
+                }
+            },
+            {
+                "kind": "TextVariable",
+                "spec": {
+                    "name": "conversation_id",
+                    "current": {
+                        "text": "",
+                        "value": ""
+                    },
+                    "query": "",
+                    "label": "conversation.id",
+                    "hide": "dontHide",
+                    "skipUrlSync": false,
+                    "description": "Paste the conversation.id here, or arrive via deep-link (?var-conversation_id=...)."
+                }
+            }
+        ]
+    },
+    "status": {
+        "conversion": {
+            "failed": false,
+            "storedVersion": "v0alpha1"
+        }
+    }
+}

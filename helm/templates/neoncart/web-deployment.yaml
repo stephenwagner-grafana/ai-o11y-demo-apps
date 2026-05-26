@@ -30,6 +30,10 @@ spec:
             {{- include "aio11y.envPostgres" . | nindent 12 }}
             - name: USERS_CONFIG_PATH
               value: /etc/neoncart/users.yaml
+            - name: GRAFANA_URL
+              value: {{ .Values.global.grafana.url | quote }}
+            - name: RCA_DASHBOARD_UID
+              value: {{ .Values.global.grafana.rcaDashboardUid | quote }}
           volumeMounts:
             - name: users
               mountPath: /etc/neoncart

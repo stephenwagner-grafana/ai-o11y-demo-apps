@@ -2230,6 +2230,15 @@ fetch('/api/whoami', { credentials: 'same-origin' })
   })
   .catch(function() { /* offline — fall back to shopper-* id */ });
 
+// Copilot widget config — Grafana stack URL + RCA dashboard UID for the
+// "Investigate this issue" deep-link. Empty grafana_url → button is hidden
+// (typical on installs where the operator didn't supply a stack URL).
+window.__ncCopilotConfig = window.__ncCopilotConfig || { grafana_url: '', rca_dashboard_uid: 'neoncart-ai-rca-conv' };
+fetch('/api/copilot/config', { credentials: 'same-origin' })
+  .then(function(r) { return r.ok ? r.json() : null; })
+  .then(function(c) { if (c) window.__ncCopilotConfig = c; })
+  .catch(function() { /* leave defaults */ });
+
 (function() {
   'use strict';
 
@@ -3208,9 +3217,16 @@ fetch('/api/whoami', { credentials: 'same-origin' })
     // Conversation-scoped RCA dashboard. The "Investigate this issue" button
     // deep-links here with var-conversation_id pre-filled, so the support
     // engineer lands on the trace + logs + AI-metadata panels for the exact
-    // session the shopper just reported. Dashboard UID is fixed by the
-    // dashboard JSON in k8s/dashboard-neoncart-ai-rca-conversation.json.
-    var RCA_DASHBOARD_BASE = 'https://stephenwagner.grafana.net/d/neoncart-ai-rca-conv';
+    // session the shopper just reported. URL is built from window.__ncCopilotConfig
+    // (populated at boot from /api/copilot/config). Dashboard JSON is at
+    // dashboards/neoncart-ai-rca-conversation.json — install.sh imports it
+    // alongside the other dashboards.
+    function rcaDashboardBase() {
+      var cfg = window.__ncCopilotConfig || {};
+      if (!cfg.grafana_url) return '';
+      var uid = cfg.rca_dashboard_uid || 'neoncart-ai-rca-conv';
+      return cfg.grafana_url.replace(/\/$/, '') + '/d/' + uid;
+    }
 
     // Recognise the canned graceful-failure phrases the assistant emits when
     // a tool errors out (e.g. the deterministic mice scenario). The button
@@ -3343,6 +3359,11 @@ fetch('/api/whoami', { credentials: 'same-origin' })
     // opens the conversation-scoped RCA dashboard in a new tab.
     function appendReportButton(wrap, query, conversationId, traceId) {
       if (!conversationId) return;
+      // No Grafana stack URL configured → hide the button entirely. The
+      // operator didn't wire one up at install time so there's nowhere to
+      // deep-link to.
+      var base = rcaDashboardBase();
+      if (!base) return;
       var row = document.createElement('div');
       row.className = 'cp-report';
       var btn = document.createElement('button');
@@ -3372,7 +3393,7 @@ fetch('/api/whoami', { credentials: 'same-origin' })
             keepalive: true,
           }).catch(function() {});
         } catch (_) {}
-        var url = RCA_DASHBOARD_BASE + '?var-conversation_id=' + encodeURIComponent(conversationId);
+        var url = base + '?var-conversation_id=' + encodeURIComponent(conversationId);
         window.open(url, '_blank', 'noopener');
       });
       row.appendChild(btn);

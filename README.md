@@ -465,6 +465,7 @@ Four portable Grafana dashboards live in [`dashboards/`](./dashboards). **None a
 | [`neoncart-business.json`](./dashboards/neoncart-business.json) | NeonCart business impact — ATC by source + model, AI conversion lift, projected weekly revenue, per-agent ROI table, combined AI agent ROI tile, **plus an "AI quality at a glance" row** (eval verdicts, ncQuality / ncGroundedness / hallucination / ncSentiment KPIs) and per-evaluator pass-rate trends. The "is the AI making us money — and behaving" view. |
 | [`cost-per-model.json`](./dashboards/cost-per-model.json) | Per-model cost & throughput — $/hour stacked bars, per-model leaderboard table with gradient gauge cells, input:output token ratio per model. Useful when comparing 2+ models side-by-side. |
 | [`ai-eval-results-full-breakdown.json`](./dashboards/ai-eval-results-full-breakdown.json) | Sigil eval results across 24h — total evals, pass-rate KPI tiles, fail-rate by model, pass-rate by agent + evaluator leaderboards, trends. The "is AI quality holding up across models" view. |
+| [`neoncart-ai-rca-conversation.json`](./dashboards/neoncart-ai-rca-conversation.json) | Single-conversation RCA — the dashboard the chatbot's "Investigate this issue" button deep-links to with `var-conversation_id` pre-filled. Trace chain, logs, and gen_ai metadata for one session. Useful when a shopper reports a failure. |
 
 ### Dashboard previews
 

@@ -377,6 +377,8 @@ global:
   otel:
     endpoint: "${OTEL_EXPORTER_OTLP_ENDPOINT}"
     headers: "${OTEL_EXPORTER_OTLP_HEADERS}"
+  grafana:
+    url: "${GRAFANA_URL:-}"
   caps:
     anthropic:
       usdPerDay: ${ANTHROPIC_CAP_USD_PER_DAY:-20}

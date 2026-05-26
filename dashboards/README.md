@@ -9,6 +9,7 @@ import them after install once the loadgen has warmed up.
 | `cost-per-model.json` | Per-model cost & throughput — $/hr stacked bars, gradient-gauge leaderboard, input:output token ratio. For "compare 2+ models side-by-side". |
 | `neoncart-business.json` | NeonCart business impact — ATC by source/model, AI conversion lift, projected revenue, per-agent ROI table. The "is the AI making us money" view. |
 | `ai-eval-results-full-breakdown.json` | Sigil eval results over 24h — pass/fail rates by agent/model/evaluator, eval volume trends, agent × score-key heatmap. LLM-judge sub-metrics filtered out so only real Prom data renders. |
+| `neoncart-ai-rca-conversation.json` | Conversation-scoped RCA dashboard the chatbot's "Investigate this issue" button deep-links to (with `var-conversation_id` pre-filled). Trace chain, logs, and gen_ai metadata for the exact session a shopper reported. |
 
 Three ways to import them into your Grafana:
 

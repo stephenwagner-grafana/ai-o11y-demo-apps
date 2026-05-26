@@ -20,6 +20,15 @@ global:
   # Service identity (resource attribute on every OTel signal)
   serviceNamespace: ai-o11y-demo-apps
 
+  # Customer's Grafana Cloud stack URL — used by the NeonCart chatbot's
+  # "Investigate this issue" deep-link to the RCA dashboard. Empty string
+  # hides the button (graceful fallback for installs that don't import
+  # dashboards). install.sh sets this from the GRAFANA_URL env collected
+  # during the wizard.
+  grafana:
+    url: ""
+    rcaDashboardUid: "neoncart-ai-rca-conv"
+
   # Provider credentials — populated by install.sh from the user-supplied .env
   anthropic:
     apiKey: ""           # required — CLAUDE_API_KEY

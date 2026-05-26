@@ -175,6 +175,21 @@ except Exception as e:  # noqa: BLE001
     log.warning("could not load users from %s: %s", _USERS_PATH, e)
 
 
+@app.get("/api/copilot/config")
+async def copilot_config() -> dict[str, str]:
+    """Per-instance config for the in-page chatbot widget.
+
+    Frontend uses `grafana_url` + `rca_dashboard_uid` to build the
+    "Investigate this issue" deep-link. Empty `grafana_url` tells the
+    widget to hide the button (the customer didn't supply a stack URL
+    at install time, so a deep-link wouldn't go anywhere useful).
+    """
+    return {
+        "grafana_url": (os.getenv("GRAFANA_URL") or "").rstrip("/"),
+        "rca_dashboard_uid": os.getenv("RCA_DASHBOARD_UID", "neoncart-ai-rca-conv"),
+    }
+
+
 @app.get("/api/whoami")
 async def whoami(
     response: Response,
